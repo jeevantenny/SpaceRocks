@@ -1,7 +1,9 @@
 """Contains constants for initializing game window."""
 
-WINDOW_SIZE = (800, 600)
+WINDOW_SIZE = (640, 480)
 PIXEL_SCALE = 2
+
+PIXEL_WINDOW_SIZE = (WINDOW_SIZE[0]//PIXEL_SCALE, WINDOW_SIZE[1]//PIXEL_SCALE)
 
 WINDOW_CAPTION = "Basic Game Engine"
 WINDOW_ICON_PATH = "ui/window_icon.png"

@@ -20,8 +20,11 @@ def run_functions(functions: Iterable[Callable], *args, **kwargs) -> None:
 
 class GameObject(p.sprite.Sprite):
 
-    def __init__(self, position: Coordinate, components: Iterable[ObjectComponent] = [], groups: Iterable["ObjectGroup"] = []) -> None:
-        super().__init__(*groups)
+    def __init__(self, position: Coordinate, components: Iterable[ObjectComponent] = [], group: "ObjectGroup | None" = None) -> None:
+        if group:
+            super().__init__(group)
+        else:
+            super().__init__()
         
         self.position = p.Vector2(position)
 
@@ -39,7 +42,9 @@ class GameObject(p.sprite.Sprite):
 
 
     @property
-    def test_property(self) -> None: pass
+    def group(self) -> "ObjectGroup | None":
+        if groups:=self.groups():
+            return groups[0]
 
 
     def add_component_methods(self, component: ObjectComponent) -> None:
@@ -101,13 +106,13 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
 
 
-    def update_all(self) -> None:
+    def update(self) -> None:
         for object in self.sprites():
             object.update()
 
 
 
-    def draw_all(self, surface: p.Surface) -> None:
+    def draw(self, surface: p.Surface, lerp_amount: float) -> None:
         for object in self.sprites():
             if object.has_component(ObjectTexture):
-                object.draw(surface)
+                object.draw(surface, lerp_amount)

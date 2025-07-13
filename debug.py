@@ -1,3 +1,3 @@
 
 
-DEBUG = True
+debug_mode = False

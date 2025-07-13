@@ -2,8 +2,9 @@ import pygame as p
 from typing import Callable
 
 from custom_types import Coordinate
+from math_functions import unit_vector
 
-from debug import DEBUG
+import debug
 
 
 
@@ -59,34 +60,10 @@ class ObjectVelocity(ObjectComponent):
     
 
     def accelerate(self, obj, value: Coordinate) -> None:
-        self.velocity += value
+        self.velocity += p.Vector2(value)
 
 
 
-
-class ObjectGravity(ObjectComponent):
-
-    dependencies = [ObjectVelocity]
-    priority = 4
-
-
-    def __init__(self, value=(0, 5)):
-        super().__init__()
-
-        self.value = p.Vector2(value)
-
-        self.add_methods = [self.update, self.set_gravity]
-
-
-
-    def set_gravity(self, obj, value) -> None:
-        self.value = p.Vector2(value)
-
-
-    
-    def update(self, obj) -> None:
-        if not (obj.has_component(ObjectGravity) and obj.get_side_contacts()["bottom"]):
-            obj.accelerate(self.value)
 
 
 
@@ -104,8 +81,17 @@ class ObjectTexture(ObjectComponent):
         self.texture = texture
         self.size = texture.get_size()
         self.rotation = 0
+        self.angular_vel = 0
 
-        self.add_methods = [self.rotate, self.get_rotation, self.set_rotation, self.draw]
+        self.add_methods = [
+            self.rotate,
+            self.get_rotation,
+            self.get_rotation_vector,
+            self.set_rotation,
+            self.set_angular_vel,
+            self.update,
+            self.draw
+        ]
 
 
 
@@ -122,10 +108,18 @@ class ObjectTexture(ObjectComponent):
     def set_rotation(self, obj, value: float) -> None:
         self.rotation = value
 
+    def set_angular_vel(self, obj, value: float) -> None:
+        self.angular_vel = value
+
+
+
+    def update(self, obj) -> None:
+        self.rotate(obj, self.angular_vel)
+
 
     
     def draw(self, obj, surface: p.Surface, lerp_amount=0.0) -> None:
-        blit_texture = p.transform.rotate(self.texture, -self.rotation)
+        blit_texture = p.transform.rotate(self.texture, -(self.rotation-self.angular_vel*(1-lerp_amount)))
         lerp_pos = obj.position.copy()
         if obj.has_component(ObjectVelocity):
             lerp_pos -= obj.get_velocity()*(1-lerp_amount)
@@ -133,7 +127,7 @@ class ObjectTexture(ObjectComponent):
         blit_pos = lerp_pos - p.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
 
-        if DEBUG:
+        if debug.debug_mode:
             p.draw.line(surface, "white", lerp_pos, lerp_pos+self.get_rotation_vector(obj)*10)
 
 
@@ -147,20 +141,19 @@ class ObjectCollision(ObjectComponent):
 
     dependencies = [ObjectVelocity]
     priority = 6
-    speed_bias = 0.1
+    speed_bias = 0.5
 
-    def __init__(self, size: Coordinate, collision_objects: list[p.typing.RectLike] = []):
+    def __init__(self, size: Coordinate, bounce=0.0):
         super().__init__()
 
         self.size = tuple(size)
         from . import GameObject
         self.GameObjectType = GameObject
-        self.collision_objects: list[p.typing.RectLike | GameObject] = collision_objects
+        self.bounce = bounce*0.5
 
         self.add_methods = [
             self.update,
             self.get_rect,
-            self.collision_effected,
             self.get_side_contacts,
             self.process_collision,
             self.draw
@@ -170,10 +163,6 @@ class ObjectCollision(ObjectComponent):
 
     def update(self, obj) -> None:
         obj.process_collision()
-
-    
-    def collision_effected(self, obj) -> bool:
-        return bool(self.collision_objects)
 
     
     def get_rect(self, obj) -> p.FRect:
@@ -187,34 +176,34 @@ class ObjectCollision(ObjectComponent):
         output = {"top": False, "bottom": False, "left": False, "right": False}
 
         obj_rect = self.get_rect(obj)
-        for other_obj in self.collision_objects:
-            if other_obj is not self and isinstance(other_obj, self.GameObjectType):
-                if other_obj.has_component(ObjectCollision):
-                    rect = other_obj.get_rect()
-                else:
-                    raise ValueError("Game object without Object Collision cannot be used with collision check")
-            else:
-                rect = other_obj
+        
+        if obj.group is None:
+            return None
+        
+        for other_obj in obj.group.sprites():
+            if other_obj is not obj and other_obj.has_component(ObjectCollision):
 
-            if obj_rect.right > rect.left and obj_rect.left < rect.right:
-                if obj_rect.top == rect.bottom:
-                    output["top"] = True
-                if obj_rect.bottom == rect.top:
-                    output["bottom"] = True
-                    
-            if obj_rect.bottom > rect.top and obj_rect.top < rect.bottom:
-                if obj_rect.left == rect.right:
-                    output["left"] = True
-                if obj_rect.right == rect.left:
-                    output["right"] = True
+                rect = other_obj.get_rect()
+                if obj_rect.right > rect.left and obj_rect.left < rect.right:
+                    if obj_rect.top == rect.bottom:
+                        output["top"] = True
+                    if obj_rect.bottom == rect.top:
+                        output["bottom"] = True
+                        
+                if obj_rect.bottom > rect.top and obj_rect.top < rect.bottom:
+                    if obj_rect.left == rect.right:
+                        output["left"] = True
+                    if obj_rect.right == rect.left:
+                        output["right"] = True
         
         return output
 
 
 
     def process_collision(self, obj) -> None:
-        obj_rect = self.get_rect(obj)
+        obj_rect: p.Rect = self.get_rect(obj)
         obj_velocity: p.Vector2 = obj.get_velocity()
+        prev_pos: p.Vector2 = obj.position - obj_velocity
 
 
         def set_change(change: float | None, new_value: float) -> float:
@@ -226,43 +215,60 @@ class ObjectCollision(ObjectComponent):
         y_change = None
         x_change = None
         resultant_vel = p.Vector2(0, 0)
-        for other_obj in self.collision_objects:
-            if isinstance(other_obj, self.GameObjectType):
-                if other_obj.has_component(ObjectCollision):
-                    rect = other_obj.get_rect()
-                    resultant_vel = obj_velocity - other_obj.get_velocity()
-                else:
-                    raise ValueError("Game object without Object Collision cannot be used with collision check")
-            else:
-                rect = other_obj
-                resultant_vel = obj_velocity
-                
-            if obj_rect.colliderect(rect):
-                if resultant_vel.y > 0:
-                    y_change = set_change(y_change, rect.top-obj_rect.bottom)
-                elif resultant_vel.y < 0:
-                    y_change = set_change(y_change, rect.bottom-obj_rect.top)
-
-                if resultant_vel.x > 0:
-                    x_change = set_change(x_change, rect.left-obj_rect.right)
-                elif resultant_vel.x < 0:
-                    x_change = set_change(x_change, rect.right-obj_rect.left)
-
-        x_bias = -abs(resultant_vel.x)*0.5
-        y_bias = -abs(resultant_vel.y)*0.5
         
-        if y_change and (not x_change or abs(y_change)+y_bias <= abs(x_change+x_bias)):
+        if obj.group is None:
+            return None
+        
+        for other_obj in obj.group.sprites():
+            if other_obj is not obj and other_obj.has_component(ObjectCollision):
+                rect: p.Rect = other_obj.get_rect()
+                other_obj_vel: p.Vector2 = other_obj.get_velocity()
+                resultant_vel = obj_velocity - other_obj_vel
+                
+                if obj_rect.colliderect(rect):
+                    if resultant_vel.y > 0:
+                        y_change = set_change(y_change, rect.top-obj_rect.bottom)
+                    elif resultant_vel.y < 0:
+                        y_change = set_change(y_change, rect.bottom-obj_rect.top)
+
+                    if resultant_vel.x > 0:
+                        x_change = set_change(x_change, rect.left-obj_rect.right)
+                    elif resultant_vel.x < 0:
+                        x_change = set_change(x_change, rect.right-obj_rect.left)
+
+                    if x_change:
+                        other_obj_vel.x += obj_velocity.x*self.bounce
+                    if y_change:
+                        other_obj_vel.y += obj_velocity.y*self.bounce
+
+                    other_obj.set_velocity(other_obj_vel)
+                    other_obj.move(other_obj_vel)
+        
+
+        if x_change:
+            option_x: p.Vector2 = obj.position + p.Vector2(x_change, 0)
+        
+        if y_change:
+            option_y: p.Vector2 = obj.position + p.Vector2(0, y_change)
+        
+        if y_change and (not x_change or (prev_pos-option_y).magnitude() < (prev_pos-option_x).magnitude()):
             obj.position.y += y_change
-            obj_velocity.y = 0
+            obj_velocity.y = -obj_velocity.y*self.bounce
         elif x_change:
             obj.position.x += x_change
-            obj_velocity.x = 0
+            obj_velocity.x = -obj_velocity.x*self.bounce
+
+        obj.set_velocity(obj_velocity)
 
 
 
     def draw(self, obj, surface: p.Surface, lerp_amount=0.0):
-        if DEBUG and obj.has_component(ObjectCollision):
-            p.draw.rect(surface, "red", obj.get_rect(), 1)
+        blit_rect: p.Rect = obj.get_rect()
+        rect_center = obj.position - obj.get_velocity()*(1-lerp_amount)
+        blit_rect.center = rect_center
+
+        if debug.debug_mode and obj.has_component(ObjectCollision):
+            p.draw.rect(surface, "red", blit_rect, 1)
 
 
 
@@ -274,7 +280,7 @@ class ObjectCollision(ObjectComponent):
 
 class BorderCollision(ObjectComponent):
 
-    dependencies = [ObjectCollision]
+    dependencies = [ObjectVelocity]
 
     def __init__(self, area: p.typing.RectLike, bounce=0.0):
         super().__init__()
@@ -282,11 +288,20 @@ class BorderCollision(ObjectComponent):
         self.bounding_area = p.Rect(area)
         self.bounce = bounce
 
-        self.add_methods = [self.process_collision]
+        self.add_methods = [self.get_bounding_area, self.set_bounding_area, self.process_collision]
+
+
+
+    def get_bounding_area(self, obj) -> None:
+       return self.bounding_area.copy()
+
+
+    def set_bounding_area(self, obj, area: p.typing.RectLike) -> None:
+        self.bounding_area = p.Rect(area)
 
 
     def process_collision(self, obj) -> None:
-        obj_vel = obj.get_velocity()
+        obj_vel: p.Vector2 = obj.get_velocity()
         obj_rect: p.Rect = obj.get_rect()
 
         if obj_rect.left <= self.bounding_area.left and obj_vel.x < 0:

@@ -9,9 +9,9 @@ from time import perf_counter
 from collections import defaultdict
 
 import config
+import debug
 
 import states
-import game_objects
 from file_processing import assets
 import states.play
 
@@ -112,6 +112,9 @@ class Game:
             elif event.type == KEYUP:
                 self.hold_keys[event.key] = 0.0
 
+
+        if self.hold_keys[p.K_LCTRL] and self.action_keys[p.K_d]:
+            debug.debug_mode = not debug.debug_mode
 
         self.state_stack.userinput(self.action_keys, self.hold_keys, p.mouse.get_pos())
 
