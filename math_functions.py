@@ -1,6 +1,18 @@
 import pygame as p
+from typing import Literal
 
 
+
+
+def clamp(value: int | float, Min: int | float, Max: int | float) -> int | float:
+    return max(Min, min(value, Max))
+
+
+def sign(value: int | float) -> Literal[-1, 0, 1]:
+    if value == 0:
+        return 0
+    else:
+        return int(value/abs(value))
 
 
 def vector_min(*values: p.Vector2) -> p.Vector2:

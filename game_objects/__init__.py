@@ -1,11 +1,9 @@
 import pygame as p
-from typing import Iterable, Callable
+from typing import Iterable, Callable, TypeGuard
 from functools import partial
 
 from custom_types import Coordinate
 from game_errors import MissingComponentError
-
-from .components import ObjectComponent, ObjectVelocity, ObjectTexture
 
 
 
@@ -20,7 +18,7 @@ def run_functions(functions: Iterable[Callable], *args, **kwargs) -> None:
 
 class GameObject(p.sprite.Sprite):
 
-    def __init__(self, position: Coordinate, components: Iterable[ObjectComponent] = [], group: "ObjectGroup | None" = None) -> None:
+    def __init__(self, *, position: Coordinate, group: "ObjectGroup | None" = None) -> None:
         if group:
             super().__init__(group)
         else:
@@ -28,41 +26,21 @@ class GameObject(p.sprite.Sprite):
         
         self.position = p.Vector2(position)
 
-        self.components: set[type[ObjectComponent]] = set()
         print(type(self).__name__, self.__dict__)
-        for comp in sorted(components, key=lambda x: x.priority):
-            self.add_component_methods(comp)
-            self.components.add(type(comp))
         
-        for comp in self.components:
-            dependencies = set(comp.dependencies)
-
-            if (missing:=dependencies.difference(self.components)):
-                raise MissingComponentError(missing, comp)
 
 
     @property
     def group(self) -> "ObjectGroup | None":
         if groups:=self.groups():
             return groups[0]
+        
 
 
-    def add_component_methods(self, component: ObjectComponent) -> None:
-        for method in component.add_methods:
-            name = method.__name__
-            new_method = partial(method, self)
-            if name in self.__dict__ or name in self.__class__.__dict__:
-                current_method = self.__getattribute__(name)
-                joined_method = partial(run_functions, [current_method, new_method])
-                self.__setattr__(name, joined_method)
-            else:
-                self.__setattr__(name, new_method)
-                
+    def force_kill(self):
+        super().kill()
+        
 
-
-
-    def has_component(self, component: type[ObjectComponent]) -> bool:
-        return component in self.components
 
 
 
@@ -74,6 +52,17 @@ class GameObject(p.sprite.Sprite):
     def update(self) -> None:
         "Updates the position velocity and other properties of an entity in every tick."
         ...
+
+
+
+    def process_collision(self) -> None:
+        ...
+
+
+    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
+        "Draws to the sprite onto a surface. The sprite must have a texture. "
+        ...
+
 
 
 
@@ -100,9 +89,10 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
 
     def accelerate_all(self, value: p.Vector2) -> None:
-        for object in self.sprites():
-            if object.has_component(ObjectVelocity):
-                object.accelerate(value)
+        # for object in self.sprites():
+        #     if object.has_component(ObjectVelocity):
+        #         object.accelerate(value)
+        ...
 
 
 
@@ -113,6 +103,6 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
 
     def draw(self, surface: p.Surface, lerp_amount: float) -> None:
-        for object in self.sprites():
-            if object.has_component(ObjectTexture):
-                object.draw(surface, lerp_amount)
+        for obj in self.sprites():
+            if hasattr(obj, "draw"):
+                obj.draw(surface, lerp_amount)

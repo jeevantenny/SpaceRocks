@@ -3,14 +3,17 @@ import random
 
 import config
 from custom_types import Coordinate
-from math_functions import unit_vector
+from math_functions import clamp, unit_vector
 
-from game_objects import ObjectGroup
+from file_processing import assets, data
+
+from game_objects import ObjectGroup, components
 from game_objects.entities import Spaceship, Asteroid
 
 from ui import LargeFont, SmallFont
 
 from . import State
+from .menus import PauseMenu
 
 
 
@@ -19,6 +22,8 @@ from . import State
 
 class Play(State):
     safe_radius = 100
+    score_limit = 99999
+
     def __init__(self, state_stack = None):
         super().__init__(state_stack)
 
@@ -29,42 +34,64 @@ class Play(State):
         self.spaceship = Spaceship((200, 120))
         self.entities.add(self.spaceship)
 
+
         self.new_asteroids = []
 
         self.score = 0
-        self.highscore = 12
+        self.highscore = data.load_highscore()
 
 
-    def userinput(self, action_keys, hold_keys, mouse_pos):
-        if action_keys[p.K_r]:
+    def  userinput(self, inputs):
+        if inputs.keyboard_mouse.action_keys[p.K_r]:
             self.spaceship.position = p.Vector2(200, 150)
             self.spaceship.set_velocity((0, 0))
-        self.spaceship.userinput(action_keys, hold_keys)
+        self.spaceship.userinput(inputs)
 
 
-        if action_keys[p.K_k]:
+        if inputs.keyboard_mouse.action_keys[p.K_k]:
             for asteroid in self.asteroids.sprites():
-                asteroid.kill()
+                asteroid.force_kill()
 
-        if action_keys[p.K_p]:
+        if inputs.keyboard_mouse.action_keys[p.K_p]:
             self.score += 1000
+
+        if inputs.keyboard_mouse.action_keys[p.K_c]:
+            self.spaceship.combo += 50
+
+
+        if inputs.keyboard_mouse.action_keys[p.K_ESCAPE]:
+            self.state_stack.push(PauseMenu())
 
 
     def update(self):
-        # if random.random() < 0.3 and self.required_asteroid_count() > self.asteroid_value():
-        #     self.spawn_asteroid()
+        if self.spaceship.alive() and random.random() < 0.05 and self.required_asteroid_count() > self.asteroid_value():
+            self.spawn_asteroid()
 
-        # for asteroid in self.new_asteroids.copy():
-        #     if self.window_border.contains(asteroid.get_rect()):
-        #         asteroid.set_bounding_area(self.window_border)
-        #         self.new_asteroids.remove(asteroid)
+        for asteroid in self.new_asteroids.copy():
+            if self.window_border.contains(asteroid.rect):
+                asteroid.set_bounding_area(self.window_border)
+                self.new_asteroids.remove(asteroid)
+
+        for obj in self.entities:
+            if isinstance(obj, Asteroid) and obj not in self.asteroids:
+                self.asteroids.add(obj)
         
         self.entities.update()
 
-        if self.spaceship.score > self.score:
+        if self.spaceship.score - self.score > 1000:
+            self.score += 1000
+        if self.spaceship.score - self.score > 100:
+            self.score += 100
+        if self.spaceship.score - self.score > 10:
+            self.score += 10
+        if self.spaceship.score - self.score > 0:
             self.score += 1
-        
+
+        self.score = min(self.score, self.score_limit)
         self.highscore = max(self.highscore, self.score)
+
+
+
 
 
 
@@ -86,9 +113,12 @@ class Play(State):
                 break
 
 
+        velocity = unit_vector(p.Vector2(window_size)*0.5-start_position)*random.randint(1, 3)
+
+
         asteroid = Asteroid(
             start_position,
-            unit_vector(self.spaceship.position-start_position)*self.get_asteroid_speed(),
+            velocity,
             initial_border,
             random.randint(1, 2)
         )
@@ -110,7 +140,7 @@ class Play(State):
 
 
     def required_asteroid_count(self) -> int:
-        return 7 + int(self.score**0.9 * 0.04)
+        return min(5 + int(self.score/50), 40)
     
 
     def get_asteroid_speed(self) -> float:
@@ -134,3 +164,14 @@ class Play(State):
 
         self.show_scores(surface, "highscore", self.highscore)
         self.show_scores(surface, "score", self.score, (8, 20))
+
+
+        return f"entity count: {len(self.entities)}, asteroid value: {self.asteroid_value()}, combo: {self.spaceship.combo}"
+    
+
+
+
+
+    def quit(self) -> None:
+        self.highscore = clamp(self.highscore, self.spaceship.score, self.score_limit)
+        data.save_highscore(self.highscore)

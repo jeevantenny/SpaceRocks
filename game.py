@@ -11,6 +11,8 @@ from collections import defaultdict
 import config
 import debug
 
+from userinput import KeyboardMouse, Controller, InputInterpreter
+
 import states
 from file_processing import assets
 import states.play
@@ -22,6 +24,8 @@ class Game:
 
     def __init__(self) -> None:
         p.init()
+        p.joystick.init()
+
         self.run = True
 
         self.window = p.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
@@ -30,14 +34,28 @@ class Game:
 
         self.game_surface = p.Surface((p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE))
 
-        self.action_keys = defaultdict(bool)
-        self.hold_keys = defaultdict(float)
+        self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
+        self.set_controllers()
+
 
         self.state_stack = states.StateStack()
+        # self.state_stack.push(states.State())
         self.state_stack.push(states.play.Play())
 
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed
+
+        self.debug_font = p.font.SysFont("arial", 20)
+
+
+
+
+    def set_controllers(self) -> None:
+        if p.joystick.get_count():
+            self.input_interpreter.controller = Controller(p.joystick.Joystick(0))
+            print(f"Connected {self.input_interpreter.controller}")
+        else:
+            self.input_interpreter.controller = Controller()
 
     
 
@@ -94,29 +112,23 @@ class Game:
     def userinput(self) -> None:
         "Record the userinputs for a given frame and process them."
 
-        self.action_keys.clear()
-        for key, amount in self.hold_keys.items():
-            if amount:
-                self.hold_keys[key] += self.delta_time
+        events = p.event.get()
         
-        for event in p.event.get():
+        for event in events:
             if event.type == QUIT:
                 self.run = False
                 break
 
-            elif event.type == KEYDOWN:
-                self.action_keys[event.key] = True
-                self.hold_keys[event.key] = self.delta_time
+            elif event.type == JOYDEVICEADDED or event.type == JOYDEVICEREMOVED:
+                self.set_controllers()
+        
+        self.input_interpreter.get_userinput(events)
 
 
-            elif event.type == KEYUP:
-                self.hold_keys[event.key] = 0.0
-
-
-        if self.hold_keys[p.K_LCTRL] and self.action_keys[p.K_d]:
+        if self.input_interpreter.keyboard_mouse.hold_keys[p.K_LCTRL] and self.input_interpreter.keyboard_mouse.action_keys[p.K_d]:
             debug.debug_mode = not debug.debug_mode
 
-        self.state_stack.userinput(self.action_keys, self.hold_keys, p.mouse.get_pos())
+        self.state_stack.userinput(self.input_interpreter)
 
 
 
@@ -127,9 +139,13 @@ class Game:
 
     def draw(self) -> None:
         lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
-        self.state_stack.draw(self.game_surface, lerp_amount)
-
+        debug_message = self.state_stack.draw(self.game_surface, lerp_amount)
+        
         self.window.blit(p.transform.scale(self.game_surface, config.WINDOW_SIZE))
+
+        if debug.debug_mode:
+            self.window.blit(self.debug_font.render(debug_message, False, "white", "black"))
+
 
 
 
@@ -155,5 +171,6 @@ class Game:
 
     def quit(self) -> None:
         self.thread.join()
+        self.state_stack.quit()
         print("Program closed successfully")
         print(f"error: {self.error}")

@@ -1,7 +1,7 @@
 import pygame as p
 from typing import Deque
 
-from custom_types import ActionKeys, HoldKeys
+from userinput import InputInterpreter
 
 
 
@@ -22,7 +22,7 @@ class State:
             return None
 
 
-    def userinput(self, action_keys: ActionKeys, hold_keys: HoldKeys, mouse_pos: p.Vector2) -> None:
+    def userinput(self, inputs: InputInterpreter) -> None:
         pass
 
 
@@ -69,8 +69,8 @@ class StateStack(Deque[State]):
         return state
     
 
-    def userinput(self, action_keys: ActionKeys, hold_keys: HoldKeys, mouse_pos: p.Vector2) -> None:
-        self.top_state.userinput(action_keys, hold_keys, mouse_pos)
+    def userinput(self, inputs: InputInterpreter) -> None:
+        self.top_state.userinput(inputs)
 
 
     
@@ -79,5 +79,11 @@ class StateStack(Deque[State]):
 
 
 
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
-        self.top_state.draw(surface, lerp_amount)
+    def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
+        return self.top_state.draw(surface, lerp_amount)
+    
+
+
+    def quit(self) -> None:
+        while len(self) > 0:
+            self.pop()

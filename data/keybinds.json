@@ -1,0 +1,62 @@
+{
+    "select": {
+        "keyboard": {
+            "key": "w",
+            "type": "action"
+        },
+        "controller": {
+            "type": "action_button",
+            "value": "a"
+        }
+    },
+    "escape": {
+        "keyboard": {
+            "key": "escape",
+            "type": "action"
+        }
+    },
+    "ship_forward": {
+        "keyboard": {
+            "key": "w",
+            "type": "hold"
+        },
+        "controller": {
+            "type": "hold_button",
+            "value": "b"
+        }
+    },
+    "shoot": {
+        "keyboard": {
+            "key": "space",
+            "type": "action"
+        },
+        "controller": {
+            "type": "action_button",
+            "value": "a"
+        }
+    },
+    "left": {
+        "keyboard": {
+            "key": "a",
+            "type": "hold"
+        },
+        "controller": {
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": -0.5
+        }
+    },
+    "right": {
+        "keyboard": {
+            "key": "d",
+            "type": "hold"
+        },
+        "controller": {
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": 0.5
+        }
+    }
+}

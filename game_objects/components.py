@@ -1,8 +1,10 @@
 import pygame as p
-from typing import Callable
+from typing import Callable, Generator, Any
 
 from custom_types import Coordinate
-from math_functions import unit_vector
+from math_functions import unit_vector, vector_min
+
+from . import GameObject
 
 import debug
 
@@ -10,7 +12,7 @@ import debug
 
 
 
-class ObjectComponent:
+class ObjectComponent(GameObject):
     "Object components give Game Objects special properties."
 
     # The priority of a component indicates what order component methods will be called
@@ -20,8 +22,8 @@ class ObjectComponent:
     add_methods: list[Callable] = []
     dependencies: list[type["ObjectComponent"]] = []
 
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 
@@ -34,156 +36,148 @@ class ObjectComponent:
 
 
 
+
 class ObjectVelocity(ObjectComponent):
     "Allows game objects to have a velocity."
 
     priority = 5
+    max_speed = 15
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.velocity = p.Vector2(0, 0)
-
-        self.add_methods = [self.update, self.get_velocity, self.set_velocity, self.accelerate]
-
-
-
-    def update(self, obj) -> None:
-        obj.move(self.velocity)
-
-
-    def get_velocity(self, obj) -> None:
-        "Returns the velocity for object"
-        return self.velocity.copy()
-    
-    def set_velocity(self, obj, value: Coordinate) -> None:
-        self.velocity = p.Vector2(value)
-    
-
-    def accelerate(self, obj, value: Coordinate) -> None:
-        self.velocity += p.Vector2(value)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._velocity = p.Vector2(0, 0)
 
 
 
+    def update(self) -> None:
+        super().update()
+        self.move(self._velocity)
+        self._velocity = (vector_min(self._velocity, unit_vector(self._velocity)*self.max_speed))
+
+
+
+    def get_velocity(self) -> p.Vector2:
+        return self._velocity.copy()
+
+    def set_velocity(self, value: Coordinate) -> None:
+        self._velocity = p.Vector2(value)
+
+
+    def accelerate(self, value: Coordinate) -> None:
+        self._velocity += p.Vector2(value)
 
 
 
 
 
 
-class ObjectTexture(ObjectComponent):
+
+
+
+
+class ObjectTexture(GameObject):
     "Gives an object a visible texture."
 
     priority = 4
 
-    def __init__(self, texture: p.Surface):
-        super().__init__()
+    def __init__(self, *, texture: p.Surface, **kwargs):
+        super().__init__(**kwargs)
 
         self.texture = texture
-        self.size = texture.get_size()
+        self.__size = texture.get_size()
         self.rotation = 0
         self.angular_vel = 0
 
-        self.add_methods = [
-            self.rotate,
-            self.get_rotation,
-            self.get_rotation_vector,
-            self.set_rotation,
-            self.set_angular_vel,
-            self.update,
-            self.draw
-        ]
+
+    def set_angular_vel(self, amount: float) -> None:
+        self.angular_vel = amount
 
 
-
-
-    def rotate(self, obj, amount: float) -> None:
+    def rotate(self, amount: float) -> None:
         self.rotation += amount
 
-    def get_rotation(self, obj) -> float:
-        return self.rotation
-    
-    def get_rotation_vector(self, obj) -> p.Vector2:
+    def get_rotation_vector(self) -> p.Vector2:
         return p.Vector2(0, -1).rotate(self.rotation) 
 
-    def set_rotation(self, obj, value: float) -> None:
+    def set_rotation(self, value: float) -> None:
         self.rotation = value
+        
 
-    def set_angular_vel(self, obj, value: float) -> None:
-        self.angular_vel = value
-
-
-
-    def update(self, obj) -> None:
-        self.rotate(obj, self.angular_vel)
+    def update(self) -> None:
+        super().update()
+        self.rotate(self.angular_vel)
 
 
     
-    def draw(self, obj, surface: p.Surface, lerp_amount=0.0) -> None:
+    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
+        super().draw(surface, lerp_amount)
         blit_texture = p.transform.rotate(self.texture, -(self.rotation-self.angular_vel*(1-lerp_amount)))
-        lerp_pos = obj.position.copy()
-        if obj.has_component(ObjectVelocity):
-            lerp_pos -= obj.get_velocity()*(1-lerp_amount)
+        lerp_pos = self.position.copy()
+        if isinstance(self, ObjectVelocity):
+            lerp_pos -= self._velocity*(1-lerp_amount)
         
         blit_pos = lerp_pos - p.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
 
         if debug.debug_mode:
-            p.draw.line(surface, "white", lerp_pos, lerp_pos+self.get_rotation_vector(obj)*10)
+            p.draw.line(surface, "white", lerp_pos, lerp_pos+self.get_rotation_vector()*10)
 
 
 
 
 
+class ObjectHitbox(ObjectComponent):
+    def __init__(self, *, hitbox_size: Coordinate, **kwargs):
+        super().__init__(**kwargs)
+        self.__hitbox_size = hitbox_size
 
 
-class ObjectCollision(ObjectComponent):
-    "Gives objects a hitbox which can be used for collision."
-
-    dependencies = [ObjectVelocity]
-    priority = 6
-    speed_bias = 0.5
-
-    def __init__(self, size: Coordinate, bounce=0.0):
-        super().__init__()
-
-        self.size = tuple(size)
-        from . import GameObject
-        self.GameObjectType = GameObject
-        self.bounce = bounce*0.5
-
-        self.add_methods = [
-            self.update,
-            self.get_rect,
-            self.get_side_contacts,
-            self.process_collision,
-            self.draw
-        ]
-
-
-
-    def update(self, obj) -> None:
-        obj.process_collision()
-
-    
-    def get_rect(self, obj) -> p.FRect:
-        rect = p.FRect(0, 0, *self.size)
-        rect.center = obj.position
+    @property
+    def rect(self) -> p.FRect:
+        rect = p.FRect(0, 0, *self.__hitbox_size)
+        rect.center = self.position
         return rect
     
 
+    def colliding_objects(self) -> Generator[GameObject, Any, None]:
+        for obj in self.group:
+            if obj is not self and isinstance(obj, ObjectCollision) and self.rect.colliderect(obj.rect):
+                yield obj
 
-    def get_side_contacts(self, obj) -> dict[str, bool]:
+
+
+class ObjectCollision(ObjectHitbox):
+    "Gives objects a hitbox which can be used for collision."
+
+    priority = 6
+    speed_bias = 0.5
+
+    def __init__(self, *, bounce=0.0, **kwargs):
+        super().__init__(**kwargs)
+
+        self.__bounce = bounce*0.5
+
+
+
+
+    def update(self) -> None:
+        super().update()
+        self.process_collision()
+    
+
+
+    def get_side_contacts(self) -> dict[str, bool]:
         output = {"top": False, "bottom": False, "left": False, "right": False}
 
-        obj_rect = self.get_rect(obj)
+        obj_rect = self.rect
         
-        if obj.group is None:
+        if self.group is None:
             return None
         
-        for other_obj in obj.group.sprites():
-            if other_obj is not obj and other_obj.has_component(ObjectCollision):
+        for other_obj in self.group.sprites():
+            if other_obj is not self and isinstance(other_obj, ObjectCollision):
 
-                rect = other_obj.get_rect()
+                rect = other_obj.rect
                 if obj_rect.right > rect.left and obj_rect.left < rect.right:
                     if obj_rect.top == rect.bottom:
                         output["top"] = True
@@ -200,10 +194,9 @@ class ObjectCollision(ObjectComponent):
 
 
 
-    def process_collision(self, obj) -> None:
-        obj_rect: p.Rect = self.get_rect(obj)
-        obj_velocity: p.Vector2 = obj.get_velocity()
-        prev_pos: p.Vector2 = obj.position - obj_velocity
+    def process_collision(self) -> None:
+        obj_rect = self.rect
+        prev_pos: p.Vector2 = self.position - self._velocity
 
 
         def set_change(change: float | None, new_value: float) -> float:
@@ -216,58 +209,58 @@ class ObjectCollision(ObjectComponent):
         x_change = None
         resultant_vel = p.Vector2(0, 0)
         
-        if obj.group is None:
+        if self.group is None:
             return None
         
-        for other_obj in obj.group.sprites():
-            if other_obj is not obj and other_obj.has_component(ObjectCollision):
-                rect: p.Rect = other_obj.get_rect()
-                other_obj_vel: p.Vector2 = other_obj.get_velocity()
-                resultant_vel = obj_velocity - other_obj_vel
-                
-                if obj_rect.colliderect(rect):
-                    if resultant_vel.y > 0:
-                        y_change = set_change(y_change, rect.top-obj_rect.bottom)
-                    elif resultant_vel.y < 0:
-                        y_change = set_change(y_change, rect.bottom-obj_rect.top)
+        for other_obj in self.colliding_objects():
+            rect: p.Rect = other_obj.rect
+            other_obj_vel: p.Vector2 = other_obj.get_velocity()
+            resultant_vel = self._velocity - other_obj_vel
+            
+            if obj_rect.colliderect(rect):
+                if resultant_vel.y > 0:
+                    y_change = set_change(y_change, rect.top-obj_rect.bottom)
+                elif resultant_vel.y < 0:
+                    y_change = set_change(y_change, rect.bottom-obj_rect.top)
 
-                    if resultant_vel.x > 0:
-                        x_change = set_change(x_change, rect.left-obj_rect.right)
-                    elif resultant_vel.x < 0:
-                        x_change = set_change(x_change, rect.right-obj_rect.left)
+                if resultant_vel.x > 0:
+                    x_change = set_change(x_change, rect.left-obj_rect.right)
+                elif resultant_vel.x < 0:
+                    x_change = set_change(x_change, rect.right-obj_rect.left)
 
-                    if x_change:
-                        other_obj_vel.x += obj_velocity.x*self.bounce
-                    if y_change:
-                        other_obj_vel.y += obj_velocity.y*self.bounce
+                if x_change:
+                    other_obj_vel.x += self._velocity.x*self.__bounce
+                if y_change:
+                    other_obj_vel.y += self._velocity.y*self.__bounce
 
-                    other_obj.set_velocity(other_obj_vel)
-                    other_obj.move(other_obj_vel)
+                other_obj.set_velocity(other_obj_vel)
+                other_obj.move(other_obj_vel)
         
 
         if x_change:
-            option_x: p.Vector2 = obj.position + p.Vector2(x_change, 0)
+            option_x: p.Vector2 = self.position + p.Vector2(x_change, 0)
         
         if y_change:
-            option_y: p.Vector2 = obj.position + p.Vector2(0, y_change)
+            option_y: p.Vector2 = self.position + p.Vector2(0, y_change)
         
         if y_change and (not x_change or (prev_pos-option_y).magnitude() < (prev_pos-option_x).magnitude()):
-            obj.position.y += y_change
-            obj_velocity.y = -obj_velocity.y*self.bounce
+            self.position.y += y_change
+            self._velocity.y = -self._velocity.y*self.__bounce
         elif x_change:
-            obj.position.x += x_change
-            obj_velocity.x = -obj_velocity.x*self.bounce
+            self.position.x += x_change
+            self._velocity.x = -self._velocity.x*self.__bounce
+        
+        
+        super().process_collision()
 
-        obj.set_velocity(obj_velocity)
 
 
-
-    def draw(self, obj, surface: p.Surface, lerp_amount=0.0):
-        blit_rect: p.Rect = obj.get_rect()
-        rect_center = obj.position - obj.get_velocity()*(1-lerp_amount)
-        blit_rect.center = rect_center
-
-        if debug.debug_mode and obj.has_component(ObjectCollision):
+    def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
+        super().draw(surface, lerp_amount)
+        if debug.debug_mode:
+            blit_rect: p.Rect = self.rect
+            rect_center = self.position - self.get_velocity()*(1-lerp_amount)
+            blit_rect.center = rect_center
             p.draw.rect(surface, "red", blit_rect, 1)
 
 
@@ -278,47 +271,50 @@ class ObjectCollision(ObjectComponent):
 
 
 
-class BorderCollision(ObjectComponent):
+class BorderCollision(ObjectHitbox):
 
-    dependencies = [ObjectVelocity]
+    dependencies = [ObjectCollision]
 
-    def __init__(self, area: p.typing.RectLike, bounce=0.0):
-        super().__init__()
+    def __init__(self, *, bounding_area: p.typing.RectLike, border_bounce=0.0, **kwargs):
+        super().__init__(**kwargs)
 
-        self.bounding_area = p.Rect(area)
-        self.bounce = bounce
-
-        self.add_methods = [self.get_bounding_area, self.set_bounding_area, self.process_collision]
+        self.__bounding_area = p.Rect(bounding_area)
+        self.__bounce = border_bounce
 
 
 
-    def get_bounding_area(self, obj) -> None:
-       return self.bounding_area.copy()
+    def get_bounding_area(self) -> None:
+       return self.__bounding_area.copy()
 
 
-    def set_bounding_area(self, obj, area: p.typing.RectLike) -> None:
-        self.bounding_area = p.Rect(area)
+    def set_bounding_area(self, area: p.typing.RectLike) -> None:
+        self.__bounding_area = p.Rect(area)
 
 
-    def process_collision(self, obj) -> None:
-        obj_vel: p.Vector2 = obj.get_velocity()
-        obj_rect: p.Rect = obj.get_rect()
+    def update(self):
+        super().update()
+        if not isinstance(self, ObjectCollision):
+            self.process_collision()
 
-        if obj_rect.left <= self.bounding_area.left and obj_vel.x < 0:
-            obj_rect.left = self.bounding_area.left
-            obj_vel.x = abs(obj_vel.x*self.bounce)
+
+    def process_collision(self) -> None:
+        super().process_collision()
+        obj_rect: p.Rect = self.rect
+
+        if obj_rect.left <= self.__bounding_area.left and self._velocity.x < 0:
+            obj_rect.left = self.__bounding_area.left
+            self._velocity.x = abs(self._velocity.x*self.__bounce)
         
-        if obj_rect.right >= self.bounding_area.right and obj_vel.x > 0:
-            obj_rect.right = self.bounding_area.right
-            obj_vel.x = -abs(obj_vel.x*self.bounce)
+        if obj_rect.right >= self.__bounding_area.right and self._velocity.x > 0:
+            obj_rect.right = self.__bounding_area.right
+            self._velocity.x = -abs(self._velocity.x*self.__bounce)
         
-        if obj_rect.top <= self.bounding_area.top and obj_vel.y < 0:
-            obj_rect.top = self.bounding_area.top
-            obj_vel.y = abs(obj_vel.y*self.bounce)
+        if obj_rect.top <= self.__bounding_area.top and self._velocity.y < 0:
+            obj_rect.top = self.__bounding_area.top
+            self._velocity.y = abs(self._velocity.y*self.__bounce)
         
-        if obj_rect.bottom >= self.bounding_area.bottom and obj_vel.y > 0:
-            obj_rect.bottom = self.bounding_area.bottom
-            obj_vel.y = -abs(obj_vel.y*self.bounce)
+        if obj_rect.bottom >= self.__bounding_area.bottom and self._velocity.y > 0:
+            obj_rect.bottom = self.__bounding_area.bottom
+            self._velocity.y = -abs(self._velocity.y*self.__bounce)
 
-        obj.position = p.Vector2(obj_rect.center)
-        obj.set_velocity(obj_vel)
+        self.position = p.Vector2(obj_rect.center)

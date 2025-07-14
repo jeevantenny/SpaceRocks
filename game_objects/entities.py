@@ -1,39 +1,40 @@
 import pygame as p
 import random
+from math import sin, pi
 from typing import Literal
 from functools import partial
 
 import config
 
-from custom_types import ActionKeys, HoldKeys, Coordinate
+from custom_types import Coordinate
 from math_functions import vector_min, unit_vector
+
+from userinput import InputInterpreter
 
 from file_processing import assets
 
+from ui import SmallFont
+
 from . import GameObject, ObjectGroup
-from .components import ObjectTexture, ObjectVelocity, ObjectCollision, BorderCollision
+from .components import ObjectVelocity, ObjectTexture, ObjectCollision, BorderCollision
 
 
 
 
 
-class Spaceship(GameObject):
+class Spaceship(ObjectVelocity, ObjectTexture, BorderCollision):
     rotation_speed = 15
-    max_speed = 15
     def __init__(self, position):
-        super().__init__(position)
-
-        self.texture = ObjectTexture(assets.load_texture("game_objects/spaceship.png"))
-        self.velocity = ObjectVelocity()
-        self.border_collision = BorderCollision((0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE), 0.1)
-
-        self.get_velocity = partial(self.velocity.get_velocity, self)
-        self.set_velocity = partial(self.velocity.set_velocity, self)
-
-        self.size = (16, 16)
-
+        super().__init__(
+            position=position,
+            hitbox_size=(16, 16),
+            texture=assets.load_texture("game_objects/spaceship.png"),
+            bounding_area=(0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE),
+            border_bounce=0.1
+        )
 
         self.score = 0
+        self.combo = 0
 
 
     
@@ -46,59 +47,57 @@ class Spaceship(GameObject):
     
 
 
-    def userinput(self, action_keys: ActionKeys, hold_keys: HoldKeys):
-        if not hold_keys[p.K_LCTRL]:
-            if hold_keys[p.K_w]:
-                self.velocity.accelerate(self, p.Vector2(0, -1).rotate(self.get_rotation()))
+    def userinput(self, inputs: InputInterpreter):
+        if not inputs.keyboard_mouse.hold_keys[p.K_LCTRL]:
+            if inputs.check_input("ship_forward"):
+                self.accelerate(p.Vector2(0, -1).rotate(self.rotation))
 
-            if hold_keys[p.K_a]:
-                self.texture.set_angular_vel(self, -self.rotation_speed)
+            if  inputs.check_input("left"):
+                self.angular_vel = -self.rotation_speed
 
-            if hold_keys[p.K_d]:
-                self.texture.set_angular_vel(self, self.rotation_speed)
+            if inputs.check_input("right"):
+                self.angular_vel = self.rotation_speed
             
-            if not (hold_keys[p.K_a] or hold_keys[p.K_d]):
-                self.texture.set_angular_vel(self, 0)
+            if not ( inputs.check_input("right") or  inputs.check_input("left")):
+                self.set_angular_vel(0)
             
-            if hold_keys[p.K_s] and self.get_velocity().magnitude() > 3:
-                obj_vel = self.get_velocity()
-                self.velocity.accelerate(self, unit_vector(obj_vel)*-2)
+            if inputs.keyboard_mouse.hold_keys[p.K_s] and self._velocity.magnitude() > 3:
+                self.accelerate(unit_vector(self._velocity)*-2)
 
 
-            if action_keys[p.K_SPACE]:
+            if  inputs.check_input("shoot") and self.alive():
                 self.shoot()
 
 
 
     def shoot(self) -> None:
-        self.group.add(Bullet(self.position, self.get_rotation_vector(), self))
-        self.velocity.accelerate(self, -self.get_rotation_vector())
+        direction = self.get_rotation_vector()
+        self.group.add(Bullet(self.position, direction, self))
+        self.accelerate(-direction)
 
 
     def update(self):
-        obj_vel = self.velocity.get_velocity(self)
-        self.velocity.set_velocity(self, vector_min(obj_vel, unit_vector(obj_vel)*self.max_speed))
-        self.velocity.update(self)
-        self.border_collision.process_collision(self)
+        super().update()
 
-
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
-        self.texture.draw(self, surface, lerp_amount)
+        for obj in self.colliding_objects():
+            if isinstance(obj, Asteroid):
+                self.kill()
 
 
 
 
 
 
-class Bullet(GameObject):
+class Bullet(ObjectVelocity, ObjectTexture):
     speed = 40
     hitbox_size = (8, 8)
     visible_area = p.Rect(0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE)
+
     def __init__(self, position: Coordinate, direction: Coordinate, shooter: Spaceship):
-        super().__init__(position, [
-            ObjectVelocity(),
-            ObjectTexture(assets.load_texture_map("particles.texture_map.json")["bullet"])
-        ], shooter.group)
+        super().__init__(
+            position=position,
+            texture=assets.load_texture_map("particles.texture_map.json")["bullet"]
+        )
 
         self.shooter = shooter
 
@@ -110,23 +109,32 @@ class Bullet(GameObject):
 
 
     def update(self):
+        super().update()
         if not self.visible_area.collidepoint(self.position):
             self.kill()
+            self.shooter.combo = 0
             return
 
 
         hit = False
         for obj in self.group.sprites():
             if isinstance(obj, Asteroid) and self.collision_check(obj):
-                obj.damage(1)
-                obj.accelerate(self.get_velocity()*0.1)
-                if not obj.health:
-                    self.shooter.score += obj.points
+                self.damage_asteroid(obj)
                 hit = True
 
         if hit:
             self.kill()
             print(self.shooter.score)
+
+
+    def damage_asteroid(self, asteroid: "Asteroid") -> None:
+        asteroid.damage(1)
+        asteroid.accelerate(self.get_velocity()*0.1)
+        if not asteroid.health:
+            self.shooter.score += asteroid.points + self.shooter.combo
+            self.group.add(DisplayPoint(asteroid.position, asteroid.points, self.shooter.combo))
+            self.shooter.combo += 1
+
 
 
 
@@ -140,7 +148,7 @@ class Bullet(GameObject):
         ]
 
         for line in collision_lines:
-            if asteroid.get_rect().clipline(*line):
+            if asteroid.rect.clipline(*line):
                 return True
         
         return False
@@ -157,7 +165,7 @@ class Bullet(GameObject):
 
 
 
-class Asteroid(GameObject):
+class Asteroid(ObjectVelocity, ObjectTexture, ObjectCollision, BorderCollision):
     size_data = {
         1: {
             "texture": "small_rock",
@@ -179,12 +187,14 @@ class Asteroid(GameObject):
         }
     }
     def __init__(self, position: Coordinate, velocity: Coordinate, window_border: p.typing.RectLike, size: Literal[1, 2, 3] = 1):
-        super().__init__(position, [
-            ObjectTexture(assets.load_texture(f"game_objects/{self.size_data[size]["texture"]}.png")),
-            ObjectVelocity(),
-            ObjectCollision(self.size_data[size]["hitbox"], 0.9),
-            BorderCollision(window_border, 0.9)
-        ])
+        super().__init__(
+            position=position,
+            texture=assets.load_texture(f"game_objects/{self.size_data[size]["texture"]}.png"),
+            hitbox_size=self.size_data[size]["hitbox"],
+            bounce=0.95,
+            bounding_area=window_border,
+            border_bounce=0.95
+        )
 
         self.size = size
 
@@ -196,6 +206,7 @@ class Asteroid(GameObject):
 
     
     def update(self):
+        super().update()
         if not self.health:
             self.kill()
 
@@ -214,10 +225,38 @@ class Asteroid(GameObject):
 
             for pos in positions:
                 pos.rotate_ip(rotate_angle)
-                new_rock = Asteroid(self.position + pos*12, self.get_velocity() + pos*3, self.get_bounding_area(), self.size-1)
+                new_rock = Asteroid(self.position + pos*8, self.get_velocity() + pos*3, self.get_bounding_area(), self.size-1)
                 new_rock.set_velocity(self.get_velocity()+pos)
                 self.group.add(new_rock)
             
-            # input()
-        
+
         super().kill()
+
+
+
+
+
+
+
+class DisplayPoint(ObjectTexture):
+    def __init__(self, position: Coordinate, points: int, combo=0):
+        text = f"+{points+combo}"
+        if combo:
+            text += " COMBO"
+
+        super().__init__(
+            position=position,
+            texture=SmallFont().render(text, color_a=(200, 50, 100) if combo else "white", color_b="black")
+        )
+
+        self.duration = 12
+
+
+
+    def update(self):
+        super().update()
+        if self.duration <= 0:
+            self.kill()
+        
+        self.duration -= 1
+        self.position.y -= sin(self.duration*pi/12)*2
