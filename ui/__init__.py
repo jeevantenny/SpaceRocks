@@ -17,7 +17,7 @@ class Font:
         self._font = partial(p.font.Font, self.font_path)
     
 
-    def render(self, text: str, size=1, color_a: p.typing.ColorLike ="white", color_b: p.typing.ColorLike =(100, 0, 0), padding=0) -> p.Surface:
+    def render(self, text: str, size=1, color_a: p.typing.ColorLike =(238, 238, 238), color_b: p.typing.ColorLike =(85, 0, 17), padding=0) -> p.Surface:
 
         sized_font = self._font(self._base_size*size)
 

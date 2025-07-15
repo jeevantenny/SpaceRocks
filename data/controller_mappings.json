@@ -6,8 +6,10 @@
             "2": "x",
             "3": "y",
 
-            "9": "l_trigger",
-            "10": "r_trigger",
+            "6": "menu",
+
+            "9": "l_bumper",
+            "10": "r_bumper",
 
             "11": "d_up",
             "12": "d_down",
@@ -31,23 +33,32 @@
             "3": {
                 "stick": "right_stick",
                 "axis": "y"
+            },
+            "4": {
+                "stick": "l_trigger"
+            },
+            "5": {
+                "stick": "r_trigger"
             }
         }
     },
     "Nintendo Switch Joy-Con (L)": {
+        "same_as": "Nintendo Switch Joy-Con (L/R)"
+    },
+    "Nintendo Switch Joy-Con (R)": {
+        "same_as": "Nintendo Switch Joy-Con (L/R)"
+    },
+    "Xbox 360 Controller": {
         "buttons" : {
             "0": "a",
             "1": "b",
             "2": "x",
             "3": "y",
 
-            "9": "l_trigger",
-            "10": "r_trigger",
+            "6": "menu",
 
-            "11": "d_up",
-            "12": "d_down",
-            "13": "d_left",
-            "14": "d_right"
+            "4": "l_bumper",
+            "5": "r_bumper"
         },
         "axis": {
             "0": {
@@ -59,11 +70,11 @@
                 "axis": "y"
             },
 
-            "2": {
+            "3": {
                 "stick": "right_stick",
                 "axis": "x"
             },
-            "3": {
+            "4": {
                 "stick": "right_stick",
                 "axis": "y"
             }

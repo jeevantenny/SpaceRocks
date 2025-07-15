@@ -1,0 +1,24 @@
+{
+    "group_name": "spaceship.animation",
+    "animations": {
+        "main": {
+            "duration": 0.0,
+            "timeline": {
+                "0.0": "main"
+            }
+        },
+        "start": {
+            "duration": 12.0,
+            "timeline": {
+                "0.0": "blank",
+                "5": "start_1",
+                "6": "start_2",
+                "7": "start_3",
+                "8": "start_4",
+                "9": "start_5",
+                "10": "start_6",
+                "11": "start_7"
+            }
+        }
+    }
+}

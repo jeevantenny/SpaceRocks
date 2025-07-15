@@ -24,11 +24,11 @@ def load_texture(path: str) -> p.Surface:
 
 def load_texture_map(path: str) -> dict[str, p.Surface]:
     mapping_data = load_json(f"{TEXTURE_MAP_DIR}{path}")
-    texture = load_texture(mapping_data["texture"])
+    main_texture = load_texture(mapping_data["texture"])
 
     texture_map = {}
     for name, area in mapping_data["mappings"].items():
-        texture_map[name] = texture.subsurface(area)
+        texture_map[name] = main_texture.subsurface(area)
     
     return texture_map
 

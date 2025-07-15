@@ -26,7 +26,6 @@ class GameObject(p.sprite.Sprite):
         
         self.position = p.Vector2(position)
 
-        print(type(self).__name__, self.__dict__)
         
 
 
@@ -39,6 +38,12 @@ class GameObject(p.sprite.Sprite):
 
     def force_kill(self):
         super().kill()
+
+
+
+
+    def set_position(self, value: Coordinate) -> None:
+        self.position = p.Vector2(value)
         
 
 
@@ -103,6 +108,14 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
 
     def draw(self, surface: p.Surface, lerp_amount: float) -> None:
+        top_sprites = []
+        from .entities import DisplayPoint
         for obj in self.sprites():
             if hasattr(obj, "draw"):
-                obj.draw(surface, lerp_amount)
+                if obj.draw_in_front:
+                    top_sprites.append(obj)
+                else:
+                    obj.draw(surface, lerp_amount)
+        
+        for obj in top_sprites:
+            obj.draw(surface, lerp_amount)

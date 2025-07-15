@@ -1,0 +1,16 @@
+{
+    "name": "spaceship.anim_controller",
+    "starting_state": "start",
+
+    "states": {
+        "start": {
+            "animations": ["start"],
+            "transitions": {
+                "main": "self.animations_complete"
+            }
+        },
+        "main": {
+            "animations": ["main"]
+        }
+    }
+}

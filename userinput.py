@@ -38,6 +38,7 @@ class KeyboardMouse:
         for event in events:
             if event.type == KEYDOWN:
                 self.__action_keys[event.key] = True
+                self.__action_keys["any"] = True
                 self.__hold_keys[event.key] = 1
 
 
@@ -55,6 +56,7 @@ class Controller:
         self.__joystick = joystick
         if self.__joystick is not None:
             if (joy_name:=joystick.get_name()) in self.controller_mappings:
+                joy_name = self.controller_mappings[joy_name].get("same_as", joy_name)
                 self.__mappings: dict[str, dict[str, Any]] = self.controller_mappings[joy_name]
             else:
                 self.__joystick = None
@@ -65,11 +67,13 @@ class Controller:
         self.__left_stick = p.Vector2()
         self.__right_stick = p.Vector2()
 
+        self.__left_trigger = 0.0
+        self.__right_trigger = 0.0
+
 
     @property
     def action_buttons(self) -> ActionKeys:
         return self.__action_buttons.copy()
-    
     @property
     def hold_keys(self) -> HoldKeys:
         return self.__hold_buttons.copy()
@@ -77,10 +81,16 @@ class Controller:
     @property
     def left_stick(self) -> p.Vector2:
         return self.__left_stick.copy()
-    
     @property
     def right_stick(self) -> p.Vector2:
         return self.__right_stick.copy()
+    
+    @property
+    def left_trigger(self) -> float:
+        return self.__left_trigger
+    @property
+    def right_trigger(self) -> float:
+        return self.__right_trigger
 
 
     
@@ -100,6 +110,7 @@ class Controller:
 
                 if button_name is not None:
                     self.__action_buttons[button_name] = True
+                    self.__action_buttons["any"] = True
                     self.__hold_buttons[button_name] = 1
                 
             if event.type == JOYBUTTONUP:
@@ -111,12 +122,32 @@ class Controller:
             if event.type == JOYAXISMOTION:
                 axis_data = self.__mappings["axis"].get(str(event.axis))
 
-                if axis_data is not None and axis_data["stick"] == "left_stick":
-                    self.__set_stick_value(self.__left_stick, axis_data["axis"], event.value)
 
+                if axis_data is not None:
+                    match axis_data["stick"]:
+                        case "left_stick":
+                            self.__set_stick_value(self.__left_stick, axis_data["axis"], event.value)
+  
+                        case "right_stick":
+                            self.__set_stick_value(self.__right_stick, axis_data["axis"], event.value)
                         
-                if axis_data is not None and axis_data["stick"] == "right_stick":
-                    self.__set_stick_value(self.__right_stick, axis_data["axis"], event.value)
+                        case "l_trigger":
+                            if abs(event.value) > self.stick_dead_zone:
+                                self.__left_trigger = event.value
+                            else:
+                                self.__left_trigger = 0.0
+                        
+                        case "r_trigger":
+                            if abs(event.value) > self.stick_dead_zone:
+                                self.__right_trigger = event.value
+                            else:
+                                self.__right_trigger = 0.0
+        
+
+        print(self.left_trigger)
+
+
+
 
 
 
@@ -128,12 +159,21 @@ class Controller:
 
 
 
+
+
+
     def get_stick_value(self, side: Literal["left", "right"], axis: Literal["x", "y"]) -> float:
         if side == "left":
             return getattr(self.left_stick, axis)
         
         if side == "right":
             return getattr(self.right_stick, axis)
+        
+
+
+    def rumble(self, low_freq: float, high_freq: float, duration: int) -> None:
+        if self.__joystick is not None:
+            self.__joystick.rumble(low_freq, high_freq, duration)
 
 
 
@@ -155,6 +195,7 @@ class InputInterpreter:
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller):
         self.keyboard_mouse = keyboard_mouse
         self.controller = controller
+        self.current_input_type: Literal["keyboard_mouse", "controller"] = "keyboard_mouse"
 
 
     
@@ -166,6 +207,12 @@ class InputInterpreter:
     def get_userinput(self, events: list[p.Event]) -> None:
         self.keyboard_mouse.get_userinput(events)
         self.controller.get_userinput(events)
+
+        if self.controller.action_buttons["any"]:
+            self.current_input_type = "controller"
+
+        if self.keyboard_mouse.action_keys["any"]:
+            self.current_input_type = "keyboard_mouse"
 
 
     def check_input(self, name: str) -> bool:

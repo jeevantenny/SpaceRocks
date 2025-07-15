@@ -50,8 +50,11 @@ class StateStack(Deque[State]):
     
     
     @property
-    def top_state(self) -> State:
-        return self[-1]
+    def top_state(self) -> State | None:
+        if self:
+            return self[-1]
+        else:
+            return None
     
 
     def push(self, state: State) -> None:

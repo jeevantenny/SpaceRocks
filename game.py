@@ -138,13 +138,14 @@ class Game:
 
 
     def draw(self) -> None:
-        lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
-        debug_message = self.state_stack.draw(self.game_surface, lerp_amount)
-        
-        self.window.blit(p.transform.scale(self.game_surface, config.WINDOW_SIZE))
+        if self.state_stack:
+            lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
+            debug_message = self.state_stack.draw(self.game_surface, lerp_amount)
+            
+            self.window.blit(p.transform.scale(self.game_surface, config.WINDOW_SIZE))
 
-        if debug.debug_mode:
-            self.window.blit(self.debug_font.render(debug_message, False, "white", "black"))
+            if debug_message is not None and debug.debug_mode:
+                self.window.blit(self.debug_font.render(debug_message, False, "white", "black"))
 
 
 

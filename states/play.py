@@ -13,7 +13,7 @@ from game_objects.entities import Spaceship, Asteroid
 from ui import LargeFont, SmallFont
 
 from . import State
-from .menus import PauseMenu
+from .menus import PauseMenu, GameOverScreen
 
 
 
@@ -31,11 +31,11 @@ class Play(State):
         self.entities = ObjectGroup()
         self.asteroids = ObjectGroup()
 
-        self.spaceship = Spaceship((200, 120))
+        self.spaceship = Spaceship(p.Vector2(config.PIXEL_WINDOW_SIZE)*0.5)
         self.entities.add(self.spaceship)
 
 
-        self.new_asteroids = []
+        self.new_asteroids: list[Asteroid] = []
 
         self.score = 0
         self.highscore = data.load_highscore()
@@ -59,18 +59,24 @@ class Play(State):
             self.spaceship.combo += 50
 
 
-        if inputs.keyboard_mouse.action_keys[p.K_ESCAPE]:
+        if inputs.check_input("escape"):
             self.state_stack.push(PauseMenu())
 
 
     def update(self):
-        if self.spaceship.alive() and random.random() < 0.05 and self.required_asteroid_count() > self.asteroid_value():
+        if not self.spaceship.alive():
+            self.state_stack.push(GameOverScreen())
+        
+        elif random.random() < 0.05 and self.required_asteroid_count() > self.asteroid_value():
             self.spawn_asteroid()
 
         for asteroid in self.new_asteroids.copy():
             if self.window_border.contains(asteroid.rect):
                 asteroid.set_bounding_area(self.window_border)
                 self.new_asteroids.remove(asteroid)
+            elif not self.window_border.colliderect(asteroid.rect) and (asteroid.position-self.spaceship.position).magnitude() < self.safe_radius:
+                self.new_asteroids.remove(asteroid)
+                asteroid.force_kill()
 
         for obj in self.entities:
             if isinstance(obj, Asteroid) and obj not in self.asteroids:
@@ -158,12 +164,13 @@ class Play(State):
 
 
     def draw(self, surface, lerp_amount=0):
-        surface.fill("black")
+        surface.fill((5, 5, 5))
 
         self.entities.draw(surface, lerp_amount)
 
-        self.show_scores(surface, "highscore", self.highscore)
-        self.show_scores(surface, "score", self.score, (8, 20))
+        if self.state_stack.top_state is self:
+            self.show_scores(surface, "highscore", self.highscore)
+            self.show_scores(surface, "score", self.score, (8, 20))
 
 
         return f"entity count: {len(self.entities)}, asteroid value: {self.asteroid_value()}, combo: {self.spaceship.combo}"

@@ -1,7 +1,7 @@
 import pygame as p
 from typing import Callable, Generator, Any
 
-from custom_types import Coordinate
+from custom_types import Coordinate, AnimData, ControllerData, Animation, AnimController
 from math_functions import unit_vector, vector_min
 
 from . import GameObject
@@ -9,6 +9,19 @@ from . import GameObject
 import debug
 
 
+
+
+
+
+__all__ = [
+    "ObjectComponent",
+    "ObjectVelocity",
+    "ObjectTexture",
+    "ObjectAnimation",
+    "ObjectHitbox",
+    "ObjectCollision",
+    "BorderCollision"
+]
 
 
 
@@ -75,16 +88,16 @@ class ObjectVelocity(ObjectComponent):
 
 
 
-class ObjectTexture(GameObject):
+class ObjectTexture(ObjectComponent):
     "Gives an object a visible texture."
 
     priority = 4
+    draw_in_front = False
 
     def __init__(self, *, texture: p.Surface, **kwargs):
         super().__init__(**kwargs)
 
         self.texture = texture
-        self.__size = texture.get_size()
         self.rotation = 0
         self.angular_vel = 0
 
@@ -97,7 +110,10 @@ class ObjectTexture(GameObject):
         self.rotation += amount
 
     def get_rotation_vector(self) -> p.Vector2:
-        return p.Vector2(0, -1).rotate(self.rotation) 
+        return p.Vector2(0, -1).rotate(self.rotation)
+    
+    def get_lerp_rotation_vector(self, lerp_amount=0.0) -> p.Vector2:
+        return p.Vector2(0, -1).rotate(self.rotation-self.angular_vel*(1-lerp_amount))
 
     def set_rotation(self, value: float) -> None:
         self.rotation = value
@@ -110,7 +126,6 @@ class ObjectTexture(GameObject):
 
     
     def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
-        super().draw(surface, lerp_amount)
         blit_texture = p.transform.rotate(self.texture, -(self.rotation-self.angular_vel*(1-lerp_amount)))
         lerp_pos = self.position.copy()
         if isinstance(self, ObjectVelocity):
@@ -121,12 +136,50 @@ class ObjectTexture(GameObject):
 
         if debug.debug_mode:
             p.draw.line(surface, "white", lerp_pos, lerp_pos+self.get_rotation_vector()*10)
+        
+        super().draw(surface, lerp_amount)
+
+
+
+
+
+class ObjectAnimation(ObjectTexture):
+    def __init__(self, *, texture_map: dict[str, p.Surface], anim_data: dict[str, AnimData], controller_data: ControllerData, **kwargs):
+        super().__init__(texture=None, **kwargs)
+
+        self.__texture_map = texture_map
+        animations = {}
+        for name, data in anim_data.items():
+            animations[name] = Animation(name, data)
+
+        self.__controller = AnimController(controller_data, animations)
+
+
+    def update(self):
+        super().update()
+        self.update_animations()
+
+
+    def update_animations(self):
+        self.__controller.update(self)
+
+
+    @property
+    def animations_complete(self) -> bool:
+        return self.__controller.animations_complete
+    
+
+    def draw(self, surface, lerp_amount=0):
+        self.texture = self.__controller.get_frame(self.__texture_map, lerp_amount)
+        super().draw(surface, lerp_amount)
 
 
 
 
 
 class ObjectHitbox(ObjectComponent):
+    draw_in_front = False
+
     def __init__(self, *, hitbox_size: Coordinate, **kwargs):
         super().__init__(**kwargs)
         self.__hitbox_size = hitbox_size
@@ -141,8 +194,19 @@ class ObjectHitbox(ObjectComponent):
 
     def colliding_objects(self) -> Generator[GameObject, Any, None]:
         for obj in self.group:
-            if obj is not self and isinstance(obj, ObjectCollision) and self.rect.colliderect(obj.rect):
+            if obj is not self and isinstance(obj, ObjectCollision) and obj.do_collision() and self.rect.colliderect(obj.rect):
                 yield obj
+
+
+
+    def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
+        super().draw(surface, lerp_amount)
+        if debug.debug_mode:
+            blit_rect: p.Rect = self.rect
+            if isinstance(self, ObjectVelocity):
+                rect_center = self.position - self.get_velocity()*(1-lerp_amount)
+                blit_rect.center = rect_center
+            p.draw.rect(surface, "red", blit_rect, 1)
 
 
 
@@ -216,6 +280,9 @@ class ObjectCollision(ObjectHitbox):
             rect: p.Rect = other_obj.rect
             other_obj_vel: p.Vector2 = other_obj.get_velocity()
             resultant_vel = self._velocity - other_obj_vel
+
+            if x_change is None and y_change is None:
+                self.on_collide(other_obj)
             
             if obj_rect.colliderect(rect):
                 if resultant_vel.y > 0:
@@ -255,13 +322,12 @@ class ObjectCollision(ObjectHitbox):
 
 
 
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
-        super().draw(surface, lerp_amount)
-        if debug.debug_mode:
-            blit_rect: p.Rect = self.rect
-            rect_center = self.position - self.get_velocity()*(1-lerp_amount)
-            blit_rect.center = rect_center
-            p.draw.rect(surface, "red", blit_rect, 1)
+    def on_collide(self, collided_with) -> None:
+        pass
+
+
+    def do_collision(self) -> bool:
+        return True
 
 
 
@@ -300,6 +366,7 @@ class BorderCollision(ObjectHitbox):
     def process_collision(self) -> None:
         super().process_collision()
         obj_rect: p.Rect = self.rect
+        prev_pos = obj_rect.center
 
         if obj_rect.left <= self.__bounding_area.left and self._velocity.x < 0:
             obj_rect.left = self.__bounding_area.left
@@ -317,4 +384,13 @@ class BorderCollision(ObjectHitbox):
             obj_rect.bottom = self.__bounding_area.bottom
             self._velocity.y = -abs(self._velocity.y*self.__bounce)
 
+        if prev_pos != obj_rect.center:
+            self.on_collide("border")
+
         self.position = p.Vector2(obj_rect.center)
+
+
+
+
+    def on_collide(self, collided_with) -> None:
+        pass

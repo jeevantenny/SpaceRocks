@@ -1,7 +1,7 @@
 {
     "select": {
         "keyboard": {
-            "key": "w",
+            "key": "return",
             "type": "action"
         },
         "controller": {
@@ -13,6 +13,10 @@
         "keyboard": {
             "key": "escape",
             "type": "action"
+        },
+        "controller": {
+            "type": "action_button",
+            "value": "menu"
         }
     },
     "ship_forward": {
@@ -22,7 +26,17 @@
         },
         "controller": {
             "type": "hold_button",
-            "value": "b"
+            "value": "r_bumper"
+        }
+    },
+    "ship_backward": {
+        "keyboard": {
+            "key": "s",
+            "type": "hold"
+        },
+        "controller": {
+            "type": "hold_button",
+            "value": "l_bumper"
         }
     },
     "shoot": {

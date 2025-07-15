@@ -1,0 +1,42 @@
+{
+    "group_name": "asteroid.animation",
+    "animations": {
+        "health_4": {
+            "duration": 0.0,
+            "timeline": {
+                "0.0": "health_4"
+            }
+        },
+        "health_3": {
+            "duration": 0.0,
+            "timeline": {
+                "0.0": "health_3"
+            }
+        },
+        "health_2": {
+            "duration": 0.0,
+            "timeline": {
+                "0.0": "health_2"
+            }
+        },
+        "health_1": {
+            "duration": 0.0,
+            "timeline": {
+                "0.0": "health_1"
+            }
+        },
+        "explode": {
+            "anim_speed_multiplier": 1.5,
+            "duration": 10,
+            "timeline": {
+                "0.0": "break_1",
+                "1.0": "break_2",
+                "2.0": "break_3",
+                "3.0": "break_4",
+                "5.0": "break_5",
+                "7.0": "break_7",
+                "9.0": "break_7"
+            }
+        }
+    }
+}

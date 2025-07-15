@@ -1,0 +1,21 @@
+{
+    "name": "basic.anim_controller",
+    "starting_state": "still",
+
+    "states": {
+        "still": {
+            "animations": ["still"]
+        },
+
+        "collected_a": {
+            "animations": ["still", "collect_item_a"],
+            "transitions": {
+                "collected_b": "self.animations_complete"
+            }
+        },
+
+        "collected_b": {
+            "animations": ["collect_item_b"]
+        }
+    }
+}

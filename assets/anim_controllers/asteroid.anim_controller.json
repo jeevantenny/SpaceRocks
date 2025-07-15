@@ -1,0 +1,37 @@
+{
+    "name": "asteroid.anim_controller",
+    "starting_state": "health_4",
+
+    "states": {
+        "health_4": {
+            "animations": ["health_4"],
+            "transitions": {
+                "explode": "not obj.health",
+                "health_3": "obj.health < 4"
+            }
+        },
+        "health_3": {
+            "animations": ["health_3"],
+            "transitions": {
+                "explode": "not obj.health",
+                "health_2": "obj.health < 3"
+            }
+        },
+        "health_2": {
+            "animations": ["health_2"],
+            "transitions": {
+                "explode": "not obj.health",
+                "health_1": "obj.health < 2"
+            }
+        },
+        "health_1": {
+            "animations": ["health_1"],
+            "transitions": {
+                "explode": "not obj.health"
+            }
+        },
+        "explode": {
+            "animations": ["explode"]
+        }
+    }
+}
