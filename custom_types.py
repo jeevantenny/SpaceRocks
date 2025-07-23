@@ -28,12 +28,19 @@ class Animation:
         self.__anim_data = anim_data
 
         self.__anim_time = 0.0
-        self.__default_frame = self.__timeline["0.0"]
+
+        if "frame_duration" in self.__anim_data:
+            self.prev_frame = None
+            self.__flipbook = True
+        else:
+            self.__flipbook = False
 
 
 
     @property
     def duration(self) -> float:
+        if self.__flipbook:
+            raise AttributeError("Can't determine duration for flipbook animation.")
         return self.__anim_data["duration"]
     
     @property
@@ -46,19 +53,32 @@ class Animation:
     
     @property
     def complete(self) -> bool:
-        return self.__anim_time == self.duration
+        if self.__flipbook:
+            return False
+        else:
+            return self.__anim_time == self.duration
     
     @property
     def __timeline(self) -> dict[str, str]:
+        if self.__flipbook:
+            raise AttributeError("Can't determine timeline for flipbook animation.")
         return self.__anim_data["timeline"]
+    
+
+    @property
+    def __frame_duration(self) -> float:
+        if not self.__flipbook:
+            raise AttributeError("Can't determine frame duration for animation.")
+        
+        return self.__anim_data["frame_duration"]
     
 
 
     def update(self):
-        if self.__anim_time < self.duration:
+        if self.__flipbook or self.__anim_time < self.duration:
             self.__anim_time += self.anim_speed_multiplier
             
-            if self.__anim_time >= self.duration:
+            if not self.__flipbook and self.__anim_time >= self.duration:
                 if self.loop:
                     self.__anim_time -= self.duration
                 else:
@@ -75,6 +95,8 @@ class Animation:
 
 
     def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
+        if self.__flipbook:
+            return self.__get_frame_flipbook(texture_map, lerp_amount)
         current_time = self.__anim_time + self.anim_speed_multiplier*lerp_amount*(not self.complete)
         prev_time = "0.0"
 
@@ -88,6 +110,26 @@ class Animation:
             return texture_map[self.__timeline[prev_time]]
         except KeyError:
             return p.Surface((0, 0))
+        
+    
+
+    def __get_frame_flipbook(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
+        frame_time = (self.__anim_time + self.anim_speed_multiplier*lerp_amount*(not self.complete))/self.__frame_duration
+
+        frames = list(texture_map.values())
+
+        if self.loop:
+            index = int(frame_time)%len(frames)
+        else:
+            index = min(int(frame_time), len(frames)-1)
+
+        return frames[index]
+    
+
+
+    def __repr__(self):
+        return f"{type(self).__name__}('{self.name}')"
+
     
 
 

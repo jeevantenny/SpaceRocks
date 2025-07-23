@@ -110,7 +110,7 @@ class Game:
 
 
     def userinput(self) -> None:
-        "Record the userinputs for a given frame and process them."
+        "Record the user inputs for a given frame and process them."
 
         events = p.event.get()
         
@@ -144,8 +144,13 @@ class Game:
             
             self.window.blit(p.transform.scale(self.game_surface, config.WINDOW_SIZE))
 
-            if debug_message is not None and debug.debug_mode:
-                self.window.blit(self.debug_font.render(debug_message, False, "white", "black"))
+
+            if debug.debug_mode:
+                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, Tickrate: {self.tick_clock.get_fps():.0f}"
+                if debug_message is not None:
+                    blit_text = f"{blit_text}, {debug_message}"
+
+                self.window.blit(self.debug_font.render(blit_text, False, "white", "black"))
 
 
 
@@ -172,6 +177,8 @@ class Game:
 
     def quit(self) -> None:
         self.thread.join()
+        if self.error:
+            input("Continue ->")
         self.state_stack.quit()
         print("Program closed successfully")
         print(f"error: {self.error}")

@@ -7,7 +7,7 @@ from functools import partial
 import config
 import debug
 
-from custom_types import Coordinate, TextureMap
+from custom_types import TextureMap
 from math_functions import vector_min, unit_vector
 
 from userinput import InputInterpreter
@@ -17,6 +17,7 @@ from file_processing import assets, load_json
 from ui import SmallFont
 
 from .components import *
+from .particles import ShipSmoke
 
 
 __all__ = [
@@ -29,7 +30,7 @@ __all__ = [
 
 
 
-class Spaceship(ObjectVelocity, ObjectAnimation, BorderCollision):
+class Spaceship(ObjectAnimation, BorderCollision):
     rotation_speed = 15
 
     __texture_map_path = "spaceship.texture_map.json"
@@ -46,24 +47,18 @@ class Spaceship(ObjectVelocity, ObjectAnimation, BorderCollision):
             border_bounce=0.1,
 
             texture_map=self.__texture_map,
-            anim_data=load_json("assets/animations/spaceship.animation.json")["animations"],
-            controller_data=load_json("assets/anim_controllers/spaceship.anim_controller.json")
+            anim_data=load_json(f"{self._anim_data_dir}/spaceship.animation.json"),
+            controller_data=load_json(f"{self._controller_data_dir}/spaceship.anim_controller.json")
         )
 
         self.score = 0
         self.combo = 0
 
+
         # self.crosshair = Crosshair(self.position)
         self.thrust = False
 
 
-    
-
-    
-    def get_rect(self) -> p.FRect:
-        rect = p.FRect(0, 0, *self.size)
-        rect.center = self.position
-        return rect
     
 
 
@@ -82,7 +77,7 @@ class Spaceship(ObjectVelocity, ObjectAnimation, BorderCollision):
             if not ( inputs.check_input("right") or  inputs.check_input("left")):
                 self.set_angular_vel(0)
             
-            if inputs.check_input("ship_backward") and self._velocity.magnitude() > 3:
+            if not self.thrust and inputs.check_input("ship_backward") and self._velocity.magnitude() > 3:
                 self.accelerate(unit_vector(self._velocity)*-2)
 
 
@@ -100,9 +95,13 @@ class Spaceship(ObjectVelocity, ObjectAnimation, BorderCollision):
             self.accelerate(-direction)
 
 
-    def update(self):
+    def update(self) -> None:
         if self.thrust:
             self.accelerate(p.Vector2(0, -1).rotate(self.rotation))
+            for _ in range(3):
+                direction = self.get_rotation_vector()
+                velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -6)
+                self.group.add(ShipSmoke(self.position-direction*16, velocity))
         
         # if self.crosshair not in self.group:
         #     self.group.add(self.crosshair)
@@ -116,7 +115,7 @@ class Spaceship(ObjectVelocity, ObjectAnimation, BorderCollision):
         for obj in self.colliding_objects():
             if isinstance(obj, Asteroid):
                 if obj.health:
-                    if obj.size == 1 and self._velocity.magnitude() > self.max_speed-3:
+                    if obj.size == 1 and self.boost():
                         self.score += obj.points
                         self.group.add(DisplayPoint(obj.get_display_point_pos(), obj.points))
                         obj.kill()
@@ -133,6 +132,10 @@ class Spaceship(ObjectVelocity, ObjectAnimation, BorderCollision):
         # if asteroid_in_line_of_site:
         #     self.crosshair.set_position(min(crosshair_asteroids, key=lambda x: (self.position-x.position).magnitude()).position)
 
+
+    
+    def boost(self) -> bool:
+        return self._velocity.magnitude() > self.max_speed-3
 
 
     def asteroid_in_crosshair(self, asteroid: "Asteroid", crosshair_line) -> bool:
@@ -154,48 +157,67 @@ class Spaceship(ObjectVelocity, ObjectAnimation, BorderCollision):
 
 
 
-class Bullet(ObjectVelocity, ObjectTexture, ObjectHitbox):
-    speed = 40
+class Bullet(ObjectTexture, ObjectVelocity):
+    max_speed = 40
     hitbox_size = (8, 8)
-    visible_area = p.Rect(0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE)
+    visible_area = p.Rect(0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE).inflate(100, 100)
 
-    def __init__(self, position: Coordinate, direction: Coordinate, shooter: Spaceship):
+    def __init__(self, position: p.typing.Point, direction: p.typing.Point, shooter: Spaceship):
         super().__init__(
             position=position,
-            texture=assets.load_texture_map("particles.texture_map.json")["bullet"],
-            hitbox_size = (20, 20)
+            texture=assets.load_texture_map("particles.texture_map.json")["bullet"]
         )
 
         self.shooter = shooter
 
         direction = unit_vector(p.Vector2(direction))
-        self.accelerate(direction*self.speed)
+        self.accelerate(direction*self.max_speed)
         self.move(direction*5)
 
         self.set_rotation(-direction.angle_to((0, -1)))
 
+        self.__lifetime = 20
+
 
     def update(self):
         super().update()
-        if not self.visible_area.collidepoint(self.position):
+        self.__lifetime -= 1
+        if self.__lifetime <= 0:
             self.kill()
             self.shooter.combo = 0
             return
 
 
         hit = False
-        for obj in self.colliding_objects():
-            if isinstance(obj, Asteroid):
+        for obj in self.group.sprites():
+            if (isinstance(obj, Asteroid)
+                and obj.health
+                and self.__collision_check(obj)
+                ):
                 self.damage_asteroid(obj)
                 hit = True
 
         if hit:
             self.kill()
+            
+        
+    
+
+
+    def draw(self, surface, lerp_amount=0):
+        super().draw(surface, lerp_amount)
+
+        if debug.debug_mode:
+            for line in self.__get_collision_lines():
+                p.draw.line(surface, "blue", *line)
+
+
+
 
 
     def damage_asteroid(self, asteroid: "Asteroid") -> None:
         asteroid.damage(1)
-        asteroid.accelerate(self.get_velocity()*0.1)
+        asteroid.accelerate(self._velocity*0.1/asteroid.size)
         if not asteroid.health:
             self.shooter.score += asteroid.points + self.shooter.combo
             self.group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo))
@@ -204,20 +226,26 @@ class Bullet(ObjectVelocity, ObjectTexture, ObjectHitbox):
 
 
 
-    def collision_check(self, asteroid: "Asteroid") -> bool:
-        sideways: p.Vector2 = self.get_rotation_vector().rotate(90)*8
-
-        collision_lines = [
-            (self.position+sideways, self.position-self.get_velocity()+sideways),
-            (self.position-sideways, self.position-self.get_velocity()-sideways),
-            (self.position, self.position-self.get_velocity())
-        ]
-
-        for line in collision_lines:
+    def __collision_check(self, asteroid: "Asteroid") -> bool:
+        for line in self.__get_collision_lines():
             if asteroid.rect.clipline(*line):
                 return True
         
         return False
+    
+
+    def __get_collision_lines(self) -> list[tuple[p.Vector2, p.Vector2]]:
+        sideways: p.Vector2 = self.get_rotation_vector().rotate(90)*8
+
+        line_offset = -self._velocity*2*(self.__lifetime <= 17)
+        prev_pos = self.position-self._velocity*(self.__lifetime <= 18)
+
+        return [
+            (prev_pos+sideways, prev_pos+line_offset+sideways),
+            (prev_pos-sideways, prev_pos+line_offset-sideways),
+            (prev_pos, prev_pos+line_offset)
+        ]
+        
         
 
 
@@ -231,7 +259,13 @@ class Bullet(ObjectVelocity, ObjectTexture, ObjectHitbox):
 
 
 
-class Asteroid(ObjectVelocity, ObjectAnimation, ObjectCollision, BorderCollision):
+
+
+
+
+
+
+class Asteroid(ObjectAnimation, ObjectCollision):
     size_data = {
         1: {
             "texture": "small",
@@ -248,7 +282,7 @@ class Asteroid(ObjectVelocity, ObjectAnimation, ObjectCollision, BorderCollision
         3: {
             "texture": "large",
             "hitbox": (60, 60),
-            "health": 4,
+            "health": 10,
             "points": 8
         }
     }
@@ -256,7 +290,7 @@ class Asteroid(ObjectVelocity, ObjectAnimation, ObjectCollision, BorderCollision
     __texture_map_path = "asteroid.texture_map.json"
     __texture_map: TextureMap | None = None
 
-    def __init__(self, position: Coordinate, velocity: Coordinate, window_border: p.typing.RectLike, size: Literal[1, 2, 3] = 1):
+    def __init__(self, position: p.typing.Point, velocity: p.typing.Point, size: Literal[1, 2, 3] = 1):
         if self.__texture_map is None:
             type(self).__texture_map = assets.load_texture_map(self.__texture_map_path)
 
@@ -269,12 +303,10 @@ class Asteroid(ObjectVelocity, ObjectAnimation, ObjectCollision, BorderCollision
             position=position,
             hitbox_size=self.size_data[size]["hitbox"],
             bounce=0.95,
-            bounding_area=window_border,
-            border_bounce=0.95,
 
             texture_map=texture_map,
-            anim_data=load_json("assets/animations/asteroid.animation.json")["animations"],
-            controller_data=load_json("assets/anim_controllers/asteroid.anim_controller.json")
+            anim_data=load_json(f"{self._anim_data_dir}/asteroid.animation.json"),
+            controller_data=load_json(f"{self._controller_data_dir}/asteroid.anim_controller.json")
         )
 
         self.size = size
@@ -325,8 +357,8 @@ class Asteroid(ObjectVelocity, ObjectAnimation, ObjectCollision, BorderCollision
 
             for pos in positions:
                 pos.rotate_ip(rotate_angle)
-                new_rock = Asteroid(self.position + pos*8, self.get_velocity() + pos*3, self.get_bounding_area(), self.size-1)
-                new_rock.set_velocity(self.get_velocity()+pos)
+                new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1)
+                new_rock.set_velocity(self._velocity+pos)
                 self.group.add(new_rock)
 
 
@@ -336,7 +368,7 @@ class Asteroid(ObjectVelocity, ObjectAnimation, ObjectCollision, BorderCollision
 class Crosshair(ObjectTexture):
     draw_in_front = True
     __texture_map_path = "crosshair.texture_map.json"
-    def __init__(self, position: Coordinate):
+    def __init__(self, position: p.typing.Point):
         super().__init__(
             position=position,
             texture=assets.load_texture_map(self.__texture_map_path)["crosshair_a"]
@@ -359,7 +391,7 @@ class Crosshair(ObjectTexture):
 class DisplayPoint(ObjectTexture):
     draw_in_front = True
 
-    def __init__(self, position: Coordinate, points: int, combo=0):
+    def __init__(self, position: p.typing.Point, points: int, combo=0):
         text = f"+{points+combo}"
         if combo:
             text += " COMBO"

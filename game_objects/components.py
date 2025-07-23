@@ -1,7 +1,7 @@
 import pygame as p
 from typing import Callable, Generator, Any
 
-from custom_types import Coordinate, AnimData, ControllerData, Animation, AnimController
+from custom_types import AnimData, ControllerData, Animation, AnimController
 from math_functions import unit_vector, vector_min
 
 from . import GameObject
@@ -72,11 +72,11 @@ class ObjectVelocity(ObjectComponent):
     def get_velocity(self) -> p.Vector2:
         return self._velocity.copy()
 
-    def set_velocity(self, value: Coordinate) -> None:
+    def set_velocity(self, value: p.typing.Point) -> None:
         self._velocity = p.Vector2(value)
 
 
-    def accelerate(self, value: Coordinate) -> None:
+    def accelerate(self, value: p.typing.Point) -> None:
         self._velocity += p.Vector2(value)
 
 
@@ -144,12 +144,15 @@ class ObjectTexture(ObjectComponent):
 
 
 class ObjectAnimation(ObjectTexture):
-    def __init__(self, *, texture_map: dict[str, p.Surface], anim_data: dict[str, AnimData], controller_data: ControllerData, **kwargs):
+    _anim_data_dir = "assets/animations"
+    _controller_data_dir = "assets/anim_controllers"
+
+    def __init__(self, *, texture_map: dict[str, p.Surface], anim_data: dict[str, str | dict[str, AnimData]], controller_data: ControllerData, **kwargs):
         super().__init__(texture=None, **kwargs)
 
         self.__texture_map = texture_map
         animations = {}
-        for name, data in anim_data.items():
+        for name, data in anim_data["animations"].items():
             animations[name] = Animation(name, data)
 
         self.__controller = AnimController(controller_data, animations)
@@ -180,7 +183,7 @@ class ObjectAnimation(ObjectTexture):
 class ObjectHitbox(ObjectComponent):
     draw_in_front = False
 
-    def __init__(self, *, hitbox_size: Coordinate, **kwargs):
+    def __init__(self, *, hitbox_size: p.typing.Point, **kwargs):
         super().__init__(**kwargs)
         self.__hitbox_size = hitbox_size
 
@@ -210,7 +213,7 @@ class ObjectHitbox(ObjectComponent):
 
 
 
-class ObjectCollision(ObjectHitbox):
+class ObjectCollision(ObjectHitbox, ObjectVelocity):
     "Gives objects a hitbox which can be used for collision."
 
     priority = 6
@@ -337,9 +340,8 @@ class ObjectCollision(ObjectHitbox):
 
 
 
-class BorderCollision(ObjectHitbox):
+class BorderCollision(ObjectHitbox, ObjectVelocity):
 
-    dependencies = [ObjectCollision]
 
     def __init__(self, *, bounding_area: p.typing.RectLike, border_bounce=0.0, **kwargs):
         super().__init__(**kwargs)

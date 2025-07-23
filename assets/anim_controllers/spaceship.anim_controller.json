@@ -10,7 +10,16 @@
             }
         },
         "main": {
-            "animations": ["main"]
+            "animations": ["main"],
+            "transitions": {
+                "boost": "obj.boost()"
+            }
+        },
+        "boost": {
+            "animations": ["main", "boost"],
+            "transitions": {
+                "main": "not obj.boost()"
+            }
         }
     }
 }

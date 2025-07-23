@@ -1,7 +1,7 @@
 import pygame as p
 from functools import partial
 
-from file_processing import assets
+from file_processing import assets, get_resource_path
 
 
 
@@ -14,7 +14,7 @@ class Font:
     _base_size: int
 
     def __init__(self):
-        self._font = partial(p.font.Font, self.font_path)
+        self._font = partial(p.font.Font, get_resource_path(self.font_path))
     
 
     def render(self, text: str, size=1, color_a: p.typing.ColorLike =(238, 238, 238), color_b: p.typing.ColorLike =(85, 0, 17), padding=0) -> p.Surface:

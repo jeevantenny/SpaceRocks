@@ -2,7 +2,6 @@ import pygame as p
 from typing import Iterable, Callable, TypeGuard
 from functools import partial
 
-from custom_types import Coordinate
 from game_errors import MissingComponentError
 
 
@@ -18,7 +17,7 @@ def run_functions(functions: Iterable[Callable], *args, **kwargs) -> None:
 
 class GameObject(p.sprite.Sprite):
 
-    def __init__(self, *, position: Coordinate, group: "ObjectGroup | None" = None) -> None:
+    def __init__(self, *, position: p.typing.Point, group: "ObjectGroup | None" = None) -> None:
         if group:
             super().__init__(group)
         else:
@@ -42,7 +41,7 @@ class GameObject(p.sprite.Sprite):
 
 
 
-    def set_position(self, value: Coordinate) -> None:
+    def set_position(self, value: p.typing.Point) -> None:
         self.position = p.Vector2(value)
         
 
@@ -86,21 +85,6 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
 
 
-
-    def move_all(self, displacement: p.Vector2) -> None:
-        for object in self.sprites():
-            object.move(displacement)
-
-
-
-    def accelerate_all(self, value: p.Vector2) -> None:
-        # for object in self.sprites():
-        #     if object.has_component(ObjectVelocity):
-        #         object.accelerate(value)
-        ...
-
-
-
     def update(self) -> None:
         for object in self.sprites():
             object.update()
@@ -119,3 +103,27 @@ class ObjectGroup(p.sprite.AbstractGroup):
         
         for obj in top_sprites:
             obj.draw(surface, lerp_amount)
+
+
+
+
+    def move_all(self, displacement: p.Vector2) -> None:
+        for object in self.sprites():
+            object.move(displacement)
+
+
+
+    def accelerate_all(self, value: p.Vector2) -> None:
+        from .components import ObjectVelocity
+        for object in self.sprites():
+            if object.has_component(ObjectVelocity):
+                object.accelerate(value)
+
+
+    def sprites(self) -> list[GameObject]:
+        return super().sprites()
+
+
+
+    def count(self) -> int:
+        return len(self.sprites())

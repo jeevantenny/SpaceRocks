@@ -19,6 +19,18 @@
         "medium_break_4": [172, 24, 38, 40],
         "medium_break_5": [211, 24, 38, 40],
         "medium_break_6": [1, 65, 38, 40],
-        "medium_break_7": [40, 65, 44, 44]
+        "medium_break_7": [40, 65, 44, 44],
+
+        "large_health_4": [1, 110, 64, 64],
+        "large_health_3": [1, 110, 64, 64],
+        "large_health_2": [1, 110, 64, 64],
+        "large_health_1": [1, 110, 64, 64],
+        "large_break_1": [67, 24, 32, 32],
+        "large_break_2": [100, 24, 32, 32],
+        "large_break_3": [133, 24, 38, 40],
+        "large_break_4": [172, 24, 38, 40],
+        "large_break_5": [211, 24, 38, 40],
+        "large_break_6": [1, 65, 38, 40],
+        "large_break_7": [40, 65, 44, 44]
     }
 }

@@ -142,9 +142,7 @@ class Controller:
                                 self.__right_trigger = event.value
                             else:
                                 self.__right_trigger = 0.0
-        
-
-        print(self.left_trigger)
+    
 
 
 

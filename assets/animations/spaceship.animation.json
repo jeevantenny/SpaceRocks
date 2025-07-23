@@ -19,6 +19,21 @@
                 "10": "start_6",
                 "11": "start_7"
             }
+        },
+        "boost": {
+            "duration": 8,
+            "anim_speed_multiplier": 0.8,
+            "loop": true,
+            "timeline": {
+                "0": "boost_1",
+                "1": "boost_2",
+                "2": "boost_3",
+                "3": "boost_4",
+                "4": "boost_5",
+                "5": "boost_6",
+                "6": "boost_7",
+                "7": "boost_8"
+            }
         }
     }
 }

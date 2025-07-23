@@ -1,8 +1,11 @@
 import pygame as p
 
-from . import State
+from config import PIXEL_WINDOW_SIZE
 
 from game_objects.entities import Bullet, Asteroid, DisplayPoint
+from ui import LargeFont
+
+from . import State
 
 
 
@@ -12,6 +15,9 @@ from game_objects.entities import Bullet, Asteroid, DisplayPoint
 class PauseMenu(State):
     def __init__(self, state_stack = None):
         super().__init__(state_stack)
+
+        self.title_text = LargeFont().render("Game Paused")
+        self.text_blit_pos = (p.Vector2(PIXEL_WINDOW_SIZE)-self.title_text.size)*0.5 + (0, -40)
 
 
 
@@ -24,7 +30,8 @@ class PauseMenu(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        surface.fill((50, 50, 50), special_flags=p.BLEND_SUB)
+        surface.fill((80, 80, 80), special_flags=p.BLEND_SUB)
+        surface.blit(self.title_text, self.text_blit_pos)
 
 
 
@@ -40,8 +47,6 @@ class GameOverScreen(State):
             self.state_stack.pop()
             self.state_stack.pop()
             self.state_stack.push(Play())
-
-            print(self.state_stack)
 
     
     def update(self):
