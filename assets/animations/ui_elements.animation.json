@@ -1,0 +1,41 @@
+{
+    "group_name": "ui_elements.animation",
+
+    "animations": {
+        "title_entrance": {
+            "duration": 15,
+            "anim_speed_multiplier": 0.85,
+            "timeline": {
+                "0": "blank",
+                "5": "main_title_entrance_1",
+                "6": "main_title_entrance_2",
+                "7": "main_title_entrance_3",
+                "8": "main_title_entrance_4",
+                "9": "main_title_entrance_5",
+                "10": "main_title_entrance_6",
+                "11": "main_title_entrance_7",
+                "12": "main_title_entrance_8",
+                "13": "main_title_entrance_9",
+                "14": "main_title_entrance_10",
+                "15": "main_title"
+            }
+        },
+        "title_glint": {
+            "duration": 0,
+            "timeline": {
+                "0": "main_title"
+            }
+
+        },
+        "title_exit": {
+            "duration": 4,
+            "timeline": {
+                "0": "main_title_exit_1",
+                "1": "main_title_exit_2",
+                "2": "main_title_exit_3",
+                "3": "main_title_exit_4",
+                "4": "blank"
+            }
+        }
+    }
+}

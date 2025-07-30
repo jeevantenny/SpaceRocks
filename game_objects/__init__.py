@@ -127,3 +127,17 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
     def count(self) -> int:
         return len(self.sprites())
+    
+
+    def kill_type(self, object_type: type[GameObject]) -> None:
+        if not issubclass(object_type, GameObject):
+            raise ValueError(f"Class {object_type.__name__} is not a GameObject type.")
+        
+        for obj in self.sprites():
+            if isinstance(obj, object_type):
+                obj.force_kill()
+    
+
+    def kill_all(self) -> None:
+        for obj in self.sprites():
+            obj.force_kill()

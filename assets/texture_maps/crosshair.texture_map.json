@@ -1,5 +1,5 @@
 {
-    "texture": "game_objects/crosshair.png",
+    "texture": "game_objects/crosshair",
     "mappings": {
         "crosshair_a": [0, 0, 15, 15],
         "crosshair_b": [0, 15, 15, 15],

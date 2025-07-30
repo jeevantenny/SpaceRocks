@@ -1,24 +1,46 @@
+"""
+Contains various types that will be used throughout the game.
+"""
+
 import pygame as p
+import random
 from typing import Literal, Generator, Any
 from collections import defaultdict
 
-from file_processing import assets
 
 
 
 
-type ActionKeys = defaultdict[int | str, bool]
-type HoldKeys = defaultdict[int, int]
+ActionKeys = defaultdict[int | str, bool]
+HoldKeys = defaultdict[int, int]
 
-type Coordinate = tuple[float, float] | p.Vector2
+Coordinate = tuple[float, float] | p.Vector2
 
-type TextureMap = dict[str, p.Surface]
-type AnimData = dict[str, dict[Literal["duration", "loop", "timeline"], float | bool | dict[str, str]]]
-type ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[str, dict[Literal["animations", "transitions"], list[str] | dict[str, str]]]]
+TextureMap = dict[str, p.Surface]
+AnimData = dict[str, dict[Literal["duration", "loop", "timeline"], float | bool | dict[str, str]]]
+ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[str, dict[Literal["animations", "transitions"], list[str] | dict[str, str]]]]
 
-# test: AnimData = {}
 
-# a = test["nin"]["duration"]
+
+
+
+
+
+class GameSound:
+    def __init__(self, name: str, sounds: list[p.Sound]):
+        self.name = name
+        self.__sounds = sounds
+    
+    
+    def play(self) -> p.Channel | None:
+        if self.__sounds:
+            return random.choice(self.__sounds).play()
+        else:
+            return None
+
+
+
+
 
 
 
@@ -205,10 +227,13 @@ class AnimController:
     
     def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
         frames = [anim.get_frame(texture_map, lerp_amount) for anim in self.current_animations()]
-        base_surface = p.Surface((max(frames, key=lambda x: x.width).width, max(frames, key=lambda x: x.height).height))
-        base_surface.fill(assets.COLORKEY)
+        if len(frames) == 1:
+            return frames[0]
+        
+        from file_processing import assets
+        base_surface = assets.colorkey_surface((max(frames, key=lambda x: x.width).width, max(frames, key=lambda x: x.height).height))
 
         for frame in frames:
             base_surface.blit(frame, (base_surface.size-p.Vector2(frame.size))*0.5)
-        base_surface.set_colorkey(assets.COLORKEY)
+        
         return base_surface

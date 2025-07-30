@@ -1,5 +1,5 @@
 {
-    "texture": "game_objects/spaceship.png",
+    "texture": "game_objects/spaceship",
     
     "mappings" : {
         "main": [0, 0, 16, 16],

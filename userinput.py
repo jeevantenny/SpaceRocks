@@ -49,7 +49,7 @@ class KeyboardMouse:
 
 
 class Controller:
-    controller_mappings = load_json("data/controller_mappings.json")
+    controller_mappings = load_json("data/controller_mappings")
     stick_dead_zone = 0.3
 
     def __init__(self, joystick: p.joystick.JoystickType | None = None):
@@ -188,7 +188,7 @@ class Controller:
 
 
 class InputInterpreter:
-    __keybinds = load_json("data/keybinds.json")
+    __keybinds = load_json("data/keybinds")
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller):
         self.keyboard_mouse = keyboard_mouse

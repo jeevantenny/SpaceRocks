@@ -1,5 +1,5 @@
 {
-    "texture": "game_objects/asteroids.png",
+    "texture": "game_objects/asteroids",
 
     "mappings": {
         "small_health_1": [1, 1, 16, 16],

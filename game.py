@@ -13,9 +13,8 @@ import debug
 
 from userinput import KeyboardMouse, Controller, InputInterpreter
 
-import states
+from states import State, StateStack, menus
 from file_processing import assets
-import states.play
 
 
 
@@ -26,6 +25,18 @@ class Game:
         p.init()
         p.joystick.init()
 
+
+        self.__setup = False
+        try:
+            self.__setup_engine()
+        except Exception:
+            traceback.print_exc()
+            input("Error occurred during setup\nExit ->")
+
+
+
+
+    def __setup_engine(self) -> None:
         self.run = True
 
         self.window = p.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
@@ -38,14 +49,16 @@ class Game:
         self.set_controllers()
 
 
-        self.state_stack = states.StateStack()
-        # self.state_stack.push(states.State())
-        self.state_stack.push(states.play.Play())
+        self.state_stack = StateStack()
+        # self.state_stack.push(State())
+        menus.TitleScreen(self.state_stack)
 
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed
 
         self.debug_font = p.font.SysFont("arial", 20)
+    
+        self.__setup = True
 
 
 
@@ -61,6 +74,9 @@ class Game:
 
     def start(self) -> None:
         "Starts the game."
+
+        if not self.__setup:
+            raise RuntimeWarning("Cannot start game because an exception has occurred during setup.")
 
         self.tick_clock = p.Clock()
         self.prev_tick = perf_counter()
@@ -140,9 +156,7 @@ class Game:
     def draw(self) -> None:
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
-            debug_message = self.state_stack.draw(self.game_surface, lerp_amount)
-            
-            self.window.blit(p.transform.scale(self.game_surface, config.WINDOW_SIZE))
+            debug_message = self.state_stack.draw(self.window, lerp_amount)
 
 
             if debug.debug_mode:
@@ -178,7 +192,13 @@ class Game:
     def quit(self) -> None:
         self.thread.join()
         if self.error:
-            input("Continue ->")
-        self.state_stack.quit()
-        print("Program closed successfully")
-        print(f"error: {self.error}")
+            input("Save and Exit ->")
+        
+        try:
+            self.state_stack.quit()
+            print("Program closed successfully")
+            print(f"error: {self.error}")
+        
+        except:
+            traceback.print_exc()
+            input("\033[91m\033[1mAn error occurred during saving. Data may not have been saved properly\033[0m\nExit ->")

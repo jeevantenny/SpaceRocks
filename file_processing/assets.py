@@ -3,7 +3,7 @@ from functools import lru_cache
 
 from . import get_resource_path, load_json
 
-
+from custom_types import GameSound
 
 
 TEXTURES_DIR = "assets/textures"
@@ -11,19 +11,33 @@ TEXTURE_MAPS_DIR = "assets/texture_maps"
 
 ANIMATIONS_DIR = "assets/animations"
 ANIM_CONTROLLERS_DIR = "assets/anim_controllers"
+
 SOUNDS_DIR = "assets/sounds"
 
 COLORKEY = (255, 0, 255)
 
 
+__sound_definition = load_json("assets/sounds")
+
+
 @lru_cache(32)
 def load_texture(path: str) -> p.Surface:
-    "Loads a texture from the textures folder as a pygame.Surface."
-    texture_path = get_resource_path(f"{TEXTURES_DIR}/{path}")
+    "Loads a texture from the textures folder as a pygame.Surface. (PNG file)"
+    texture_path = get_resource_path(f"{TEXTURES_DIR}/{path}.png")
     texture = p.image.load(texture_path).convert()
     texture.set_colorkey(COLORKEY)
     return texture
 
+
+
+
+
+
+def colorkey_surface(size: p.typing.Point, flags=0, depth=0, masks: p.typing.ColorLike | None = None) -> p.Surface:
+    surface = p.Surface(size)
+    surface.set_colorkey(COLORKEY)
+    surface.fill(COLORKEY)
+    return surface
 
 
 
@@ -54,9 +68,19 @@ def load_anim_controllers(path: str):
 
 
 
+@lru_cache(32)
+def load_sound(name: str) -> GameSound:
+    "Loads a sound defined in sound definitions. (OGG file)"
 
-def load_sound(path: str) -> p.Sound:
-    "Loads a sound from the sounds folder as a pygame.Sound."
+    if name not in __sound_definition:
+        raise ValueError(f"Invalid sound name '{name}'")
+    
+    sounds = [p.Sound(f"{SOUNDS_DIR}/{path}.ogg") for path in __sound_definition[name]["sounds"]]
 
-    sound_path = get_resource_path(f"{SOUNDS_DIR}/{path}")
-    return p.Sound(sound_path)
+    return GameSound(name, sounds)
+
+
+
+def load_music(path: str):
+    p.mixer_music.load(f"{SOUNDS_DIR}/{path}.ogg")
+    

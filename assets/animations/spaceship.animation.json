@@ -8,16 +8,16 @@
             }
         },
         "start": {
-            "duration": 12.0,
+            "duration": 8.0,
             "timeline": {
                 "0.0": "blank",
-                "5": "start_1",
-                "6": "start_2",
-                "7": "start_3",
-                "8": "start_4",
-                "9": "start_5",
-                "10": "start_6",
-                "11": "start_7"
+                "1": "start_1",
+                "2": "start_2",
+                "3": "start_3",
+                "4": "start_4",
+                "5": "start_5",
+                "6": "start_6",
+                "7": "start_7"
             }
         },
         "boost": {

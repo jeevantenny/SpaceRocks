@@ -1,5 +1,5 @@
 {
-    "texture": "game_objects/particles.png",
+    "texture": "game_objects/particles",
     "mappings": {
         "bullet": [1, 1, 8, 12],
 

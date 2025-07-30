@@ -6,15 +6,16 @@ from functools import partial
 
 import config
 import debug
-
 from custom_types import TextureMap
 from math_functions import vector_min, unit_vector
-
 from userinput import InputInterpreter
+from misc import get_named_frames
 
 from file_processing import assets, load_json
 
-from ui import SmallFont
+
+
+from ui.font import SmallFont
 
 from .components import *
 from .particles import ShipSmoke
@@ -31,9 +32,9 @@ __all__ = [
 
 
 class Spaceship(ObjectAnimation, BorderCollision):
-    rotation_speed = 15
+    __rotation_speed = 25
 
-    __texture_map_path = "spaceship.texture_map.json"
+    __texture_map_path = "spaceship.texture_map"
     __texture_map: TextureMap | None = None
 
     def __init__(self, position):
@@ -44,11 +45,11 @@ class Spaceship(ObjectAnimation, BorderCollision):
             position=position,
             hitbox_size=(16, 16),
             bounding_area=(0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE),
-            border_bounce=0.1,
+            border_bounce=0.5,
 
             texture_map=self.__texture_map,
-            anim_data=load_json(f"{self._anim_data_dir}/spaceship.animation.json"),
-            controller_data=load_json(f"{self._controller_data_dir}/spaceship.anim_controller.json")
+            anim_data=load_json(f"{self._anim_data_dir}/spaceship.animation"),
+            controller_data=load_json(f"{self._controller_data_dir}/spaceship.anim_controller")
         )
 
         self.score = 0
@@ -68,23 +69,36 @@ class Spaceship(ObjectAnimation, BorderCollision):
             
             self.thrust = inputs.check_input("ship_forward")
 
-            if  inputs.check_input("left"):
-                self.angular_vel = -self.rotation_speed
+            if inputs.check_input("left") and -self._angular_vel < self.__rotation_speed:
+                if self._angular_vel > 0:
+                    self._angular_vel = 0
+                
+                self._angular_vel -= 5
 
-            if inputs.check_input("right"):
-                self.angular_vel = self.rotation_speed
+            if inputs.check_input("right") and self._angular_vel < self.__rotation_speed:
+                if self._angular_vel < 0:
+                    self._angular_vel = 0
+                
+                self._angular_vel += 5
             
-            if not ( inputs.check_input("right") or  inputs.check_input("left")):
-                self.set_angular_vel(0)
+
             
-            if not self.thrust and inputs.check_input("ship_backward") and self._velocity.magnitude() > 3:
-                self.accelerate(unit_vector(self._velocity)*-2)
+            if not (inputs.check_input("right") or inputs.check_input("left")):
+                self._angular_vel = 0
+            
+            if not self.thrust and inputs.check_input("ship_backward"):
+                if self._velocity.magnitude() > 0.5:
+                    self.accelerate(unit_vector(self._velocity)*-0.2)
+                else:
+                    self._velocity *= 0
 
 
             if  inputs.check_input("shoot") and self.alive():
                 self.shoot()
                 if inputs.current_input_type == "controller":
                     inputs.controller.rumble(0.2, 0.1, 1)
+
+
 
 
 
@@ -148,9 +162,11 @@ class Spaceship(ObjectAnimation, BorderCollision):
 
     def draw(self, surface, lerp_amount=0):
         super().draw(surface, lerp_amount)
+
         
         if debug.debug_mode:
-            p.draw.line(surface, "green", self.position, self.position+self.get_lerp_rotation_vector(lerp_amount)*sum(config.PIXEL_WINDOW_SIZE))
+            lerp_pos = self._get_lerp_pos(lerp_amount)
+            p.draw.line(surface, "green", lerp_pos, lerp_pos+self.get_lerp_rotation_vector(lerp_amount)*500)
 
 
 
@@ -165,7 +181,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
     def __init__(self, position: p.typing.Point, direction: p.typing.Point, shooter: Spaceship):
         super().__init__(
             position=position,
-            texture=assets.load_texture_map("particles.texture_map.json")["bullet"]
+            texture=assets.load_texture_map("particles.texture_map")["bullet"]
         )
 
         self.shooter = shooter
@@ -176,13 +192,13 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
         self.set_rotation(-direction.angle_to((0, -1)))
 
-        self.__lifetime = 20
+        self.__lifetime = 15
 
 
     def update(self):
         super().update()
         self.__lifetime -= 1
-        if self.__lifetime <= 0:
+        if self.__lifetime == 0:
             self.kill()
             self.shooter.combo = 0
             return
@@ -287,26 +303,21 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         }
     }
 
-    __texture_map_path = "asteroid.texture_map.json"
+    __texture_map_path = "asteroid.texture_map"
     __texture_map: TextureMap | None = None
 
     def __init__(self, position: p.typing.Point, velocity: p.typing.Point, size: Literal[1, 2, 3] = 1):
         if self.__texture_map is None:
             type(self).__texture_map = assets.load_texture_map(self.__texture_map_path)
 
-        texture_map = {
-            name.removeprefix(f"{self.size_data[size]["texture"]}_"): texture
-            for name, texture in self.__texture_map.items()
-        }
-
         super().__init__(
             position=position,
             hitbox_size=self.size_data[size]["hitbox"],
             bounce=0.95,
 
-            texture_map=texture_map,
-            anim_data=load_json(f"{self._anim_data_dir}/asteroid.animation.json"),
-            controller_data=load_json(f"{self._controller_data_dir}/asteroid.anim_controller.json")
+            texture_map=get_named_frames(self.__texture_map, self.size_data[size]["texture"]),
+            anim_data=load_json(f"{self._anim_data_dir}/asteroid.animation"),
+            controller_data=load_json(f"{self._controller_data_dir}/asteroid.anim_controller")
         )
 
         self.size = size
@@ -347,10 +358,10 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
 
-    def kill(self):
+    def kill(self, spawn_asteroids=True):
         self.health = 0
         self.explode_pos = self.position.copy()
-        if self.size > 1:
+        if spawn_asteroids and self.size > 1:
             positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
             positions = map(p.Vector2, positions)
             rotate_angle = random.randint(1, 90)
@@ -367,7 +378,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 class Crosshair(ObjectTexture):
     draw_in_front = True
-    __texture_map_path = "crosshair.texture_map.json"
+    __texture_map_path = "crosshair.texture_map"
     def __init__(self, position: p.typing.Point):
         super().__init__(
             position=position,
@@ -388,27 +399,41 @@ class Crosshair(ObjectTexture):
 
 
 
-class DisplayPoint(ObjectTexture):
+class DisplayPoint(ObjectTexture, ObjectHitbox):
     draw_in_front = True
+    __safe_area = p.Rect(0, 3, config.PIXEL_WINDOW_SIZE[0], config.PIXEL_WINDOW_SIZE[1]-3)
 
     def __init__(self, position: p.typing.Point, points: int, combo=0):
         text = f"+{points+combo}"
         if combo:
-            text += " COMBO"
+            text = f"COMBO {text}"
+
+        texture = SmallFont.render(text, color_a="#dd6644" if combo else "#eeeeee")
 
         super().__init__(
             position=position,
-            texture=SmallFont().render(text, color_a=(221, 102, 68) if combo else (238, 238, 238), color_b="black")
+            texture=texture,
+            hitbox_size=texture.size
         )
+        
 
-        self.duration = 12
+        self.__stay_in_view()
+
+        self.__lifetime = 12
 
 
 
     def update(self):
         super().update()
-        if self.duration <= 0:
+
+        self.__lifetime -= 1
+        if self.__lifetime == 0:
             self.kill()
         
-        self.duration -= 1
-        self.position.y -= sin(self.duration*pi/12)*2
+        self.position.y -= sin(self.__lifetime*pi/12)*2
+    
+
+
+
+    def __stay_in_view(self) -> None:
+        self.set_position(self.rect.inflate(1, 1).clamp(self.__safe_area).center)

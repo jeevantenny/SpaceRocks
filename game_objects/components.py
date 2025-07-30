@@ -40,9 +40,6 @@ class ObjectComponent(GameObject):
 
 
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}()"
-
 
 
 
@@ -99,11 +96,11 @@ class ObjectTexture(ObjectComponent):
 
         self.texture = texture
         self.rotation = 0
-        self.angular_vel = 0
+        self._angular_vel = 0
 
 
     def set_angular_vel(self, amount: float) -> None:
-        self.angular_vel = amount
+        self._angular_vel = amount
 
 
     def rotate(self, amount: float) -> None:
@@ -113,7 +110,7 @@ class ObjectTexture(ObjectComponent):
         return p.Vector2(0, -1).rotate(self.rotation)
     
     def get_lerp_rotation_vector(self, lerp_amount=0.0) -> p.Vector2:
-        return p.Vector2(0, -1).rotate(self.rotation-self.angular_vel*(1-lerp_amount))
+        return p.Vector2(0, -1).rotate(self.rotation-self._angular_vel*(1-lerp_amount))
 
     def set_rotation(self, value: float) -> None:
         self.rotation = value
@@ -121,16 +118,13 @@ class ObjectTexture(ObjectComponent):
 
     def update(self) -> None:
         super().update()
-        self.rotate(self.angular_vel)
+        self.rotate(self._angular_vel)
 
 
     
     def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
-        blit_texture = p.transform.rotate(self.texture, -(self.rotation-self.angular_vel*(1-lerp_amount)))
-        lerp_pos = self.position.copy()
-        if isinstance(self, ObjectVelocity):
-            lerp_pos -= self._velocity*(1-lerp_amount)
-        
+        blit_texture = self._get_blit_texture(lerp_amount)
+        lerp_pos = self._get_lerp_pos(lerp_amount)
         blit_pos = lerp_pos - p.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
 
@@ -138,6 +132,30 @@ class ObjectTexture(ObjectComponent):
             p.draw.line(surface, "white", lerp_pos, lerp_pos+self.get_rotation_vector()*10)
         
         super().draw(surface, lerp_amount)
+
+
+    
+    def _get_blit_texture(self, lerp_amount=0.0) -> p.Surface:
+        return p.transform.rotate(self.texture, -(self.rotation-self._angular_vel*(1-lerp_amount)))
+
+
+    def _get_lerp_pos(self, lerp_amount=0.0) -> p.Vector2:
+        lerp_pos = self.position.copy()
+        if isinstance(self, ObjectVelocity):
+            lerp_pos -= self._velocity*(1-lerp_amount)
+        
+        return lerp_pos
+    
+
+
+        
+
+
+
+
+
+
+
 
 
 
@@ -172,9 +190,18 @@ class ObjectAnimation(ObjectTexture):
         return self.__controller.animations_complete
     
 
-    def draw(self, surface, lerp_amount=0):
+
+    def _get_blit_texture(self, lerp_amount=0):
         self.texture = self.__controller.get_frame(self.__texture_map, lerp_amount)
-        super().draw(surface, lerp_amount)
+        return super()._get_blit_texture(lerp_amount)
+    
+
+
+
+
+
+
+
 
 
 
@@ -204,6 +231,7 @@ class ObjectHitbox(ObjectComponent):
 
     def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
         super().draw(surface, lerp_amount)
+        lerp_amount=1
         if debug.debug_mode:
             blit_rect: p.Rect = self.rect
             if isinstance(self, ObjectVelocity):
