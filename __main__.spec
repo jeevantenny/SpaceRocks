@@ -10,6 +10,7 @@ datas = [
     ('assets\\textures', 'assets\\textures'),
     ('assets\\textures\\game_objects', 'assets\\textures\\game_objects'),
     ('assets\\textures\\ui', 'assets\\textures\\ui'),
+    ('assets\\textures\\backgrounds', 'assets\\textures\\backgrounds'),
 
     ('data', 'data'),
     ('user_data', 'user_data')
@@ -39,7 +40,7 @@ exe = EXE( # type: ignore
     [],
     name='JJJ Asteroids',
     icon="assets/textures/exe_icon.ico",
-    debug=False,
+    debug=True, # TODO Change this to False
     bootloader_ignore_signals=False,
     strip=False,
     upx=False, # TODO Change this to True

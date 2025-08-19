@@ -4,8 +4,9 @@ Contains various types that will be used throughout the game.
 
 import pygame as p
 import random
-from typing import Literal, Generator, Any
+from typing import Self, Literal, Callable, Generator, Any
 from collections import defaultdict
+from functools import lru_cache
 
 
 
@@ -13,6 +14,9 @@ from collections import defaultdict
 
 ActionKeys = defaultdict[int | str, bool]
 HoldKeys = defaultdict[int, int]
+
+__BindData = dict[Literal["input_device"] | str, Literal["controller", "keyboard"] | str]
+KeybindsType = dict[str, list[__BindData]]
 
 Coordinate = tuple[float, float] | p.Vector2
 
@@ -32,11 +36,115 @@ class GameSound:
         self.__sounds = sounds
     
     
-    def play(self) -> p.Channel | None:
+    def play(self, volume=1.0) -> p.Channel | None:
         if self.__sounds:
-            return random.choice(self.__sounds).play()
+            sound = random.choice(self.__sounds)
+            sound.set_volume(volume)
+            return sound.play()
         else:
             return None
+
+
+
+
+
+
+class Timer:
+    def __init__(self, duration: int, loop=False, exec_after: Callable[[], None] | None = None):
+        self.__duration = duration
+        self.loop = loop
+        self.__exec_after = exec_after
+        self.__time_left = 0.0
+
+    @property
+    def duration(self) -> float:
+        return self.__duration
+
+    @property
+    def countdown(self) -> float:
+        return self.__time_left
+    
+    @property
+    def time_elapsed(self) -> float:
+        return self.__duration - self.__time_left
+    
+    @property
+    def complete(self) -> bool:
+        return self.__time_left == 0.0
+    
+    @property
+    def completion_amount(self) -> float:
+        return self.time_elapsed/self.__duration
+    
+
+
+    def start(self) -> Self:
+        self.__time_left = self.__duration
+        return self
+    
+
+    def restart(self) -> None:
+        self.start()
+
+
+    def end(self) -> None:
+        self.__time_left == 0.0
+        if self.__exec_after is not None:
+            self.__exec_after()
+
+    def update(self, speed_multiplier=1.0) -> None:
+        if self.loop or not self.complete:
+            self.__time_left -= speed_multiplier
+            
+            if self.__time_left <= 0.0:
+                if self.loop:
+                    self.__time_left += self.__duration
+                else:
+                    self.__time_left = 0.0
+                if self.__exec_after is not None:
+                    self.__exec_after()
+    
+
+    
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}: {self.countdown}>"
+    
+
+
+
+class Stopwatch:
+    def __init__(self):
+        self.__time = 0.0
+        self.__running = False
+
+
+    @property
+    def time_elapsed(self) -> float:
+        return self.__time
+    
+
+    def start(self) -> Self:
+        self.__running = True
+        return self
+    
+    def restart(self) -> None:
+        self.reset()
+        self.start()
+    
+
+    def reset(self) -> None:
+        self.__time = 0.0
+
+
+    def pause(self):
+        self.__running = False
+    
+
+    def update(self, speed_multiplier=1.0) -> None:
+        if self.__running:
+            self.__time += speed_multiplier
+    
+
 
 
 
@@ -49,14 +157,16 @@ class Animation:
         self.name = name
         self.__anim_data = anim_data
 
-        self.__anim_time = 0.0
-
+        self.__anim_time: Timer | Stopwatch
         if "frame_duration" in self.__anim_data:
             self.prev_frame = None
             self.__flipbook = True
+            self.__anim_time = Stopwatch().start()
         else:
             self.__flipbook = False
-
+            self.__anim_time = Timer(self.duration, self.loop)
+            self.__timeline = self.__convert_timeline(self.__anim_data["timeline"])
+            
 
 
     @property
@@ -78,13 +188,7 @@ class Animation:
         if self.__flipbook:
             return False
         else:
-            return self.__anim_time == self.duration
-    
-    @property
-    def __timeline(self) -> dict[str, str]:
-        if self.__flipbook:
-            raise AttributeError("Can't determine timeline for flipbook animation.")
-        return self.__anim_data["timeline"]
+            return self.__anim_time.complete
     
 
     @property
@@ -97,14 +201,13 @@ class Animation:
 
 
     def update(self):
-        if self.__flipbook or self.__anim_time < self.duration:
-            self.__anim_time += self.anim_speed_multiplier
+        self.__anim_time.update(self.anim_speed_multiplier)
             
-            if not self.__flipbook and self.__anim_time >= self.duration:
-                if self.loop:
-                    self.__anim_time -= self.duration
-                else:
-                    self.__anim_time = self.duration
+            # if not self.__flipbook and self.__anim_time >= self.duration:
+            #     if self.loop:
+            #         self.__anim_time -= self.duration
+            #     else:
+            #         self.__anim_time = self.duration
 
 
 
@@ -112,18 +215,18 @@ class Animation:
 
 
     def restart(self) -> None:
-        self.__anim_time = 0.0
+        self.__anim_time.restart()
 
 
 
     def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
         if self.__flipbook:
             return self.__get_frame_flipbook(texture_map, lerp_amount)
-        current_time = self.__anim_time + self.anim_speed_multiplier*lerp_amount*(not self.complete)
-        prev_time = "0.0"
+        current_time = self.__anim_time.time_elapsed + self.anim_speed_multiplier*lerp_amount*(not self.complete)
+        prev_time = 0.0
 
         for time in self.__timeline.keys():
-            if float(time) > current_time:
+            if time > current_time:
                 break
             else:
                 prev_time = time
@@ -136,7 +239,7 @@ class Animation:
     
 
     def __get_frame_flipbook(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
-        frame_time = (self.__anim_time + self.anim_speed_multiplier*lerp_amount*(not self.complete))/self.__frame_duration
+        frame_time = (self.__anim_time.time_elapsed + self.anim_speed_multiplier*lerp_amount*(not self.complete))/self.__frame_duration
 
         frames = list(texture_map.values())
 
@@ -146,6 +249,12 @@ class Animation:
             index = min(int(frame_time), len(frames)-1)
 
         return frames[index]
+    
+
+    
+    @staticmethod
+    def __convert_timeline(timeline: dict[str, str]) -> dict[float, str]:
+        return {float(key): value for key, value in timeline.items()}
     
 
 
@@ -164,7 +273,7 @@ class AnimController:
     def __init__(self, controller_data: ControllerData, animations: dict[str, Animation]):
         self.__controller_data = controller_data
         self.__animations = animations
-        self.__current_state_name = self.__controller_data["starting_state"]
+        self.set_state(self.__controller_data["starting_state"])
 
 
     @property
@@ -186,42 +295,15 @@ class AnimController:
     @property
     def animations_complete(self) -> bool:
         return all([anim.complete for anim in self.current_animations()])
-    
-
-
-    def current_animations(self) -> Generator[Animation, Any, None]:
-        for anim_name in self.__current_animation_names:
-            yield self.__animations[anim_name]
 
 
 
 
     def update(self, animated_obj) -> None:
-        self.__test_for_transition(animated_obj)
+        self.__do_transitions(animated_obj)
 
         for anim in self.current_animations():
             anim.update()
-
-        
-
-
-    def __test_for_transition(self, obj):
-        for state_name, condition in self.__current_transitions.items():
-            if self.__test_condition(obj, condition):
-                self.__current_state_name = state_name
-                self.__test_for_transition(obj)
-                break
-
-
-    
-    def __test_condition(self, obj, condition: str) -> bool:
-        return eval(condition, None, locals())
-
-
-
-    def restart_animations(self) -> None:
-        for anim in self.current_animations():
-            anim.restart()
 
 
     
@@ -237,3 +319,38 @@ class AnimController:
             base_surface.blit(frame, (base_surface.size-p.Vector2(frame.size))*0.5)
         
         return base_surface
+
+
+
+    def restart_animations(self) -> None:
+        for anim in self.current_animations():
+            anim.restart()
+    
+
+
+    def current_animations(self) -> Generator[Animation, Any, None]:
+        for anim_name in self.__current_animation_names:
+            yield self.__animations[anim_name]
+
+
+    def set_state(self, name: str) -> None:
+        if name not in self.states:
+            raise ValueError(f"Invalid state name '{name}'")
+        
+        self.__current_state_name = name
+        self.restart_animations()
+
+        
+
+
+    def __do_transitions(self, obj) -> None:
+        for state_name, condition in self.__current_transitions.items():
+            if self.__test_condition(obj, condition):
+                self.set_state(state_name)
+                self.__do_transitions(obj)
+                break
+
+
+    
+    def __test_condition(self, obj, condition: str) -> bool:
+        return bool(eval(condition, None, locals()))

@@ -3,11 +3,10 @@ import os
 from . import load_json, save_json, get_resource_path
 
 
-HIGHSCORE_DATA_PATH = "user_data/user_data"
+HIGHSCORE_DATA_PATH = "user_data/highscore"
 
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
-    # return 0
     try:
         return load_json(path, False)["highscore"]
     except FileNotFoundError:
@@ -15,7 +14,6 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
 
 
 def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
-    # return # TODO Re-enable this
     if not os.path.exists("user_data"):
         os.makedirs("user_data")
         data = {}

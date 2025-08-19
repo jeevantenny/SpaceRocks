@@ -4,9 +4,10 @@ import random
 import config
 import debug
 
-from math_functions import clamp, unit_vector
+from math_functions import unit_vector
 
 from file_processing import assets, data
+from audio import soundfx
 
 from game_objects import ObjectGroup, components
 from game_objects.entities import Spaceship, Asteroid
@@ -25,25 +26,24 @@ from .menus import PauseMenu, GameOverScreen
 class Play(State):
     __safe_radius = 150
     __score_limit = 99999
-    __asteroid_target_distance = 100
 
     def __init__(self, state_stack = None):
         super().__init__(state_stack)
 
         self.visible_area = p.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
         self.world_border = self.visible_area.inflate(100, 100)
-        self.background_texture = assets.load_texture("main_background")
+        self.background_texture = assets.load_texture("backgrounds/space_background")
 
         self.entities = ObjectGroup()
-        self.asteroids = ObjectGroup()
+        self.asteroids = ObjectGroup[Asteroid]()
 
         self.__center = p.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
         self.spaceship = Spaceship(self.__center)
         self.entities.add(self.spaceship)
 
-
         self.score = 0
         self.highscore = data.load_highscore()
+        self.__has_highscore = self.highscore != 0
         self.highscore_changed = False
 
         self.__timer = 10
@@ -51,7 +51,7 @@ class Play(State):
         self._initialized = True
 
 
-    def  userinput(self, inputs):
+    def userinput(self, inputs):
         if debug.debug_mode:
             if inputs.keyboard_mouse.action_keys[p.K_r]:
                 self.spaceship.position = p.Vector2(200, 150)
@@ -71,7 +71,7 @@ class Play(State):
 
         self.spaceship.userinput(inputs)
 
-        if inputs.check_input("escape"):
+        if inputs.check_input("pause"):
             PauseMenu(self.state_stack)
 
 
@@ -79,7 +79,7 @@ class Play(State):
         if not self.spaceship.alive():
             self.game_over()
         
-        elif random.random() < 0.3 and self.required_asteroid_count()*0.8 > self.asteroid_value():
+        elif random.random() < 0.3 and self.required_asteroid_value()*0.8 > self.__asteroid_value():
             self.spawn_asteroid()
 
         for asteroid in self.asteroids.sprites():
@@ -98,9 +98,12 @@ class Play(State):
 
         if not self.highscore_changed and self.spaceship.score > self.highscore:
             self.highscore_changed = True
-
+        prev_score = self.score
         self.score = self.increment_score(self.score, self.spaceship.score)
         self.highscore = max(self.highscore, self.score)
+
+        if self.score > prev_score:
+            soundfx.play_sound("game.point", 0.3)
 
         if self.__timer:
             self.__timer -= 1
@@ -110,7 +113,7 @@ class Play(State):
 
 
 
-    def _draw_pixel_art(self, surface, lerp_amount=0):
+    def draw(self, surface, lerp_amount=0.0):
         surface.blit(self.background_texture)
 
         self.entities.draw(surface, lerp_amount)
@@ -118,7 +121,7 @@ class Play(State):
         if debug.debug_mode:
             p.draw.circle(surface, "orange", self.spaceship.position, self.__safe_radius, 1)
 
-        if isinstance(self.state_stack.top_state, (Play, PauseMenu)):
+        if isinstance(self.state_stack.top_state, (Play, PauseMenu)): # type: ignore
             if self.__timer:
                 text_offset = -80*(self.__timer*0.1)**2
             else:
@@ -127,7 +130,7 @@ class Play(State):
             self.show_scores(surface, "score", self.score, (8, 20+text_offset))
 
 
-        return f"entity count: {self.entities.count()}, asteroid value: {self.asteroid_value()}, combo: {self.spaceship.combo}"
+        return f"entity count: {self.entities.count()}, asteroid value: {self.__asteroid_value()}, combo: {self.spaceship.combo}"
 
 
 
@@ -173,13 +176,18 @@ class Play(State):
             if (self.spaceship.position-start_position).magnitude() > self.__safe_radius:
                 break
 
-        velocity = unit_vector(self.__center-start_position)*random.randint(1, 3)
+        if random.random() < self.score*0.00002:
+            target_pos = self.spaceship.position
+        else:
+            target_pos = self.__center
+
+        velocity = unit_vector(target_pos-start_position)*self.__get_asteroid_speed()
         velocity.rotate_ip(random.randint(-10, 10))
 
         asteroid = Asteroid(
             start_position,
             velocity,
-            random.randint(1, 2)
+            random.randint(1, 2) # type: ignore
         )
 
         self.entities.add(asteroid)
@@ -196,21 +204,16 @@ class Play(State):
 
 
 
-    def required_asteroid_count(self) -> int:
-        return min(5 + int(self.score/50), 60)
+    def required_asteroid_value(self) -> int:
+        return min(5 + int(self.score/500), 60)
     
 
-    def get_asteroid_speed(self) -> float:
-        return random.randint(1, min(3 + int(0.02*self.score), 5))
+    def __get_asteroid_speed(self) -> float:
+        return random.random()*self.score*0.005+1
     
 
-    def asteroid_value(self) -> int:
-        asteroid_value = 0
-
-        for asteroid in self.asteroids:
-            asteroid_value += asteroid.size
-        
-        return asteroid_value
+    def __asteroid_value(self) -> int:
+        return sum(asteroid.size for asteroid in self.asteroids)
     
 
     def set_score(self) -> None:

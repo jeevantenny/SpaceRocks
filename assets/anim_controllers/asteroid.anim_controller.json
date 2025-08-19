@@ -1,37 +1,35 @@
 {
     "name": "asteroid.anim_controller",
-    "starting_state": "health_4",
+    "starting_state": "small_idle",
 
     "states": {
-        "health_4": {
-            "animations": ["health_4"],
+        "small_idle": {
+            "animations": ["small_idle"],
             "transitions": {
-                "explode": "not obj.health",
-                "health_3": "obj.health < 4"
+                "medium_health_2": "obj.size == 2",
+                "small_explode": "not obj.health"
             }
         },
-        "health_3": {
-            "animations": ["health_3"],
+        "small_explode": {
+            "animations": ["small_explode"]
+        },
+
+
+
+        "medium_health_2": {
+            "animations": ["medium_health_2"],
             "transitions": {
-                "explode": "not obj.health",
-                "health_2": "obj.health < 3"
+                "medium_health_1": "obj.health <= 1"
             }
         },
-        "health_2": {
-            "animations": ["health_2"],
+        "medium_health_1": {
+            "animations": ["medium_health_1"],
             "transitions": {
-                "explode": "not obj.health",
-                "health_1": "obj.health < 2"
+                "medium_explode": "obj.health == 0"
             }
         },
-        "health_1": {
-            "animations": ["health_1"],
-            "transitions": {
-                "explode": "not obj.health"
-            }
-        },
-        "explode": {
-            "animations": ["explode"]
+        "medium_explode": {
+            "animations": ["medium_explode"]
         }
     }
 }

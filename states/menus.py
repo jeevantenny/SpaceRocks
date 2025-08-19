@@ -5,7 +5,7 @@ import random
 import config
 from misc import increment_score, instructions_text
 
-from file_processing import assets
+from audio import soundfx
 
 from game_objects.entities import Bullet, Asteroid, DisplayPoint, ShipSmoke
 from game_objects.components import ObjectAnimation
@@ -26,8 +26,9 @@ class TitleScreen(State):
         super().__init__(state_stack)
         self.prev_state: Play
 
-        self.title = elements.TitleText((92, 60), "title_entrance")
-        self.version_number = font.SmallFont.render(f"version {config.VERSION_NUM}", 1, "#ffffff", "#000000")
+        self.title = elements.TitleText((92, 60), "main_entrance_a")
+        version_text = ".".join(map(str, config.VERSION_NUM))
+        self.version_number = font.SmallFont.render(f"version {version_text}", 1, "#ffffff", "#333333")
 
         self.__start_gameplay = False
 
@@ -36,21 +37,21 @@ class TitleScreen(State):
 
 
     def userinput(self, inputs):
-        
-
         if not self.__start_gameplay:
-            if self.title.current_anim_name == "title_glint":
+            if self.title.current_anim_name == "main_glint":
                 self.prev_state.spaceship.userinput(inputs)
 
                 if (
-                    inputs.check_input("ship_forward")
+                    inputs.check_input("select")
+                    or inputs.check_input("ship_forward")
                     or inputs.check_input("ship_backward")
                     or inputs.check_input("shoot")
                     or inputs.check_input("left")
                     or inputs.check_input("right")
                     ):
                     self.__start_gameplay = True
-                    self.title.set_current_animation("title_exit")
+                    self.title.set_current_animation("main_exit")
+    
         else:
             self.prev_state.spaceship.userinput(inputs)
         
@@ -62,8 +63,8 @@ class TitleScreen(State):
         self.title.update()
         if not self.__start_gameplay:
             if self.title.animations_complete:
-                self.title.set_current_animation("title_glint")
-            if self.title.current_anim_name == "title_glint":
+                self.title.set_current_animation("main_glint")
+            if self.title.current_anim_name == "main_glint":
                 self.prev_state.spaceship.update()
 
         else:
@@ -73,14 +74,10 @@ class TitleScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
-        super().draw(surface, lerp_amount)
-
-
-    def _draw_pixel_art(self, surface, lerp_amount=0):
-        surface.blit(self.version_number, (2, config.PIXEL_WINDOW_SIZE[1]-10))
         self.title.draw(surface, lerp_amount)
 
-        if self.title.current_anim_name != "title_entrance":
+        if self.title.current_anim_name == "main_glint":
+            surface.blit(self.version_number, (3, config.PIXEL_WINDOW_SIZE[1]-11))
             text_surface = font.SmallFont.render(instructions_text())
             surface.blit(text_surface, ((config.PIXEL_WINDOW_SIZE[0]-text_surface.width)*0.5, 170))
 
@@ -93,27 +90,32 @@ class PauseMenu(State):
     def __init__(self, state_stack = None):
         super().__init__(state_stack)
 
-        self.title_text = font.LargeFont.render("Game Paused")
-        self.text_blit_pos = (p.Vector2(config.PIXEL_WINDOW_SIZE)-self.title_text.size)*0.5 + (0, -40)
+        self.title = elements.TitleText((92, 70), "main_entrance_b")
+        self.__subtext_b = font.SmallFont.render("Click [Enter] to continue")
+        self.__exit_menu = False
 
         self._initialized = True
 
 
 
     def userinput(self, inputs):
-        if inputs.check_input("escape"):
-            self.state_stack.pop()
+        if self.title.animations_complete and (inputs.check_input("pause") or inputs.check_input("select")):
+            self.title.set_current_animation("main_exit")
+            self.__exit_menu = True
 
+
+    def update(self):
+        self.title.update()
+        if self.__exit_menu and self.title.animations_complete:
+            self.state_stack.pop()
     
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
         surface.fill("#505050", special_flags=p.BLEND_SUB)
-        return super().draw(surface, lerp_amount)
-
-
-    def _draw_pixel_art(self, surface, lerp_amount=0):
-        surface.blit(self.title_text, self.text_blit_pos)
+        self.title.draw(surface, lerp_amount)
+        if not self.__exit_menu:
+            surface.blit(self.__subtext_b, (115, 170))
 
 
 
@@ -128,6 +130,7 @@ class GameOverScreen(State):
 
         self.score_data = score_data
         self.display_score = 0
+        self.title = elements.TitleText((92, 90), "game_over")
 
         self._initialized = True
 
@@ -154,6 +157,8 @@ class GameOverScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
+        self.title.draw(surface, lerp_amount)
+        
             
 
 
@@ -192,6 +197,7 @@ class ShowScore(State):
     def update(self):
         if self.display_score < self.score:
             self.display_score = increment_score(self.display_score, self.score, 0.15)
+            soundfx.play_sound("game.point", 0.3)
         elif self.__timer:
             self.__timer -= 1
         
@@ -203,8 +209,16 @@ class ShowScore(State):
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
         surface.fill("#404040", special_flags=p.BLEND_RGB_SUB)
-        return super().draw(surface, lerp_amount)
-    
+
+        if self.__timer:
+            text_surface = font.LargeFont.render(add_padding(str(self.display_score), 5, pad_char='0'), 2)
+            surface.blit(text_surface, (99, 101))
+        else:
+            self.__display_score(surface, "Highscore", self.highscore, (102, 50))
+            self.__display_score(surface, "Score", self.score, (102, 120))
+
+
+
 
     def __display_score(self, surface: p.Surface, name: str, score: int, position=(0, 0)) -> None:
         position = p.Vector2(position)
@@ -214,16 +228,6 @@ class ShowScore(State):
         number_surface = font.LargeFont.render(add_padding(str(score), 5, pad_char='0'), 2)
         surface.blit(number_surface, position+(0, 15))
 
-
-
-    def _draw_pixel_art(self, surface, lerp_amount=0):
-
-        if self.__timer:
-            text_surface = font.LargeFont.render(add_padding(str(self.display_score), 5, pad_char='0'), 2)
-            surface.blit(text_surface, (99, 101))
-        else:
-            self.__display_score(surface, "Highscore", self.highscore, (102, 50))
-            self.__display_score(surface, "Score", self.score, (102, 120))
         
 
 

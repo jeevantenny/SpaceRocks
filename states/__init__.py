@@ -1,10 +1,11 @@
 import pygame as p
-from typing import Any, Deque, Generator, Callable
+from typing import Self, Literal, Any, Deque, Generator, Callable
 from functools import wraps
 
 import game_errors
 import config
 from userinput import InputInterpreter
+from custom_types import Timer
 
 from file_processing import assets
 
@@ -36,12 +37,26 @@ def draw_wrapper(draw_func: Callable):
 
 
 
+def stack_method(func: Callable):
+    @wraps(func)
+    def wrapper(self: type["StateStack"], *args, **kwargs):
+        if self.top_state is not None:
+            return func(self, *args, **kwargs)
+        else:
+            return None
+        
+    return wrapper
+
+
 
 
 
 class State:
     "A state that a game is in. Use to separate different menus and gameplay."
 
+    enter_duration = 0
+    exit_duration = 0
+    take_input_on_transition = True
     _initialized = False
 
     def __init__(self, state_stack: "StateStack | None" = None):
@@ -52,7 +67,7 @@ class State:
         self.__pixel_art_surface = p.Surface(config.PIXEL_WINDOW_SIZE)
         self.__pixel_art_surface.set_colorkey(assets.COLORKEY)
 
-        type(self).draw = draw_wrapper(type(self).draw)
+        type(self).draw = draw_wrapper(type(self).draw) # type: ignore
 
 
     @property
@@ -73,7 +88,17 @@ class State:
         pass
 
 
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
+    def update_on_enter(self, enter_amount: float) -> None:
+        "Called to update while entering state."
+        pass
+
+
+    def update_on_exit(self, exit_amount: float) -> None:
+        "Called to update while exiting state."
+        self.update_on_enter(1-exit_amount)
+
+
+    def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
         "Draws the contents of the game onto the window in every frame."
         self.__pixel_art_surface.fill(assets.COLORKEY)
         output = self._draw_pixel_art(self.__pixel_art_surface, lerp_amount)
@@ -81,9 +106,14 @@ class State:
         return output
 
 
-    def _draw_pixel_art(self, surface: p.Surface, lerp_amount=0.0) -> None:
-        "A modified draw method that reduces the window resolution when drawing. Contents drawn over main draw method."
+    def draw_on_enter(self, enter_amount: float, surface: p.Surface, lerp_amount=0.0) -> None:
+        "Called to draw values while entering state."
         pass
+
+
+    def draw_on_exit(self, exit_amount: float, surface: p.Surface, lerp_amount=0.0) -> None:
+        "Called to draw while exiting state."
+        self.draw_on_enter(1-exit_amount)
 
 
     def quit(self) -> None:
@@ -109,6 +139,10 @@ class StateStack:
         else:
             self.__container = Deque()
 
+        
+        self.__current_mode: Literal["show_state", "enter_transition", "exit_transition"] = "show_state"
+        self.__transition_timer = Timer(0.0)
+
     
     
     @property
@@ -119,8 +153,10 @@ class StateStack:
             return None
     
 
-    def push(self, state: State) -> None:
+    def push(self, state: State, transition=True) -> None:
         "Adds a new state to the top of the stack."
+
+        self.__transition_timer.end()
 
         if state in self:
             raise game_errors.DuplicateStateError(state)
@@ -128,44 +164,74 @@ class StateStack:
         state.state_stack = self
         self.__container.append(state)
 
+        if transition and state.enter_duration > 0.0:
+            self.__current_mode = "enter_transition"
+            self.__transition_timer = Timer(state.enter_duration).start()
 
-    def pop(self, quit_state=True) -> State:
+
+    def pop(self, transition=True, quit_state=True) -> State:
         "Removes and returns the top state."
-        state = self.__container.pop()
-        if quit_state:
-            state.quit()
+
+        self.__transition_timer.end()
+        
+        state = self.top_state
+        if transition and state.exit_duration > 0.0:
+            self.__transition_timer = Timer(state.exit_duration, exec_after=lambda: self.pop(False, quit_state)).start()
+        
+        else:
+            if quit_state:
+                state.quit()
+            self.__container.pop()
         
         return state
-    
+        
 
     def index(self, item: State) -> int:
         "Returns the index of the current state."
         return self.__container.index(item)
     
 
+    @stack_method
     def userinput(self, inputs: InputInterpreter) -> None:
         "Processes userinput for top state."
-        self.top_state.userinput(inputs)
+        if self.__current_mode == "show_state" or self.top_state.take_input_on_transition:
+            self.top_state.userinput(inputs) # type: ignore
 
 
-    
+    @stack_method
     def update(self) -> None:
         "Updates the top state for every tick."
-        self.top_state.update()
+        if not self.__transition_timer.complete:
+            self.__transition_timer.update()
+            if self.__current_mode == "enter_transition":
+                self.top_state.update_on_enter(self.__transition_timer.completion_amount)
+
+            elif self.__current_mode == "exit_transition":
+                self.top_state.update_on_exit(self.__transition_timer.completion_amount)
+            
+            if self.__transition_timer.complete:
+                self.__current_mode == "show_state"
+            
+        else:
+            self.top_state.update() # type: ignore
 
 
-
+    @stack_method
     def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
         "Draws the top state for every frame."
-        return self.top_state.draw(surface, lerp_amount)
+        return self.top_state.draw(surface, lerp_amount) # type: ignore
     
 
-
+    @stack_method
     def quit(self) -> None:
         "Quits all states and pops them from the stack."
         while len(self) > 0:
             self.pop()
 
+
+
+    def __eq__(self, value: Self):
+        return self.__container == value.__container
 
 
     def __len__(self) -> int:

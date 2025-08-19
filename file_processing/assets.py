@@ -75,7 +75,9 @@ def load_sound(name: str) -> GameSound:
     if name not in __sound_definition:
         raise ValueError(f"Invalid sound name '{name}'")
     
-    sounds = [p.Sound(f"{SOUNDS_DIR}/{path}.ogg") for path in __sound_definition[name]["sounds"]]
+    sound_data = __sound_definition[name]
+    
+    sounds = [p.Sound(f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}") for path in sound_data["sounds"]]
 
     return GameSound(name, sounds)
 

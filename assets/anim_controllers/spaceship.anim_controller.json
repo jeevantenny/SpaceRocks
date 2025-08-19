@@ -12,14 +12,11 @@
         "main": {
             "animations": ["main"],
             "transitions": {
-                "boost": "obj.boost()"
+                "explode": "not obj.operational"
             }
         },
-        "boost": {
-            "animations": ["main", "boost"],
-            "transitions": {
-                "main": "not obj.boost()"
-            }
+        "explode": {
+            "animations": ["main", "explode"]
         }
     }
 }

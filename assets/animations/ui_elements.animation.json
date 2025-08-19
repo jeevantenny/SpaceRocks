@@ -2,9 +2,8 @@
     "group_name": "ui_elements.animation",
 
     "animations": {
-        "title_entrance": {
+        "main_entrance_a": {
             "duration": 15,
-            "anim_speed_multiplier": 0.85,
             "timeline": {
                 "0": "blank",
                 "5": "main_title_entrance_1",
@@ -20,14 +19,24 @@
                 "15": "main_title"
             }
         },
-        "title_glint": {
+        "main_entrance_b": {
+            "duration": 4,
+            "timeline": {
+                "0": "main_title_exit_4",
+                "1": "main_title_exit_3",
+                "2": "main_title_exit_2",
+                "3": "main_title_exit_1",
+                "4": "main_title"
+            }
+        },
+        "main_glint": {
             "duration": 0,
             "timeline": {
                 "0": "main_title"
             }
 
         },
-        "title_exit": {
+        "main_exit": {
             "duration": 4,
             "timeline": {
                 "0": "main_title_exit_1",
@@ -35,6 +44,35 @@
                 "2": "main_title_exit_3",
                 "3": "main_title_exit_4",
                 "4": "blank"
+            }
+        },
+
+
+        "pause_enter": {
+            "duration": 4,
+            "timeline": {
+                "0": "pause_title_anim_4",
+                "1": "pause_title_anim_3",
+                "2": "pause_title_anim_2",
+                "3": "pause_title_anim_1",
+                "4": "pause_title"
+            }
+        },
+        
+        "pause_exit": {
+            "duration": 4,
+            "timeline": {
+                "0": "pause_title_anim_1",
+                "1": "pause_title_anim_2",
+                "2": "pause_title_anim_3",
+                "3": "pause_title_anim_4"
+            }
+        },
+
+        "game_over": {
+            "duration": 0,
+            "timeline": {
+                "0": "game_over"
             }
         }
     }

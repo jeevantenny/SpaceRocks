@@ -31,7 +31,7 @@ class GameObject(p.sprite.Sprite):
     @property
     def group(self) -> "ObjectGroup | None":
         if groups:=self.groups():
-            return groups[0]
+            return groups[0] # type: ignore
         
 
 
@@ -79,7 +79,7 @@ class GameObject(p.sprite.Sprite):
 
 
 
-class ObjectGroup(p.sprite.AbstractGroup):
+class ObjectGroup[T=GameObject](p.sprite.AbstractGroup):
     def __init__(self):
         super().__init__()
 
@@ -87,19 +87,18 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
     def update(self) -> None:
         for object in self.sprites():
-            object.update()
+            object.update() # type: ignore
 
 
 
-    def draw(self, surface: p.Surface, lerp_amount: float) -> None:
+    def draw(self, surface: p.Surface, lerp_amount: float) -> None: # type: ignore
         top_sprites = []
-        from .entities import DisplayPoint
         for obj in self.sprites():
             if hasattr(obj, "draw"):
-                if obj.draw_in_front:
+                if obj.draw_in_front: # type: ignore
                     top_sprites.append(obj)
                 else:
-                    obj.draw(surface, lerp_amount)
+                    obj.draw(surface, lerp_amount) # type: ignore
         
         for obj in top_sprites:
             obj.draw(surface, lerp_amount)
@@ -109,18 +108,18 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
     def move_all(self, displacement: p.Vector2) -> None:
         for object in self.sprites():
-            object.move(displacement)
+            object.move(displacement) # type: ignore
 
 
 
     def accelerate_all(self, value: p.Vector2) -> None:
         from .components import ObjectVelocity
         for object in self.sprites():
-            if object.has_component(ObjectVelocity):
-                object.accelerate(value)
+            if object.has_component(ObjectVelocity): # type: ignore
+                object.accelerate(value) # type: ignore
 
 
-    def sprites(self) -> list[GameObject]:
+    def sprites(self) -> list[T]:
         return super().sprites()
 
 
@@ -140,4 +139,4 @@ class ObjectGroup(p.sprite.AbstractGroup):
 
     def kill_all(self) -> None:
         for obj in self.sprites():
-            obj.force_kill()
+            obj.force_kill() # type: ignore

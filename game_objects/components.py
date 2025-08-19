@@ -51,7 +51,7 @@ class ObjectVelocity(ObjectComponent):
     "Allows game objects to have a velocity."
 
     priority = 5
-    max_speed = 15
+    _max_speed = 15
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -62,7 +62,7 @@ class ObjectVelocity(ObjectComponent):
     def update(self) -> None:
         super().update()
         self.move(self._velocity)
-        self._velocity = (vector_min(self._velocity, unit_vector(self._velocity)*self.max_speed))
+        self._velocity = (vector_min(self._velocity, unit_vector(self._velocity)*self._max_speed))
 
 
 
@@ -71,6 +71,9 @@ class ObjectVelocity(ObjectComponent):
 
     def set_velocity(self, value: p.typing.Point) -> None:
         self._velocity = p.Vector2(value)
+
+    def clear_velocity(self) -> None:
+        self.set_velocity((0, 0))
 
 
     def accelerate(self, value: p.typing.Point) -> None:
@@ -231,7 +234,6 @@ class ObjectHitbox(ObjectComponent):
 
     def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
         super().draw(surface, lerp_amount)
-        lerp_amount=1
         if debug.debug_mode:
             blit_rect: p.Rect = self.rect
             if isinstance(self, ObjectVelocity):
@@ -396,7 +398,7 @@ class BorderCollision(ObjectHitbox, ObjectVelocity):
     def process_collision(self) -> None:
         super().process_collision()
         obj_rect: p.Rect = self.rect
-        prev_pos = obj_rect.center
+        prev_vel = self._velocity.copy()
 
         if obj_rect.left <= self.__bounding_area.left and self._velocity.x < 0:
             obj_rect.left = self.__bounding_area.left
@@ -414,8 +416,11 @@ class BorderCollision(ObjectHitbox, ObjectVelocity):
             obj_rect.bottom = self.__bounding_area.bottom
             self._velocity.y = -abs(self._velocity.y*self.__bounce)
 
-        if prev_pos != obj_rect.center:
-            self.on_collide("border")
+        
+        if prev_vel.x != self._velocity.x:
+            self.on_collide("vertical_border")
+        elif prev_vel.y != self._velocity.y:
+            self.on_collide("horizontal_border")
 
         self.position = p.Vector2(obj_rect.center)
 

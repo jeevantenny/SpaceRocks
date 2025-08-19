@@ -4,7 +4,6 @@ import random
 from file_processing import assets, load_json
 
 
-from . import GameObject
 from .components import *
 
 
@@ -27,7 +26,7 @@ class ShipSmoke(ObjectAnimation, ObjectVelocity):
 
         self.accelerate(velocity)
         self._angular_vel = random.randint(-6, 6)
-        self.__lifetime = random.randint(10, 15)
+        self.__lifetime = random.randint(12, 18)
 
 
     def update(self):

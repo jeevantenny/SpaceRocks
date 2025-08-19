@@ -4,13 +4,13 @@
         "main": {
             "duration": 0.0,
             "timeline": {
-                "0.0": "main"
+                "0": "main"
             }
         },
         "start": {
             "duration": 8.0,
             "timeline": {
-                "0.0": "blank",
+                "0": "blank",
                 "1": "start_1",
                 "2": "start_2",
                 "3": "start_3",
@@ -20,19 +20,14 @@
                 "7": "start_7"
             }
         },
-        "boost": {
-            "duration": 8,
-            "anim_speed_multiplier": 0.8,
-            "loop": true,
+        "explode": {
+            "duration":12,
             "timeline": {
-                "0": "boost_1",
-                "1": "boost_2",
-                "2": "boost_3",
-                "3": "boost_4",
-                "4": "boost_5",
-                "5": "boost_6",
-                "6": "boost_7",
-                "7": "boost_8"
+                "0": "explode_1",
+                "1": "explode_2",
+                "2": "explode_3",
+                "3": "explode_4",
+                "4": "explode_5"
             }
         }
     }

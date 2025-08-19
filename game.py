@@ -13,7 +13,7 @@ import debug
 
 from userinput import KeyboardMouse, Controller, InputInterpreter
 
-from states import State, StateStack, menus
+from states import StateStack, menus, test
 from file_processing import assets
 
 
@@ -22,6 +22,7 @@ class Game:
     "The Core part of the Game Engine."
 
     def __init__(self) -> None:
+        p.mixer.pre_init(channels=16)
         p.init()
         p.joystick.init()
 
@@ -40,18 +41,18 @@ class Game:
         self.run = True
 
         self.window = p.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
+        self.pixel_scaled_window = p.Surface(p.Vector2(self.window.size)/config.PIXEL_SCALE)
         p.display.set_caption(config.WINDOW_CAPTION)
         p.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
 
         self.game_surface = p.Surface((p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE))
 
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
-        self.set_controllers()
 
 
         self.state_stack = StateStack()
-        # self.state_stack.push(State())
         menus.TitleScreen(self.state_stack)
+        # test.TestState(self.state_stack)
 
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed
@@ -66,7 +67,7 @@ class Game:
     def set_controllers(self) -> None:
         if p.joystick.get_count():
             self.input_interpreter.controller = Controller(p.joystick.Joystick(0))
-            print(f"Connected {self.input_interpreter.controller}")
+            print(f"Connected {self.input_interpreter.controller.device_name}")
         else:
             self.input_interpreter.controller = Controller()
 
@@ -140,9 +141,16 @@ class Game:
         
         self.input_interpreter.get_userinput(events)
 
+        keyboard = self.input_interpreter.keyboard_mouse
 
-        if self.input_interpreter.keyboard_mouse.hold_keys[p.K_LCTRL] and self.input_interpreter.keyboard_mouse.action_keys[p.K_d]:
+
+        if keyboard.hold_keys[p.K_LCTRL] and keyboard.action_keys[p.K_d]:
             debug.debug_mode = not debug.debug_mode
+
+
+        if debug.debug_mode:
+            if self.state_stack.top_state is not None and keyboard.hold_keys[K_LCTRL] and keyboard.action_keys[p.K_BACKSPACE]:
+                self.state_stack.pop()
 
         self.state_stack.userinput(self.input_interpreter)
 
@@ -150,14 +158,15 @@ class Game:
 
     def update(self) -> None:
         self.state_stack.update()
+        self.input_interpreter.controller.update()
 
 
 
     def draw(self) -> None:
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
-            debug_message = self.state_stack.draw(self.window, lerp_amount)
-
+            debug_message = self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
+            p.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.window)
 
             if debug.debug_mode:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, Tickrate: {self.tick_clock.get_fps():.0f}"
@@ -191,9 +200,9 @@ class Game:
 
     def quit(self) -> None:
         self.thread.join()
+        self.input_interpreter.controller.stop_rumble()
         if self.error:
             input("Save and Exit ->")
-        
         try:
             self.state_stack.quit()
             print("Program closed successfully")

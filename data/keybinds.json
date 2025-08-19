@@ -1,76 +1,111 @@
 {
-    "select": {
-        "keyboard": {
+    "select": [
+        {
+            "input_device": "keyboard",
             "key": "return",
             "type": "action"
         },
-        "controller": {
+        {
+            "input_device": "controller",
             "type": "action_button",
             "value": "a"
         }
-    },
-    "escape": {
-        "keyboard": {
+    ],
+    "pause": [
+        {
+            "input_device": "keyboard",
             "key": "escape",
             "type": "action"
         },
-        "controller": {
+        {
+            "input_device": "keyboard",
+            "key": "p",
+            "type": "action"
+        },
+        {
+            "input_device": "controller",
             "type": "action_button",
             "value": "menu"
         }
-    },
-    "ship_forward": {
-        "keyboard": {
+    ],
+    "ship_forward": [
+        {
+            "input_device": "keyboard",
             "key": "w",
             "type": "hold"
         },
-        "controller": {
+        {
+            "input_device": "controller",
             "type": "hold_button",
             "value": "r_bumper"
+        },
+        {
+            "input_device": "controller",
+            "type": "trigger",
+            "side": "left",
+            "value": 0.5
         }
-    },
-    "ship_backward": {
-        "keyboard": {
+    ],
+    "ship_backward": [
+        {
+            "input_device": "keyboard",
             "key": "s",
             "type": "hold"
         },
-        "controller": {
+        {
+            "input_device": "controller",
             "type": "hold_button",
             "value": "l_bumper"
         }
-    },
-    "shoot": {
-        "keyboard": {
+    ],
+    "shoot": [
+        {
+            "input_device": "keyboard",
             "key": "space",
             "type": "action"
         },
-        "controller": {
+        {
+            "input_device": "controller",
             "type": "action_button",
             "value": "a"
         }
-    },
-    "left": {
-        "keyboard": {
+    ],
+    "left": [
+        {
+            "input_device": "keyboard",
             "key": "a",
             "type": "hold"
         },
-        "controller": {
+        {
+            "input_device": "controller",
             "type": "stick",
             "side": "left",
             "axis": "x",
             "value": -0.5
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_left"
         }
-    },
-    "right": {
-        "keyboard": {
+    ],
+    "right": [
+        {
+            "input_device": "keyboard",
             "key": "d",
             "type": "hold"
         },
-        "controller": {
+        {
+            "input_device": "controller",
             "type": "stick",
             "side": "left",
             "axis": "x",
             "value": 0.5
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_right"
         }
-    }
+    ]
 }
