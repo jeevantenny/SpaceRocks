@@ -15,8 +15,9 @@ from functools import lru_cache
 ActionKeys = defaultdict[int | str, bool]
 HoldKeys = defaultdict[int, int]
 
-__BindData = dict[Literal["input_device"] | str, Literal["controller", "keyboard"] | str]
-KeybindsType = dict[str, list[__BindData]]
+InputType = Literal["controller", "keyboard_mouse"]
+BindData = dict[Literal["input_device", "key", "type", "value", "icon"] | str, InputType | str]
+KeybindsType = dict[str, list[BindData]]
 
 Coordinate = tuple[float, float] | p.Vector2
 

@@ -9,12 +9,12 @@ from file_processing import assets
 
 
 class TitleText:
-    __texture_map_path = "ui_elements.texture_map"
+    __texture_map_name = "ui_elements"
     __animations_path = "ui_elements.animation"
     
     def __init__(self, corner_pos: p.typing.Point, animation_name: str):
         self.corner_pos = p.Vector2(corner_pos)
-        self.__texture_map = assets.load_texture_map(self.__texture_map_path)
+        self.__texture_map = assets.load_texture_map(self.__texture_map_name)
         self.__animations = {}
 
         for name, anim_data in assets.load_animations(self.__animations_path)["animations"].items():

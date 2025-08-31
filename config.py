@@ -1,6 +1,6 @@
 """Contains constants for initializing game window."""
 
-VERSION_NUM = (0, 1, 1)
+VERSION_NUM = (0, 1, 2)
 
 WINDOW_SIZE = (640, 480)
 PIXEL_SCALE = 2

@@ -7,10 +7,8 @@ from functools import partial
 import config
 import debug
 from custom_types import TextureMap
-from math_functions import vector_min, unit_vector
-from userinput import InputInterpreter
-from input_feedback import controller_rumble
-from misc import get_named_frames
+from math_functions import unit_vector
+from input_device import InputInterpreter, controller_rumble
 
 from file_processing import assets, load_json
 from audio import soundfx
@@ -36,12 +34,12 @@ __all__ = [
 class Spaceship(ObjectAnimation, BorderCollision):
     __rotation_speed = 30
 
-    __texture_map_path = "spaceship.texture_map"
+    __texture_map_name = "spaceship"
     __texture_map: TextureMap | None = None
 
     def __init__(self, position):
         if self.__texture_map is None:
-            type(self).__texture_map = assets.load_texture_map(self.__texture_map_path)
+            type(self).__texture_map = assets.load_texture_map(self.__texture_map_name)
         
         super().__init__(
             position=position,
@@ -84,13 +82,13 @@ class Spaceship(ObjectAnimation, BorderCollision):
                 self._angular_vel += 5
             
 
-            
-            if not (inputs.check_input("right") or inputs.check_input("left")):
+            # If both left and right are clicked or neither is
+            if inputs.check_input("right") == inputs.check_input("left"):
                 self._angular_vel = 0
             
-            if not self.__thrust and inputs.check_input("ship_backward"):
-                if self._velocity.magnitude() > 0.5:
-                    self.accelerate(unit_vector(self._velocity)*-0.2)
+            # if not self.__thrust and inputs.check_input("ship_backward"):
+            #     if self._velocity.magnitude() > 0.5:
+            #         self.accelerate(unit_vector(self._velocity)*-0.2)
 
 
             if  inputs.check_input("shoot") and self.alive():
@@ -138,7 +136,7 @@ class Spaceship(ObjectAnimation, BorderCollision):
             self.accelerate(-direction*0.5)
 
         soundfx.play_sound("entity.ship.shoot")
-        controller_rumble("small_pulse")
+        controller_rumble("gun_fire")
 
 
     
@@ -186,7 +184,6 @@ class Spaceship(ObjectAnimation, BorderCollision):
                 return False
             else:
                 self.kill()
-                asteroid.damage(1)
                 return True
         else:
             return False
@@ -206,7 +203,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
     def __init__(self, position: p.typing.Point, direction: p.typing.Point, shooter: Spaceship):
         super().__init__(
             position=position,
-            texture=assets.load_texture_map("particles.texture_map")["bullet"]
+            texture=assets.load_texture_map("particles")["bullet"]
         )
 
         self.shooter = shooter
@@ -328,7 +325,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         }
     }
 
-    __texture_map_path = "asteroid.texture_map"
+    __texture_map_name = "asteroid"
     __texture_map: TextureMap | None = None
 
     def __init__(self, position: p.typing.Point, velocity: p.typing.Point, size: Literal[1, 2, 3] = 1):
@@ -337,7 +334,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             hitbox_size=self.size_data[size]["hitbox"],
             bounce=0.95,
 
-            texture_map=assets.load_texture_map(self.__texture_map_path),
+            texture_map=assets.load_texture_map(self.__texture_map_name),
             anim_data=load_json(f"{self._anim_data_dir}/asteroid.animation"),
             controller_data=load_json(f"{self._controller_data_dir}/asteroid.anim_controller")
         )
@@ -386,15 +383,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         self.health = 0
         self.explode_pos = self.position.copy()
         if spawn_asteroids and self.size > 1:
-            positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
-            positions = map(p.Vector2, positions)
-            rotate_angle = random.randint(1, 90)
-
-            for pos in positions:
-                pos.rotate_ip(rotate_angle)
-                new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1)
-                new_rock.set_velocity(self._velocity+pos)
-                self.group.add(new_rock)
+            self.__spawn_small_asteroid()
 
         if self.size == 1:
             soundfx.play_sound("entity.asteroid.small_explode", 0.7)
@@ -402,16 +391,29 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             soundfx.play_sound("entity.asteroid.medium_explode", 0.7)
 
 
+    def __spawn_small_asteroid(self):
+        positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+        positions = map(p.Vector2, positions)
+        rotate_angle = random.randint(1, 90)
+
+        for pos in positions:
+            pos.rotate_ip(rotate_angle)
+            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1)
+            new_rock.set_velocity(self._velocity+pos)
+            for group in self.groups():
+                group.add(new_rock)
+
+
 
 
 
 class Crosshair(ObjectTexture):
     draw_in_front = True
-    __texture_map_path = "crosshair.texture_map"
+    __texture_map_name = "crosshair"
     def __init__(self, position: p.typing.Point):
         super().__init__(
             position=position,
-            texture=assets.load_texture_map(self.__texture_map_path)["crosshair_a"]
+            texture=assets.load_texture_map(self.__texture_map_name)["crosshair_a"]
         )
 
         self.visible = False

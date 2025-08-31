@@ -16,7 +16,7 @@
             }
         },
         "explode": {
-            "animations": ["main", "explode"]
+            "animations": ["explode"]
         }
     }
 }

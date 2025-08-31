@@ -5,6 +5,7 @@ import config
 import debug
 
 from math_functions import unit_vector
+from misc import increment_score
 
 from file_processing import assets, data
 from audio import soundfx
@@ -12,8 +13,7 @@ from audio import soundfx
 from game_objects import ObjectGroup, components
 from game_objects.entities import Spaceship, Asteroid
 
-from ui import add_padding
-from ui.font import LargeFont, SmallFont
+from ui import add_padding, font
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
@@ -33,6 +33,7 @@ class Play(State):
         self.visible_area = p.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
         self.world_border = self.visible_area.inflate(100, 100)
         self.background_texture = assets.load_texture("backgrounds/space_background")
+        self.__info_text = font.SmallFont.render("")
 
         self.entities = ObjectGroup()
         self.asteroids = ObjectGroup[Asteroid]()
@@ -43,7 +44,6 @@ class Play(State):
 
         self.score = 0
         self.highscore = data.load_highscore()
-        self.__has_highscore = self.highscore != 0
         self.highscore_changed = False
 
         self.__timer = 10
@@ -71,42 +71,20 @@ class Play(State):
 
         self.spaceship.userinput(inputs)
 
-        if inputs.check_input("pause"):
+        if self.spaceship.operational and inputs.check_input("pause"):
             PauseMenu(self.state_stack)
 
 
     def update(self):
-        if not self.spaceship.alive():
-            self.game_over()
+        if self.spaceship.operational:
+            self.__game_loop()
+        elif self.spaceship.alive():
+            for entity in self.entities:
+                if not isinstance(entity, Asteroid):
+                    entity.update()
         
-        elif random.random() < 0.3 and self.required_asteroid_value()*0.8 > self.__asteroid_value():
-            self.spawn_asteroid()
-
-        for asteroid in self.asteroids.sprites():
-            if (
-                not asteroid.rect.colliderect(self.world_border)
-                or (not asteroid.rect.colliderect)
-                ):
-                asteroid.force_kill()
-
-        for obj in self.entities:
-            if isinstance(obj, Asteroid) and obj not in self.asteroids:
-                self.asteroids.add(obj)
-        
-        self.entities.update()
-
-
-        if not self.highscore_changed and self.spaceship.score > self.highscore:
-            self.highscore_changed = True
-        prev_score = self.score
-        self.score = self.increment_score(self.score, self.spaceship.score)
-        self.highscore = max(self.highscore, self.score)
-
-        if self.score > prev_score:
-            soundfx.play_sound("game.point", 0.3)
-
-        if self.__timer:
-            self.__timer -= 1
+        else:
+            self.__game_over()
 
 
 
@@ -115,8 +93,13 @@ class Play(State):
 
     def draw(self, surface, lerp_amount=0.0):
         surface.blit(self.background_texture)
+        # surface.fill("#333333")
 
-        self.entities.draw(surface, lerp_amount)
+        if self.spaceship.operational:
+            self.entities.draw(surface, lerp_amount)
+        else:
+            self.entities.draw(surface)
+
 
         if debug.debug_mode:
             p.draw.circle(surface, "orange", self.spaceship.position, self.__safe_radius, 1)
@@ -126,8 +109,11 @@ class Play(State):
                 text_offset = -80*(self.__timer*0.1)**2
             else:
                 text_offset = 0
-            self.show_scores(surface, "highscore", self.highscore, (8, 4+text_offset))
-            self.show_scores(surface, "score", self.score, (8, 20+text_offset))
+            self.__show_scores(surface, "highscore", self.highscore, (10, 4+text_offset))
+            self.__show_scores(surface, "score", self.score, (10, 20+text_offset))
+
+        if self.spaceship.operational and self.is_top_state():
+            surface.blit(self.__info_text, (10, config.PIXEL_WINDOW_SIZE[1]-20))
 
 
         return f"entity count: {self.entities.count()}, asteroid value: {self.__asteroid_value()}, combo: {self.spaceship.combo}"
@@ -141,26 +127,45 @@ class Play(State):
 
 
 
-    @classmethod
-    def increment_score(cls, current_score: int, target_score: int) -> int:
-        if target_score - current_score > 1000:
-            current_score += 1000
-        if target_score - current_score > 100:
-            current_score += 100
-        if target_score - current_score > 10:
-            current_score += 10
-        if target_score - current_score > 0:
-            current_score += 1
-
-        return min(current_score, cls.__score_limit)
 
 
 
+    def __game_loop(self):
+        if random.random() < 0.3 and self.required_asteroid_value()*0.8 > self.__asteroid_value():
+            self.__spawn_asteroid()
+
+        for asteroid in self.asteroids.sprites():
+            if (
+                not asteroid.rect.colliderect(self.world_border)
+                or (not asteroid.rect.colliderect)
+                ):
+                asteroid.force_kill()
+
+
+        self.entities.update()
+
+
+        if not self.highscore_changed and self.spaceship.score > self.highscore:
+            self.highscore_changed = True
+        prev_score = self.score
+        self.score = increment_score(self.score, self.spaceship.score)
+        self.highscore = max(self.highscore, self.score)
+
+        if self.score > prev_score:
+            soundfx.play_sound("game.point", 0.3)
+
+        if self.__timer:
+            self.__timer -= 1
+
+        self.__info_text = font.FontWithIcons.render("Press<pause> to pause")
 
 
 
 
-    def spawn_asteroid(self) -> None:
+
+
+
+    def __spawn_asteroid(self) -> None:
         window_size = config.PIXEL_WINDOW_SIZE
         start_position = p.Vector2()
 
@@ -195,12 +200,13 @@ class Play(State):
 
 
 
-    def show_scores(self, surface: p.Surface, name: str, score: int, offset: p.typing.Point = (8, 4)):
+
+    def __show_scores(self, surface: p.Surface, name: str, score: int, offset: p.typing.Point):
         score_text = add_padding(str(score), 5, pad_char='0')
 
-        score_desc_surf = SmallFont.render(name.capitalize())
+        score_desc_surf = font.SmallFont.render(name.capitalize())
         surface.blit(score_desc_surf, offset+p.Vector2(0, 8))
-        surface.blit(LargeFont.render(score_text), offset+p.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
+        surface.blit(font.LargeFont.render(score_text), offset+p.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
 
 
 
@@ -216,7 +222,7 @@ class Play(State):
         return sum(asteroid.size for asteroid in self.asteroids)
     
 
-    def set_score(self) -> None:
+    def __set_score(self) -> None:
         self.score = min(self.spaceship.score, self.__score_limit)
         self.highscore = max(self.highscore, self.score)
 
@@ -224,8 +230,8 @@ class Play(State):
 
     
     
-    def game_over(self) -> None:
-        self.set_score()
+    def __game_over(self) -> None:
+        self.__set_score()
         for obj in self.entities.sprites():
             if isinstance(obj, components.ObjectVelocity):
                 obj.set_velocity((0, 0))
@@ -239,5 +245,5 @@ class Play(State):
 
 
     def quit(self) -> None:
-        self.set_score()
+        self.__set_score()
         data.save_highscore(self.highscore)

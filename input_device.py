@@ -4,13 +4,25 @@ from pygame.locals import *
 from typing import Callable, Any, Literal
 from collections import defaultdict
 
-from custom_types import ActionKeys, HoldKeys, KeybindsType
+from custom_types import ActionKeys, HoldKeys, InputType, BindData, KeybindsType
 from math_functions import sign
 
 from file_processing import load_json
 
 
 
+
+
+
+
+def controller_rumble(pattern_name: str, intensity=0.5, wait_until_clear=False) -> None:
+    if Controller.current_instance is not None:
+        Controller.current_instance.rumble(pattern_name, intensity, wait_until_clear)
+
+
+
+def get_action_icon_name(action_name: str) -> str | None:
+    return InputInterpreter.get_action_icon_name(action_name)
 
 
 
@@ -54,6 +66,8 @@ class Controller:
     __rumble_patterns = load_json("data/rumble_patterns")
     __stick_dead_zone = 0.3
 
+    current_instance: "Controller | None" = None
+
     def __init__(self, joystick: p.joystick.JoystickType | None = None):
         self.__joystick = joystick
         if self.__joystick is not None:
@@ -75,10 +89,8 @@ class Controller:
         self.__right_trigger = 0.0
 
         self.__rumble_queue = []
-        self.__rumble_intensity = 0.0
-
-        import input_feedback
-        input_feedback._controller_instance = self
+        
+        type(self).current_instance = self
 
 
     @property
@@ -242,6 +254,8 @@ class Controller:
 
 class InputInterpreter:
     __keybinds: KeybindsType = load_json("data/keybinds")
+    __action_icons = load_json("data/action_icons")
+    __current_instance: "InputInterpreter | None" = None
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
         self.keyboard_mouse = keyboard_mouse
@@ -250,7 +264,8 @@ class InputInterpreter:
         else:
             self.controller = controller
         
-        self.current_input_type: Literal["keyboard_mouse", "controller"] = "keyboard_mouse"
+        self.__current_input_type: InputType = "keyboard_mouse"
+        type(self).__current_instance = self
 
 
     
@@ -259,26 +274,30 @@ class InputInterpreter:
     
 
 
+    def __get_bind_options(self, action_name: str) -> list[BindData]:
+        if action_name not in self.__keybinds:
+            raise ValueError(f"Invalid action_name '{action_name}'")
+        else:
+            return self.__keybinds[action_name]
+
+    
+
+
     def get_userinput(self, events: list[p.Event]) -> None:
         self.keyboard_mouse.get_userinput(events)
         if self.controller.action_buttons["any"]:
-            self.current_input_type = "controller"
+            self.__current_input_type = "controller"
 
         self.controller.get_userinput(events)
         if self.keyboard_mouse.action_keys["any"]:
-            self.current_input_type = "keyboard_mouse"
+            self.__current_input_type = "keyboard_mouse"
 
 
-    def check_input(self, name: str) -> bool:
-        if name not in self.__keybinds:
-            raise ValueError(f"Invalid input name '{name}'")
-        
-        input_parameters = self.__keybinds[name]
-
+    def check_input(self, action_name: str) -> bool:
         results: list[bool] = []
 
-        for bind_data in input_parameters:
-            if bind_data["input_device"] == "keyboard":
+        for bind_data in self.__get_bind_options(action_name):
+            if bind_data["input_device"] == "keyboard_mouse":
                 key_code = p.key.key_code(bind_data["key"])
                 if bind_data["type"] == "hold":
                     results.append(bool(self.keyboard_mouse.hold_keys[key_code]))
@@ -311,3 +330,27 @@ class InputInterpreter:
         
 
         return any(results)
+    
+
+
+    def __get_all_action_icons(self) -> dict[str, str]:
+        icons: dict[str, str]
+        if self.__current_input_type == "keyboard_mouse":
+            icons = self.__action_icons[self.__current_input_type]
+        else:
+            icons = self.__action_icons["controllers"][self.controller.device_name]
+            if "same_as" in icons:
+                icons = self.__action_icons["controllers"][icons["same_as"]]
+        
+        return icons
+
+
+
+    @classmethod
+    def get_action_icon_name(cls, action_name: str) -> str | None:
+        self = cls.__current_instance
+
+        try:
+            return self.__get_all_action_icons()[action_name]
+        except KeyError:
+            return None

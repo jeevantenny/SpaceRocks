@@ -1,7 +1,7 @@
 {
     "select": [
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "return",
             "type": "action"
         },
@@ -13,12 +13,12 @@
     ],
     "pause": [
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "escape",
             "type": "action"
         },
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "p",
             "type": "action"
         },
@@ -30,7 +30,7 @@
     ],
     "ship_forward": [
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "w",
             "type": "hold"
         },
@@ -48,7 +48,7 @@
     ],
     "ship_backward": [
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "s",
             "type": "hold"
         },
@@ -60,7 +60,7 @@
     ],
     "shoot": [
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "space",
             "type": "action"
         },
@@ -72,7 +72,7 @@
     ],
     "left": [
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "a",
             "type": "hold"
         },
@@ -91,7 +91,7 @@
     ],
     "right": [
         {
-            "input_device": "keyboard",
+            "input_device": "keyboard_mouse",
             "key": "d",
             "type": "hold"
         },

@@ -91,7 +91,7 @@ class ObjectGroup[T=GameObject](p.sprite.AbstractGroup):
 
 
 
-    def draw(self, surface: p.Surface, lerp_amount: float) -> None: # type: ignore
+    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None: # type: ignore
         top_sprites = []
         for obj in self.sprites():
             if hasattr(obj, "draw"):

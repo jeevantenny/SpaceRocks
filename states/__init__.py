@@ -4,7 +4,7 @@ from functools import wraps
 
 import game_errors
 import config
-from userinput import InputInterpreter
+from input_device import InputInterpreter
 from custom_types import Timer
 
 from file_processing import assets
@@ -64,9 +64,6 @@ class State:
         if state_stack is not None:
             state_stack.push(self)
 
-        self.__pixel_art_surface = p.Surface(config.PIXEL_WINDOW_SIZE)
-        self.__pixel_art_surface.set_colorkey(assets.COLORKEY)
-
         type(self).draw = draw_wrapper(type(self).draw) # type: ignore
 
 
@@ -100,10 +97,7 @@ class State:
 
     def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
         "Draws the contents of the game onto the window in every frame."
-        self.__pixel_art_surface.fill(assets.COLORKEY)
-        output = self._draw_pixel_art(self.__pixel_art_surface, lerp_amount)
-        surface.blit(p.transform.scale_by(self.__pixel_art_surface, config.PIXEL_SCALE))
-        return output
+        pass
 
 
     def draw_on_enter(self, enter_amount: float, surface: p.Surface, lerp_amount=0.0) -> None:
@@ -114,6 +108,11 @@ class State:
     def draw_on_exit(self, exit_amount: float, surface: p.Surface, lerp_amount=0.0) -> None:
         "Called to draw while exiting state."
         self.draw_on_enter(1-exit_amount)
+
+
+    def is_top_state(self) -> bool:
+        "Returns weather the current state is at the top of it's stack."
+        return self.state_stack.top_state is self
 
 
     def quit(self) -> None:

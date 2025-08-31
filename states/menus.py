@@ -19,6 +19,12 @@ from . import State
 
 
 
+def darken_surface(surface: p.Surface) -> None:
+    surface.fill("#005588", special_flags=p.BLEND_RGB_MULT)
+
+
+
+
 class TitleScreen(State):
     def __init__(self, state_stack = None):
         from .play import Play
@@ -31,8 +37,11 @@ class TitleScreen(State):
         self.version_number = font.SmallFont.render(f"version {version_text}", 1, "#ffffff", "#333333")
 
         self.__start_gameplay = False
+        self.__info_text = font.SmallFont.render("")
 
         self._initialized = True
+
+
 
 
 
@@ -71,6 +80,8 @@ class TitleScreen(State):
             self.prev_state.update()
             if self.title.animations_complete:
                 self.state_stack.pop()
+        
+        self.__info_text = font.FontWithIcons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
@@ -78,8 +89,7 @@ class TitleScreen(State):
 
         if self.title.current_anim_name == "main_glint":
             surface.blit(self.version_number, (3, config.PIXEL_WINDOW_SIZE[1]-11))
-            text_surface = font.SmallFont.render(instructions_text())
-            surface.blit(text_surface, ((config.PIXEL_WINDOW_SIZE[0]-text_surface.width)*0.5, 170))
+            surface.blit(self.__info_text, ((config.PIXEL_WINDOW_SIZE[0]-self.__info_text.width)*0.5, 170))
 
 
 
@@ -91,10 +101,10 @@ class PauseMenu(State):
         super().__init__(state_stack)
 
         self.title = elements.TitleText((92, 70), "main_entrance_b")
-        self.__subtext_b = font.SmallFont.render("Click [Enter] to continue")
         self.__exit_menu = False
 
         self._initialized = True
+        self.__info_text = font.SmallFont.render("")
 
 
 
@@ -108,14 +118,16 @@ class PauseMenu(State):
         self.title.update()
         if self.__exit_menu and self.title.animations_complete:
             self.state_stack.pop()
+        
+        self.__info_text = font.FontWithIcons.render("Press<K_return> to continue")
     
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        surface.fill("#505050", special_flags=p.BLEND_SUB)
+        darken_surface(surface)
         self.title.draw(surface, lerp_amount)
         if not self.__exit_menu:
-            surface.blit(self.__subtext_b, (115, 170))
+            surface.blit(self.__info_text, (115, 170))
 
 
 
@@ -208,7 +220,7 @@ class ShowScore(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        surface.fill("#404040", special_flags=p.BLEND_RGB_SUB)
+        darken_surface(surface)
 
         if self.__timer:
             text_surface = font.LargeFont.render(add_padding(str(self.display_score), 5, pad_char='0'), 2)
@@ -234,4 +246,3 @@ class ShowScore(State):
 
 
 
-    

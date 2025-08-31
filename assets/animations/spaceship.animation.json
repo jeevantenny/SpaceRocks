@@ -22,12 +22,15 @@
         },
         "explode": {
             "duration":12,
+            "anim_speed_multiplier": 0.7,
             "timeline": {
                 "0": "explode_1",
                 "1": "explode_2",
                 "2": "explode_3",
                 "3": "explode_4",
-                "4": "explode_5"
+                "4": "explode_5",
+                "5": "explode_6",
+                "7": "blank"
             }
         }
     }

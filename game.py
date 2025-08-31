@@ -6,13 +6,13 @@ import threading
 
 import traceback
 from time import perf_counter
-from collections import defaultdict
 
 import config
 import debug
 
-from userinput import KeyboardMouse, Controller, InputInterpreter
+from input_device import KeyboardMouse, Controller, InputInterpreter
 
+from ui import font
 from states import StateStack, menus, test
 from file_processing import assets
 
@@ -46,8 +46,8 @@ class Game:
         p.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
 
         self.game_surface = p.Surface((p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE))
-
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
+        font.init()
 
 
         self.state_stack = StateStack()
@@ -169,7 +169,7 @@ class Game:
             p.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.window)
 
             if debug.debug_mode:
-                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, Tickrate: {self.tick_clock.get_fps():.0f}"
+                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}"
                 if debug_message is not None:
                     blit_text = f"{blit_text}, {debug_message}"
 

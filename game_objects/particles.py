@@ -10,10 +10,10 @@ from .components import *
 
 
 class ShipSmoke(ObjectAnimation, ObjectVelocity):
-    __texture_map_path = "particles.texture_map"
+    __texture_map_name = "particles"
     def __init__(self, position: p.typing.Point, velocity: p.typing.Point):
         texture_map = {}
-        for name, texture in assets.load_texture_map(self.__texture_map_path).items():
+        for name, texture in assets.load_texture_map(self.__texture_map_name).items():
             if "smoke" in name:
                 texture_map[name.removeprefix("smoke")] = texture
         

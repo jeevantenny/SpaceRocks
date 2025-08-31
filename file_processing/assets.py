@@ -43,7 +43,7 @@ def colorkey_surface(size: p.typing.Point, flags=0, depth=0, masks: p.typing.Col
 
 @lru_cache(32)
 def load_texture_map(path: str) -> dict[str, p.Surface]:
-    mapping_data = load_json(f"{TEXTURE_MAPS_DIR}/{path}")
+    mapping_data = load_json(f"{TEXTURE_MAPS_DIR}/{path}.texture_map")
     main_texture = load_texture(mapping_data["texture"])
 
     texture_map = {}
