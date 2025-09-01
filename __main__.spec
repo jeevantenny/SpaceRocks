@@ -1,20 +1,27 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
-datas = [
-    ('assets\\anim_controllers', 'assets\\anim_controllers'),
-    ('assets\\animations', 'assets\\animations'),
-    ('assets\\fonts', 'assets\\fonts'),
-    ('assets\\sounds', 'assets\\sounds'),
-    ('assets\\texture_maps', 'assets\\texture_maps'),
-    ('assets\\textures', 'assets\\textures'),
-    ('assets\\textures\\game_objects', 'assets\\textures\\game_objects'),
-    ('assets\\textures\\ui', 'assets\\textures\\ui'),
-    ('assets\\textures\\backgrounds', 'assets\\textures\\backgrounds'),
+data_paths = [
+    "assets\\anim_controllers",
+    "assets\\animations",
+    "assets\\fonts",
+    "assets\\texture_maps",
 
-    ('data', 'data'),
-    ('user_data', 'user_data')
+    "assets\\sounds\\entity\\asteroid",
+    "assets\\sounds\\entity\\spaceship",
+    "assets\\sounds\\game",
+
+    "assets\\textures",
+    "assets\\textures\\backgrounds",
+    "assets\\textures\\game_objects",
+    "assets\\textures\\ui",
+
+
+    "data",
+    "user_data"
 ]
+
+datas = [(path, path) for path in data_paths]
 
 
 a = Analysis( # type: ignore

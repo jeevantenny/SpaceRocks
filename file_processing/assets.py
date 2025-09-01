@@ -58,13 +58,13 @@ def load_texture_map(path: str) -> dict[str, pg.Surface]:
 
 
 @lru_cache(32)
-def load_animations(path: str):
-    return load_json(f"{ANIMATIONS_DIR}/{path}")
+def load_anim_data(path: str):
+    return load_json(f"{ANIMATIONS_DIR}/{path}.animation")
 
 
 @lru_cache(32)
-def load_anim_controllers(path: str):
-    return load_json(f"{ANIM_CONTROLLERS_DIR}/{path}")
+def load_anim_controller_data(path: str):
+    return load_json(f"{ANIM_CONTROLLERS_DIR}/{path}.anim_controller")
 
 
 

@@ -94,8 +94,20 @@ class ObjectTexture(ObjectComponent):
         super().__init__(**kwargs)
 
         self.texture = texture
-        self.rotation = 0
+        self.__rotation = 0
         self._angular_vel = 0
+
+
+    @property
+    def rotation(self) -> int:
+        return self.__rotation
+    @rotation.setter
+    def rotation(self, value: int) -> None:
+        value = value%360
+        if value > 180:
+            value = value-360
+        
+        self.__rotation = value
 
 
     def set_angular_vel(self, amount: float) -> None:

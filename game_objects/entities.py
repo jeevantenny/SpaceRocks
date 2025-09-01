@@ -2,15 +2,13 @@ import pygame as pg
 import random
 from math import sin, pi
 from typing import Literal
-from functools import partial
 
 import config
 import debug
-from custom_types import TextureMap
-from math_functions import unit_vector
+from math_functions import clamp, unit_vector
 from input_device import InputInterpreter, controller_rumble
 
-from file_processing import assets, load_json
+from file_processing import assets
 from audio import soundfx
 
 
@@ -25,8 +23,7 @@ __all__ = [
     "Spaceship",
     "Bullet",
     "Asteroid",
-    "DisplayPoint",
-    "Crosshair"
+    "DisplayPoint"
 ]
 
 
@@ -34,12 +31,10 @@ __all__ = [
 class Spaceship(ObjectAnimation, BorderCollision):
     draw_layer = 2
     __rotation_speed = 30
-    __texture_map_name = "spaceship"
-    __texture_map: TextureMap | None = None
+    __asset_key = "spaceship"
+    _max_speed = 100
 
     def __init__(self, position):
-        if self.__texture_map is None:
-            type(self).__texture_map = assets.load_texture_map(self.__texture_map_name)
         
         super().__init__(
             position=position,
@@ -47,16 +42,17 @@ class Spaceship(ObjectAnimation, BorderCollision):
             bounding_area=(0, 0, *pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE),
             border_bounce=0.5,
 
-            texture_map=self.__texture_map,
-            anim_data=load_json(f"{self._anim_data_dir}/spaceship.animation"),
-            controller_data=load_json(f"{self._controller_data_dir}/spaceship.anim_controller")
+            texture_map=assets.load_texture_map(self.__asset_key),
+            anim_data=assets.load_anim_data(self.__asset_key),
+            controller_data=assets.load_anim_controller_data(self.__asset_key)
         )
 
         self.score = 0
         self.combo = 0
+        self.operational = True
+
         self.__thrust = False
         self.__thruster_audio_chan: pg.Channel | None = None
-        self.operational = True
 
 
     
@@ -104,13 +100,16 @@ class Spaceship(ObjectAnimation, BorderCollision):
             self.__release_smoke()
             if self.__thruster_audio_chan is None:
                 self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.6, -1)
+            else:
+                self.__thruster_audio_chan.set_volume(clamp(abs(self.rotation)*0.002+0.3, 0, 1))
 
         elif self.__thruster_audio_chan is not None:
             self.__thruster_audio_chan.fadeout(100)
             self.__thruster_audio_chan = None
-            # soundfx.play_sound("entity.ship.boost_end", 0.6)
         
         super().update()
+
+            
         
         if not self.operational:
             if self.animations_complete:
@@ -333,8 +332,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         }
     }
 
-    __texture_map_name = "asteroid"
-    __texture_map: TextureMap | None = None
+    __asset_key = "asteroid"
 
     def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point, size: Literal[1, 2, 3] = 1):
         super().__init__(
@@ -342,9 +340,9 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             hitbox_size=self.size_data[size]["hitbox"],
             bounce=0.95,
 
-            texture_map=assets.load_texture_map(self.__texture_map_name),
-            anim_data=load_json(f"{self._anim_data_dir}/asteroid.animation"),
-            controller_data=load_json(f"{self._controller_data_dir}/asteroid.anim_controller")
+            texture_map=assets.load_texture_map(self.__asset_key),
+            anim_data=assets.load_anim_data(self.__asset_key),
+            controller_data=assets.load_anim_controller_data(self.__asset_key)
         )
 
         self.size = size
@@ -414,23 +412,6 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
 
-
-class Crosshair(ObjectTexture):
-    draw_layer = 4
-    __texture_map_name = "crosshair"
-    def __init__(self, position: pg.typing.Point):
-        super().__init__(
-            position=position,
-            texture=assets.load_texture_map(self.__texture_map_name)["crosshair_a"]
-        )
-
-        self.visible = False
-
-
-    
-    def draw(self, surface, lerp_amount=0):
-        if self.visible:
-            super().draw(surface, lerp_amount)
 
 
 

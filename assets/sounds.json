@@ -1,50 +1,44 @@
 {
     "entity.ship.bounce": {
         "sounds": [
-            "entity/ship_bounce_1",
-            "entity/ship_bounce_2"
+            "entity/spaceship/ship_bounce_1",
+            "entity/spaceship/ship_bounce_2"
         ],
         "file_type": "wav"
         
     },
     "entity.ship.shoot": {
         "sounds": [
-            "entity/shoot_2"
+            "entity/spaceship/shoot_2"
         ],
         "file_type": "wav"
     },
     "entity.ship.boost": {
         "sounds": [
-            "entity/ship_boost"
-        ],
-        "file_type": "wav"
-    },
-    "entity.ship.boost_end": {
-        "sounds": [
-            "entity/ship_boost_end"
+            "entity/spaceship/ship_boost"
         ],
         "file_type": "wav"
     },
     "game.point": {
-        "sounds": ["point"],
+        "sounds": ["game/point"],
         "file_type": "wav"
     },
     "entity.asteroid.damage": {
-        "sounds": ["entity/asteroid_damage"],
+        "sounds": ["entity/asteroid/asteroid_damage"],
         "file_type": "wav"
     },
     "entity.asteroid.small_explode": {
         "sounds": [
-            "entity/explosion_1",
-            "entity/explosion_2",
-            "entity/explosion_3"
+            "entity/asteroid/explosion_1",
+            "entity/asteroid/explosion_2",
+            "entity/asteroid/explosion_3"
         ]
     },
     "entity.asteroid.medium_explode": {
         "sounds": [
-            "entity/explosion_4",
-            "entity/explosion_5",
-            "entity/explosion_6"
+            "entity/asteroid/explosion_4",
+            "entity/asteroid/explosion_5",
+            "entity/asteroid/explosion_6"
         ]
     }
 }

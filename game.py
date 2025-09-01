@@ -211,3 +211,5 @@ class Game:
         except:
             traceback.print_exc()
             input("\033[91m\033[1mAn error occurred during saving. Data may not have been saved properly\033[0m\nExit ->")
+        finally:
+            pg.quit()

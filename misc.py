@@ -1,24 +1,5 @@
-from custom_types import TextureMap
 
 
-
-
-
-def get_named_frames(frames: TextureMap, name: str) -> TextureMap:
-    length = len(name)
-
-    return {
-        frame_name.removeprefix(f"{name}_"): frame
-
-        for frame_name, frame in frames.items()
-        if frame_name[0:length] == name
-    }
-
-
-
-
-def instructions_text() ->  str:
-    return f"Forward [w]     Shoot [space]     Turn [a]-[d]"
 
 
 

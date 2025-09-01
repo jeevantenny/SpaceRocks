@@ -3,7 +3,7 @@ from typing import Literal
 import random
 
 import config
-from misc import increment_score, instructions_text
+from misc import increment_score
 
 from audio import soundfx
 
@@ -34,7 +34,7 @@ class TitleScreen(State):
 
         self.title = elements.TitleText((92, 60), "main_entrance_a")
         version_text = ".".join(map(str, config.VERSION_NUM))
-        self.version_number = font.SmallFont.render(f"version {version_text}", 1, "#ffffff", "#333333")
+        self.version_text_surface = font.SmallFont.render(f"version {version_text}   pygame-ce {pg.ver}", 1, "#ffffff", "#333333")
 
         self.__start_gameplay = False
         self.__info_text = font.SmallFont.render("")
@@ -88,7 +88,7 @@ class TitleScreen(State):
         self.title.draw(surface, lerp_amount)
 
         if self.title.current_anim_name == "main_glint":
-            surface.blit(self.version_number, (3, config.PIXEL_WINDOW_HEIGHT-11))
+            surface.blit(self.version_text_surface, (3, config.PIXEL_WINDOW_HEIGHT-11))
             surface.blit(self.__info_text, ((config.PIXEL_WINDOW_WIDTH-self.__info_text.width)*0.5, 170))
 
 
@@ -142,7 +142,7 @@ class GameOverScreen(State):
 
         self.score_data = score_data
         self.display_score = 0
-        self.title = elements.TitleText((92, 90), "game_over")
+        self.title = elements.TitleText((92, 110), "game_over")
 
         self._initialized = True
 
@@ -162,6 +162,7 @@ class GameOverScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
+        darken_surface(surface)
         self.title.draw(surface, lerp_amount)
         
             
