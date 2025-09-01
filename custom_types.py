@@ -2,7 +2,7 @@
 Contains various types that will be used throughout the game.
 """
 
-import pygame as p
+import pygame as pg
 import random
 from typing import Self, Literal, Callable, Generator, Any
 from collections import defaultdict
@@ -19,9 +19,9 @@ InputType = Literal["controller", "keyboard_mouse"]
 BindData = dict[Literal["input_device", "key", "type", "value", "icon"] | str, InputType | str]
 KeybindsType = dict[str, list[BindData]]
 
-Coordinate = tuple[float, float] | p.Vector2
+Coordinate = tuple[float, float] | pg.Vector2
 
-TextureMap = dict[str, p.Surface]
+TextureMap = dict[str, pg.Surface]
 AnimData = dict[str, dict[Literal["duration", "loop", "timeline"], float | bool | dict[str, str]]]
 ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[str, dict[Literal["animations", "transitions"], list[str] | dict[str, str]]]]
 
@@ -32,18 +32,18 @@ ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[st
 
 
 class GameSound:
-    def __init__(self, name: str, sounds: list[p.Sound]):
+    def __init__(self, name: str, sounds: list[pg.Sound]):
         self.name = name
         self.__sounds = sounds
     
     
-    def play(self, volume=1.0) -> p.Channel | None:
+    def play(self, volume=1.0, loops=0) -> pg.Channel | None:
         if self.__sounds:
             sound = random.choice(self.__sounds)
             sound.set_volume(volume)
-            return sound.play()
+            return sound.play(loops)
         else:
-            return None
+            return ValueError(f"No sounds available to play for '{self.name}'")
 
 
 
@@ -220,7 +220,7 @@ class Animation:
 
 
 
-    def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
+    def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> pg.Surface:
         if self.__flipbook:
             return self.__get_frame_flipbook(texture_map, lerp_amount)
         current_time = self.__anim_time.time_elapsed + self.anim_speed_multiplier*lerp_amount*(not self.complete)
@@ -235,11 +235,11 @@ class Animation:
         try:
             return texture_map[self.__timeline[prev_time]]
         except KeyError:
-            return p.Surface((0, 0))
+            return pg.Surface((0, 0))
         
     
 
-    def __get_frame_flipbook(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
+    def __get_frame_flipbook(self, texture_map: TextureMap, lerp_amount=0.0) -> pg.Surface:
         frame_time = (self.__anim_time.time_elapsed + self.anim_speed_multiplier*lerp_amount*(not self.complete))/self.__frame_duration
 
         frames = list(texture_map.values())
@@ -308,7 +308,7 @@ class AnimController:
 
 
     
-    def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> p.Surface:
+    def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> pg.Surface:
         frames = [anim.get_frame(texture_map, lerp_amount) for anim in self.current_animations()]
         if len(frames) == 1:
             return frames[0]
@@ -317,7 +317,7 @@ class AnimController:
         base_surface = assets.colorkey_surface((max(frames, key=lambda x: x.width).width, max(frames, key=lambda x: x.height).height))
 
         for frame in frames:
-            base_surface.blit(frame, (base_surface.size-p.Vector2(frame.size))*0.5)
+            base_surface.blit(frame, (base_surface.size-pg.Vector2(frame.size))*0.5)
         
         return base_surface
 

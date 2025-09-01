@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 from pygame.locals import *
 
 from typing import Callable, Any, Literal
@@ -42,7 +42,7 @@ class KeyboardMouse:
     
 
 
-    def get_userinput(self, events: list[p.Event]) -> None:
+    def get_userinput(self, events: list[pg.Event]) -> None:
         self.__action_keys.clear()
         for key, amount in self.__hold_keys.items():
             if amount:
@@ -68,7 +68,7 @@ class Controller:
 
     current_instance: "Controller | None" = None
 
-    def __init__(self, joystick: p.joystick.JoystickType | None = None):
+    def __init__(self, joystick: pg.joystick.JoystickType | None = None):
         self.__joystick = joystick
         if self.__joystick is not None:
             working_name = self.device_name
@@ -82,8 +82,8 @@ class Controller:
         self.__action_buttons: ActionKeys = defaultdict(bool)
         self.__hold_buttons: HoldKeys = defaultdict(int)
 
-        self.__left_stick = p.Vector2()
-        self.__right_stick = p.Vector2()
+        self.__left_stick = pg.Vector2()
+        self.__right_stick = pg.Vector2()
 
         self.__left_trigger = 0.0
         self.__right_trigger = 0.0
@@ -109,10 +109,10 @@ class Controller:
         return self.__hold_buttons.copy()
     
     @property
-    def left_stick(self) -> p.Vector2:
+    def left_stick(self) -> pg.Vector2:
         return self.__left_stick.copy()
     @property
-    def right_stick(self) -> p.Vector2:
+    def right_stick(self) -> pg.Vector2:
         return self.__right_stick.copy()
     
     @property
@@ -124,7 +124,7 @@ class Controller:
 
 
     
-    def get_userinput(self, events: list[p.Event]) -> None:
+    def get_userinput(self, events: list[pg.Event]) -> None:
         self.__action_buttons.clear()
 
         if self.__joystick is None:
@@ -189,7 +189,7 @@ class Controller:
 
 
 
-    def __set_stick_value(self, stick: p.Vector2, axis: str, value: float):
+    def __set_stick_value(self, stick: pg.Vector2, axis: str, value: float):
         if abs(value) > self.__stick_dead_zone:
             setattr(stick, axis, value)
         else:
@@ -283,7 +283,7 @@ class InputInterpreter:
     
 
 
-    def get_userinput(self, events: list[p.Event]) -> None:
+    def get_userinput(self, events: list[pg.Event]) -> None:
         self.keyboard_mouse.get_userinput(events)
         if self.controller.action_buttons["any"]:
             self.__current_input_type = "controller"
@@ -298,7 +298,7 @@ class InputInterpreter:
 
         for bind_data in self.__get_bind_options(action_name):
             if bind_data["input_device"] == "keyboard_mouse":
-                key_code = p.key.key_code(bind_data["key"])
+                key_code = pg.key.key_code(bind_data["key"])
                 if bind_data["type"] == "hold":
                     results.append(bool(self.keyboard_mouse.hold_keys[key_code]))
                 else:

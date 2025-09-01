@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 import random
 
 from file_processing import assets, load_json
@@ -11,7 +11,7 @@ from .components import *
 
 class ShipSmoke(ObjectAnimation, ObjectVelocity):
     __texture_map_name = "particles"
-    def __init__(self, position: p.typing.Point, velocity: p.typing.Point):
+    def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point):
         texture_map = {}
         for name, texture in assets.load_texture_map(self.__texture_map_name).items():
             if "smoke" in name:

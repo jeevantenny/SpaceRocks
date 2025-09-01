@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 from typing import Literal
 from functools import partial
 
@@ -20,16 +20,16 @@ class Font:
     font_path: str
     _shadow_offset: int
     _base_size: int
-    _font: partial[p.Font] | None = None
+    _font: partial[pg.Font] | None = None
 
     def __init__(self):
         "To initialize font. Only needed to be used once."
 
         if self._font is None:
-            type(self)._font = partial(p.font.Font, get_resource_path(self.font_path))
+            type(self)._font = partial(pg.font.Font, get_resource_path(self.font_path))
     
     @classmethod
-    def render(cls, text: str, size=1, color_a: p.typing.ColorLike="#dd6644", color_b: p.typing.ColorLike="#550011") -> p.Surface:
+    def render(cls, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011") -> pg.Surface:
         if cls._font is None:
             raise game_errors.InitializationError(cls)
 
@@ -39,10 +39,10 @@ class Font:
         main.set_colorkey(assets.COLORKEY)
         background = sized_font.render(text, False, color_b, assets.COLORKEY)
         
-        surface = p.Surface(main.get_size()+p.Vector2(1, 1)*cls._shadow_offset)
+        surface = pg.Surface(main.get_size()+pg.Vector2(1, 1)*cls._shadow_offset)
         surface.fill(assets.COLORKEY)
 
-        surface.blit(background, p.Vector2(1, 1)*cls._shadow_offset*size)
+        surface.blit(background, pg.Vector2(1, 1)*cls._shadow_offset*size)
         surface.blit(main, (0, 0))
         surface.set_colorkey(assets.COLORKEY)
 
@@ -86,11 +86,11 @@ class FontWithIcons(Font):
             surface.blit(e, (x_offset, 0))
             x_offset += e.width+1
         
-        return p.transform.scale_by(surface, size)
+        return pg.transform.scale_by(surface, size)
     
 
     @classmethod
-    def __get_text_elements(cls, text: str) -> list[p.Surface]:
+    def __get_text_elements(cls, text: str) -> list[pg.Surface]:
         elements = []
         back_pt = 0
         front_pt = 0

@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 from typing import Self, Literal, Any, Deque, Generator, Callable
 from functools import wraps
 
@@ -27,7 +27,7 @@ def draw_wrapper(draw_func: Callable):
     running the method.
     """
     @wraps(draw_func)
-    def wrapper(self: type[State], surface: p.Surface, lerp_amount=0) -> str | None:
+    def wrapper(self: type[State], surface: pg.Surface, lerp_amount=0) -> str | None:
         if self._initialized:
             return draw_func(self, surface, lerp_amount)
         else:
@@ -95,17 +95,17 @@ class State:
         self.update_on_enter(1-exit_amount)
 
 
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> str | None:
         "Draws the contents of the game onto the window in every frame."
         pass
 
 
-    def draw_on_enter(self, enter_amount: float, surface: p.Surface, lerp_amount=0.0) -> None:
+    def draw_on_enter(self, enter_amount: float, surface: pg.Surface, lerp_amount=0.0) -> None:
         "Called to draw values while entering state."
         pass
 
 
-    def draw_on_exit(self, exit_amount: float, surface: p.Surface, lerp_amount=0.0) -> None:
+    def draw_on_exit(self, exit_amount: float, surface: pg.Surface, lerp_amount=0.0) -> None:
         "Called to draw while exiting state."
         self.draw_on_enter(1-exit_amount)
 
@@ -216,7 +216,7 @@ class StateStack:
 
 
     @stack_method
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> str | None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> str | None:
         "Draws the top state for every frame."
         return self.top_state.draw(surface, lerp_amount) # type: ignore
     

@@ -13,6 +13,18 @@
         ],
         "file_type": "wav"
     },
+    "entity.ship.boost": {
+        "sounds": [
+            "entity/ship_boost"
+        ],
+        "file_type": "wav"
+    },
+    "entity.ship.boost_end": {
+        "sounds": [
+            "entity/ship_boost_end"
+        ],
+        "file_type": "wav"
+    },
     "game.point": {
         "sounds": ["point"],
         "file_type": "wav"

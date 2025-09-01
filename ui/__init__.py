@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 from typing import Literal
 
 from input_device import get_action_icon_name
@@ -24,7 +24,7 @@ def add_padding(text: str, length: int, side: Literal["left", "right"] = "right"
 
 
 
-def load_icon(icon_name) -> p.Surface:
+def load_icon(icon_name) -> pg.Surface:
     action_icon_name = get_action_icon_name(icon_name)
     if action_icon_name is not None:
         working_name = action_icon_name

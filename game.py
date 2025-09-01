@@ -1,6 +1,6 @@
 "Contains the main Game class."
 
-import pygame as p
+import pygame as pg
 from pygame.locals import *
 import threading
 
@@ -22,9 +22,9 @@ class Game:
     "The Core part of the Game Engine."
 
     def __init__(self) -> None:
-        p.mixer.pre_init(channels=16)
-        p.init()
-        p.joystick.init()
+        pg.mixer.pre_init(channels=32, buffer=1024)
+        pg.init()
+        pg.joystick.init()
 
 
         self.__setup = False
@@ -40,12 +40,12 @@ class Game:
     def __setup_engine(self) -> None:
         self.run = True
 
-        self.window = p.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
-        self.pixel_scaled_window = p.Surface(p.Vector2(self.window.size)/config.PIXEL_SCALE)
-        p.display.set_caption(config.WINDOW_CAPTION)
-        p.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
+        self.window = pg.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
+        self.pixel_scaled_window = pg.Surface(pg.Vector2(self.window.size)/config.PIXEL_SCALE)
+        pg.display.set_caption(config.WINDOW_CAPTION)
+        pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
 
-        self.game_surface = p.Surface((p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE))
+        self.game_surface = pg.Surface((pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE))
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
         font.init()
 
@@ -57,7 +57,7 @@ class Game:
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed
 
-        self.debug_font = p.font.SysFont("arial", 20)
+        self.debug_font = pg.font.SysFont("arial", 20)
     
         self.__setup = True
 
@@ -65,8 +65,8 @@ class Game:
 
 
     def set_controllers(self) -> None:
-        if p.joystick.get_count():
-            self.input_interpreter.controller = Controller(p.joystick.Joystick(0))
+        if pg.joystick.get_count():
+            self.input_interpreter.controller = Controller(pg.joystick.Joystick(0))
             print(f"Connected {self.input_interpreter.controller.device_name}")
         else:
             self.input_interpreter.controller = Controller()
@@ -79,11 +79,11 @@ class Game:
         if not self.__setup:
             raise RuntimeWarning("Cannot start game because an exception has occurred during setup.")
 
-        self.tick_clock = p.Clock()
+        self.tick_clock = pg.Clock()
         self.prev_tick = perf_counter()
         self.delta_time = 1/self.tick_rate
 
-        self.frame_clock = p.Clock()
+        self.frame_clock = pg.Clock()
         self.prev_frame = perf_counter()
 
         self.error = False
@@ -129,7 +129,7 @@ class Game:
     def userinput(self) -> None:
         "Record the user inputs for a given frame and process them."
 
-        events = p.event.get()
+        events = pg.event.get()
         
         for event in events:
             if event.type == QUIT:
@@ -144,12 +144,12 @@ class Game:
         keyboard = self.input_interpreter.keyboard_mouse
 
 
-        if keyboard.hold_keys[p.K_LCTRL] and keyboard.action_keys[p.K_d]:
+        if keyboard.hold_keys[pg.K_LCTRL] and keyboard.action_keys[pg.K_d]:
             debug.debug_mode = not debug.debug_mode
 
 
         if debug.debug_mode:
-            if self.state_stack.top_state is not None and keyboard.hold_keys[K_LCTRL] and keyboard.action_keys[p.K_BACKSPACE]:
+            if self.state_stack.top_state is not None and keyboard.hold_keys[K_LCTRL] and keyboard.action_keys[pg.K_BACKSPACE]:
                 self.state_stack.pop()
 
         self.state_stack.userinput(self.input_interpreter)
@@ -166,7 +166,7 @@ class Game:
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
             debug_message = self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
-            p.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.window)
+            pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.window)
 
             if debug.debug_mode:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}"
@@ -191,7 +191,7 @@ class Game:
 
 
     def next_frame(self) -> None:
-        p.display.flip()
+        pg.display.flip()
 
         self.frame_clock.tick(config.MAX_FPS)
         self.prev_frame = perf_counter()

@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 from typing import Literal
 import random
 
@@ -19,8 +19,8 @@ from . import State
 
 
 
-def darken_surface(surface: p.Surface) -> None:
-    surface.fill("#005588", special_flags=p.BLEND_RGB_MULT)
+def darken_surface(surface: pg.Surface) -> None:
+    surface.fill("#225588", special_flags=pg.BLEND_RGB_MULT)
 
 
 
@@ -88,8 +88,8 @@ class TitleScreen(State):
         self.title.draw(surface, lerp_amount)
 
         if self.title.current_anim_name == "main_glint":
-            surface.blit(self.version_number, (3, config.PIXEL_WINDOW_SIZE[1]-11))
-            surface.blit(self.__info_text, ((config.PIXEL_WINDOW_SIZE[0]-self.__info_text.width)*0.5, 170))
+            surface.blit(self.version_number, (3, config.PIXEL_WINDOW_HEIGHT-11))
+            surface.blit(self.__info_text, ((config.PIXEL_WINDOW_WIDTH-self.__info_text.width)*0.5, 170))
 
 
 
@@ -102,9 +102,9 @@ class PauseMenu(State):
 
         self.title = elements.TitleText((92, 70), "main_entrance_b")
         self.__exit_menu = False
+        self.__info_text = font.SmallFont.render("")
 
         self._initialized = True
-        self.__info_text = font.SmallFont.render("")
 
 
 
@@ -119,7 +119,7 @@ class PauseMenu(State):
         if self.__exit_menu and self.title.animations_complete:
             self.state_stack.pop()
         
-        self.__info_text = font.FontWithIcons.render("Press<K_return> to continue")
+        self.__info_text = font.FontWithIcons.render("Press<select> to continue")
     
 
     def draw(self, surface, lerp_amount=0):
@@ -153,13 +153,6 @@ class GameOverScreen(State):
 
     
     def update(self):
-        for obj in self.prev_state.entities.sprites():
-            if isinstance(obj, (Bullet, DisplayPoint)):
-                obj.kill()
-            
-            elif (isinstance(obj, Asteroid) and not obj.health) or isinstance(obj, ShipSmoke):
-                obj.update()
-
         if self.__timer == 0:
             self.state_stack.pop()
             ShowScore(self.score_data, self.state_stack)
@@ -187,7 +180,7 @@ class ShowScore(State):
 
         self.__timer = 30
 
-        self.__final_stats: p.Surface | None = None
+        self.__info_text = font.SmallFont.render("")
 
         self._initialized = True
 
@@ -212,9 +205,8 @@ class ShowScore(State):
             soundfx.play_sound("game.point", 0.3)
         elif self.__timer:
             self.__timer -= 1
-        
-        elif self.__final_stats is None:
-            pass
+        else:
+            self.__info_text = font.FontWithIcons.render("Play Again<select>")
 
 
 
@@ -228,14 +220,15 @@ class ShowScore(State):
         else:
             self.__display_score(surface, "Highscore", self.highscore, (102, 50))
             self.__display_score(surface, "Score", self.score, (102, 120))
+            surface.blit(self.__info_text, ((config.PIXEL_WINDOW_WIDTH-self.__info_text.width)*0.5, 200))
 
 
 
 
-    def __display_score(self, surface: p.Surface, name: str, score: int, position=(0, 0)) -> None:
-        position = p.Vector2(position)
+    def __display_score(self, surface: pg.Surface, name: str, score: int, position=(0, 0)) -> None:
+        position = pg.Vector2(position)
         text_surface = font.SmallFont.render(name, 2)
-        surface.blit(text_surface, position+(60, 0)-p.Vector2(text_surface.width, 0)*0.5)
+        surface.blit(text_surface, position+(60, 0)-pg.Vector2(text_surface.width, 0)*0.5)
 
         number_surface = font.LargeFont.render(add_padding(str(score), 5, pad_char='0'), 2)
         surface.blit(number_surface, position+(0, 15))

@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 from functools import lru_cache
 
 from . import get_resource_path, load_json
@@ -21,10 +21,10 @@ __sound_definition = load_json("assets/sounds")
 
 
 @lru_cache(32)
-def load_texture(path: str) -> p.Surface:
+def load_texture(path: str) -> pg.Surface:
     "Loads a texture from the textures folder as a pygame.Surface. (PNG file)"
     texture_path = get_resource_path(f"{TEXTURES_DIR}/{path}.png")
-    texture = p.image.load(texture_path).convert()
+    texture = pg.image.load(texture_path).convert()
     texture.set_colorkey(COLORKEY)
     return texture
 
@@ -33,8 +33,8 @@ def load_texture(path: str) -> p.Surface:
 
 
 
-def colorkey_surface(size: p.typing.Point, flags=0, depth=0, masks: p.typing.ColorLike | None = None) -> p.Surface:
-    surface = p.Surface(size)
+def colorkey_surface(size: pg.typing.Point, flags=0, depth=0, masks: pg.typing.ColorLike | None = None) -> pg.Surface:
+    surface = pg.Surface(size)
     surface.set_colorkey(COLORKEY)
     surface.fill(COLORKEY)
     return surface
@@ -42,7 +42,7 @@ def colorkey_surface(size: p.typing.Point, flags=0, depth=0, masks: p.typing.Col
 
 
 @lru_cache(32)
-def load_texture_map(path: str) -> dict[str, p.Surface]:
+def load_texture_map(path: str) -> dict[str, pg.Surface]:
     mapping_data = load_json(f"{TEXTURE_MAPS_DIR}/{path}.texture_map")
     main_texture = load_texture(mapping_data["texture"])
 
@@ -77,12 +77,12 @@ def load_sound(name: str) -> GameSound:
     
     sound_data = __sound_definition[name]
     
-    sounds = [p.Sound(f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}") for path in sound_data["sounds"]]
+    sounds = [pg.Sound(f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}") for path in sound_data["sounds"]]
 
     return GameSound(name, sounds)
 
 
 
 def load_music(path: str):
-    p.mixer_music.load(f"{SOUNDS_DIR}/{path}.ogg")
+    pg.mixer_music.load(f"{SOUNDS_DIR}/{path}.ogg")
     

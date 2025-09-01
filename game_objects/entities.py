@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 import random
 from math import sin, pi
 from typing import Literal
@@ -32,8 +32,8 @@ __all__ = [
 
 
 class Spaceship(ObjectAnimation, BorderCollision):
+    draw_layer = 2
     __rotation_speed = 30
-
     __texture_map_name = "spaceship"
     __texture_map: TextureMap | None = None
 
@@ -44,7 +44,7 @@ class Spaceship(ObjectAnimation, BorderCollision):
         super().__init__(
             position=position,
             hitbox_size=(16, 16),
-            bounding_area=(0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE),
+            bounding_area=(0, 0, *pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE),
             border_bounce=0.5,
 
             texture_map=self.__texture_map,
@@ -55,6 +55,7 @@ class Spaceship(ObjectAnimation, BorderCollision):
         self.score = 0
         self.combo = 0
         self.__thrust = False
+        self.__thruster_audio_chan: pg.Channel | None = None
         self.operational = True
 
 
@@ -65,7 +66,7 @@ class Spaceship(ObjectAnimation, BorderCollision):
         if not self.operational:
             return
 
-        if not inputs.keyboard_mouse.hold_keys[p.K_LCTRL]:
+        if not inputs.keyboard_mouse.hold_keys[pg.K_LCTRL]:
             
             self.__thrust = inputs.check_input("ship_forward")
 
@@ -99,8 +100,15 @@ class Spaceship(ObjectAnimation, BorderCollision):
 
     def update(self) -> None:
         if self.__thrust:
-            self.accelerate(p.Vector2(0, -1).rotate(self.rotation))
+            self.accelerate(pg.Vector2(0, -1).rotate(self.rotation))
             self.__release_smoke()
+            if self.__thruster_audio_chan is None:
+                self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.6, -1)
+
+        elif self.__thruster_audio_chan is not None:
+            self.__thruster_audio_chan.fadeout(100)
+            self.__thruster_audio_chan = None
+            # soundfx.play_sound("entity.ship.boost_end", 0.6)
         
         super().update()
         
@@ -118,11 +126,9 @@ class Spaceship(ObjectAnimation, BorderCollision):
 
     def draw(self, surface, lerp_amount=0):
         super().draw(surface, lerp_amount)
-
-        
         if debug.debug_mode:
             lerp_pos = self._get_lerp_pos(lerp_amount)
-            p.draw.line(surface, "green", lerp_pos, lerp_pos+self.get_lerp_rotation_vector(lerp_amount)*500)
+            pg.draw.line(surface, "green", lerp_pos, lerp_pos+self.get_lerp_rotation_vector(lerp_amount)*500)
                 
 
 
@@ -166,6 +172,7 @@ class Spaceship(ObjectAnimation, BorderCollision):
         self.__thrust = False
         self.clear_velocity()
         self.set_angular_vel(0)
+        soundfx.play_sound("entity.asteroid.medium_explode", 1.0)
     
 
     def __release_smoke(self) -> None:
@@ -195,12 +202,13 @@ class Spaceship(ObjectAnimation, BorderCollision):
 
 class Bullet(ObjectTexture, ObjectVelocity):
     _max_speed = 40
+    draw_layer = 1
     hitbox_size = (8, 8)
-    visible_area = p.Rect(0, 0, *p.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE).inflate(100, 100)
+    visible_area = pg.Rect(0, 0, *pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE).inflate(100, 100)
 
     __lifetime = 15
 
-    def __init__(self, position: p.typing.Point, direction: p.typing.Point, shooter: Spaceship):
+    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter: Spaceship):
         super().__init__(
             position=position,
             texture=assets.load_texture_map("particles")["bullet"]
@@ -208,7 +216,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
         self.shooter = shooter
 
-        direction = unit_vector(p.Vector2(direction))
+        direction = unit_vector(pg.Vector2(direction))
         self.accelerate(direction*self._max_speed)
         self.move(direction*5)
 
@@ -247,7 +255,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
         if debug.debug_mode:
             for line in self.__get_collision_lines():
-                p.draw.line(surface, "blue", *line)
+                pg.draw.line(surface, "blue", *line)
 
 
 
@@ -272,8 +280,8 @@ class Bullet(ObjectTexture, ObjectVelocity):
         return False
     
 
-    def __get_collision_lines(self) -> list[tuple[p.Vector2, p.Vector2]]:
-        sideways: p.Vector2 = self.get_rotation_vector().rotate(90)*8
+    def __get_collision_lines(self) -> list[tuple[pg.Vector2, pg.Vector2]]:
+        sideways: pg.Vector2 = self.get_rotation_vector().rotate(90)*8
 
         line_offset = -self._velocity*2*(self.__lifetime <= type(self).__lifetime-3)
         prev_pos = self.position-self._velocity
@@ -328,7 +336,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     __texture_map_name = "asteroid"
     __texture_map: TextureMap | None = None
 
-    def __init__(self, position: p.typing.Point, velocity: p.typing.Point, size: Literal[1, 2, 3] = 1):
+    def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point, size: Literal[1, 2, 3] = 1):
         super().__init__(
             position=position,
             hitbox_size=self.size_data[size]["hitbox"],
@@ -344,7 +352,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         self.health = self.size_data[size]["health"]
         self.set_angular_vel(random.randint(-8, 8))
         self.accelerate(velocity)
-        self.explode_pos: p.Vector2 | None = None
+        self.explode_pos: pg.Vector2 | None = None
 
         self.points = self.size_data[size]["points"]
 
@@ -393,7 +401,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
     def __spawn_small_asteroid(self):
         positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
-        positions = map(p.Vector2, positions)
+        positions = map(pg.Vector2, positions)
         rotate_angle = random.randint(1, 90)
 
         for pos in positions:
@@ -408,9 +416,9 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
 class Crosshair(ObjectTexture):
-    draw_in_front = True
+    draw_layer = 4
     __texture_map_name = "crosshair"
-    def __init__(self, position: p.typing.Point):
+    def __init__(self, position: pg.typing.Point):
         super().__init__(
             position=position,
             texture=assets.load_texture_map(self.__texture_map_name)["crosshair_a"]
@@ -431,10 +439,10 @@ class Crosshair(ObjectTexture):
 
 
 class DisplayPoint(ObjectTexture, ObjectHitbox):
-    draw_in_front = True
-    __safe_area = p.Rect(0, 3, config.PIXEL_WINDOW_SIZE[0], config.PIXEL_WINDOW_SIZE[1]-3)
+    draw_layer = 5
+    __safe_area = pg.Rect(0, 3, config.PIXEL_WINDOW_WIDTH, config.PIXEL_WINDOW_HEIGHT-3)
 
-    def __init__(self, position: p.typing.Point, points: int, combo=0):
+    def __init__(self, position: pg.typing.Point, points: int, combo=0):
         text = f"+{points+combo}"
         if combo:
             text = f"COMBO {text}"

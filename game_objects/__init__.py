@@ -1,8 +1,7 @@
-import pygame as p
-from typing import Iterable, Callable, TypeGuard
-from functools import partial
+import pygame as pg
+from typing import Iterable, Callable
 
-from game_errors import MissingComponentError
+import debug
 
 
 
@@ -15,15 +14,15 @@ def run_functions(functions: Iterable[Callable], *args, **kwargs) -> None:
 
 
 
-class GameObject(p.sprite.Sprite):
+class GameObject(pg.sprite.Sprite):
 
-    def __init__(self, *, position: p.typing.Point, group: "ObjectGroup | None" = None) -> None:
+    def __init__(self, *, position: pg.typing.Point, group: "ObjectGroup | None" = None) -> None:
         if group:
             super().__init__(group)
         else:
             super().__init__()
         
-        self.position = p.Vector2(position)
+        self.position = pg.Vector2(position)
 
         
 
@@ -41,15 +40,27 @@ class GameObject(p.sprite.Sprite):
 
 
 
-    def set_position(self, value: p.typing.Point) -> None:
-        self.position = p.Vector2(value)
+    def set_position(self, value: pg.typing.Point) -> None:
+        self.position = pg.Vector2(value)
         
 
 
 
 
-    def move(self, displacement: p.Vector2) -> None:
+    def move(self, displacement: pg.Vector2) -> None:
         self.position += displacement
+
+
+    
+    def distance_to(self, other: "GameObject | pg.Vector2") -> float:
+        if isinstance(other, GameObject):
+            other_pos = other.position
+        elif isinstance(other, pg.Vector2):
+            other_pos = other
+        else:
+            raise TypeError(f"'other' should be of type 'GameObject' or 'pygame.Vector2', not '{type(other).__name__}'")
+        
+        return (self.position - other_pos).magnitude()
 
 
     
@@ -63,7 +74,7 @@ class GameObject(p.sprite.Sprite):
         ...
 
 
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         "Draws to the sprite onto a surface. The sprite must have a texture. "
         ...
 
@@ -79,7 +90,7 @@ class GameObject(p.sprite.Sprite):
 
 
 
-class ObjectGroup[T=GameObject](p.sprite.AbstractGroup):
+class ObjectGroup[T=GameObject](pg.sprite.AbstractGroup):
     def __init__(self):
         super().__init__()
 
@@ -91,28 +102,27 @@ class ObjectGroup[T=GameObject](p.sprite.AbstractGroup):
 
 
 
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None: # type: ignore
-        top_sprites = []
-        for obj in self.sprites():
-            if hasattr(obj, "draw"):
-                if obj.draw_in_front: # type: ignore
-                    top_sprites.append(obj)
-                else:
-                    obj.draw(surface, lerp_amount) # type: ignore
-        
-        for obj in top_sprites:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None: # type: ignore
+        from .components import ObjectTexture, ObjectHitbox
+
+        draw_order = sorted(
+            self.get_type(ObjectTexture),
+            key=lambda x: x.draw_layer
+        )
+
+        for obj in draw_order:
             obj.draw(surface, lerp_amount)
 
 
 
 
-    def move_all(self, displacement: p.Vector2) -> None:
+    def move_all(self, displacement: pg.Vector2) -> None:
         for object in self.sprites():
             object.move(displacement) # type: ignore
 
 
 
-    def accelerate_all(self, value: p.Vector2) -> None:
+    def accelerate_all(self, value: pg.Vector2) -> None:
         from .components import ObjectVelocity
         for object in self.sprites():
             if object.has_component(ObjectVelocity): # type: ignore
@@ -126,6 +136,10 @@ class ObjectGroup[T=GameObject](p.sprite.AbstractGroup):
 
     def count(self) -> int:
         return len(self.sprites())
+    
+
+    def get_type[GET_TYPE](self, object_type: type[GET_TYPE]) -> list[GET_TYPE]:
+        return list(filter(lambda x: isinstance(x, object_type), self.sprites()))
     
 
     def kill_type(self, object_type: type[GameObject]) -> None:

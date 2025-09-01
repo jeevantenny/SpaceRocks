@@ -5,7 +5,7 @@
         "left": "K_a",
         "right": "K_d",
         "pause": "K_esc",
-        "return": "K_return"
+        "select": "K_return"
     },
 
     "controllers": {
@@ -17,7 +17,7 @@
             "left": "K_a",
             "right": "K_d",
             "pause": "K_esc",
-            "return": "K_return"
+            "select": "K_return"
         },
         "Nintendo Switch Joy-Con (L)": {
             "ship_forward": "K_w",
@@ -25,7 +25,7 @@
             "left": "K_a",
             "right": "K_d",
             "pause": "K_esc",
-            "return": "K_return"
+            "select": "K_return"
         },
         "Nintendo Switch Joy-Con (R)": {
             "same_as": "Nintendo Switch Joy-Con (L)"

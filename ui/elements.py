@@ -1,10 +1,8 @@
-import pygame as p
+import pygame as pg
 
-from custom_types import TextureMap, AnimData, Animation
+from custom_types import Animation
 
 from file_processing import assets
-
-
 
 
 
@@ -12,8 +10,8 @@ class TitleText:
     __texture_map_name = "ui_elements"
     __animations_path = "ui_elements.animation"
     
-    def __init__(self, corner_pos: p.typing.Point, animation_name: str):
-        self.corner_pos = p.Vector2(corner_pos)
+    def __init__(self, corner_pos: pg.typing.Point, animation_name: str):
+        self.corner_pos = pg.Vector2(corner_pos)
         self.__texture_map = assets.load_texture_map(self.__texture_map_name)
         self.__animations = {}
 
@@ -50,9 +48,9 @@ class TitleText:
 
 
     
-    def __get_texture(self, lerp_amount=0.0) -> p.Surface:
+    def __get_texture(self, lerp_amount=0.0) -> pg.Surface:
         return self.__current_animation.get_frame(self.__texture_map, lerp_amount)
     
 
-    def draw(self, surface: p.Surface, lerp_amount=0.0) -> None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         surface.blit(self.__get_texture(lerp_amount), self.corner_pos)

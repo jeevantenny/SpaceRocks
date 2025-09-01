@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 import random
 
 import config
@@ -11,7 +11,7 @@ from file_processing import assets, data
 from audio import soundfx
 
 from game_objects import ObjectGroup, components
-from game_objects.entities import Spaceship, Asteroid
+from game_objects.entities import Spaceship, Asteroid, Bullet
 
 from ui import add_padding, font
 
@@ -30,7 +30,7 @@ class Play(State):
     def __init__(self, state_stack = None):
         super().__init__(state_stack)
 
-        self.visible_area = p.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
+        self.visible_area = pg.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
         self.world_border = self.visible_area.inflate(100, 100)
         self.background_texture = assets.load_texture("backgrounds/space_background")
         self.__info_text = font.SmallFont.render("")
@@ -38,7 +38,7 @@ class Play(State):
         self.entities = ObjectGroup()
         self.asteroids = ObjectGroup[Asteroid]()
 
-        self.__center = p.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
+        self.__center = pg.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
         self.spaceship = Spaceship(self.__center)
         self.entities.add(self.spaceship)
 
@@ -53,20 +53,20 @@ class Play(State):
 
     def userinput(self, inputs):
         if debug.debug_mode:
-            if inputs.keyboard_mouse.action_keys[p.K_r]:
-                self.spaceship.position = p.Vector2(200, 150)
+            if inputs.keyboard_mouse.action_keys[pg.K_r]:
+                self.spaceship.position = pg.Vector2(200, 150)
                 self.spaceship.set_velocity((0, 0))
 
 
-            if inputs.keyboard_mouse.action_keys[p.K_k]:
+            if inputs.keyboard_mouse.action_keys[pg.K_k]:
                 for asteroid in self.asteroids.sprites():
                     self.spaceship.score += asteroid.points
                     asteroid.kill(False)
 
-            if inputs.keyboard_mouse.action_keys[p.K_p]:
+            if inputs.keyboard_mouse.action_keys[pg.K_p]:
                 self.spaceship.score += 1000
 
-            if inputs.keyboard_mouse.action_keys[p.K_c]:
+            if inputs.keyboard_mouse.action_keys[pg.K_c]:
                 self.spaceship.combo += 50
 
         self.spaceship.userinput(inputs)
@@ -80,7 +80,13 @@ class Play(State):
             self.__game_loop()
         elif self.spaceship.alive():
             for entity in self.entities:
-                if not isinstance(entity, Asteroid):
+                if isinstance(entity, components.ObjectVelocity) and not isinstance(entity, Bullet):
+                    entity.clear_velocity()
+                if isinstance(entity, Asteroid):
+                    entity.set_angular_vel(0)
+                    if not entity.health:
+                        entity.update()
+                else:
                     entity.update()
         
         else:
@@ -95,14 +101,11 @@ class Play(State):
         surface.blit(self.background_texture)
         # surface.fill("#333333")
 
-        if self.spaceship.operational:
-            self.entities.draw(surface, lerp_amount)
-        else:
-            self.entities.draw(surface)
+        self.entities.draw(surface, lerp_amount)
 
 
         if debug.debug_mode:
-            p.draw.circle(surface, "orange", self.spaceship.position, self.__safe_radius, 1)
+            pg.draw.circle(surface, "orange", self.spaceship.position, self.__safe_radius, 1)
 
         if isinstance(self.state_stack.top_state, (Play, PauseMenu)): # type: ignore
             if self.__timer:
@@ -113,7 +116,7 @@ class Play(State):
             self.__show_scores(surface, "score", self.score, (10, 20+text_offset))
 
         if self.spaceship.operational and self.is_top_state():
-            surface.blit(self.__info_text, (10, config.PIXEL_WINDOW_SIZE[1]-20))
+            surface.blit(self.__info_text, (10, config.PIXEL_WINDOW_HEIGHT-20))
 
 
         return f"entity count: {self.entities.count()}, asteroid value: {self.__asteroid_value()}, combo: {self.spaceship.combo}"
@@ -131,13 +134,13 @@ class Play(State):
 
 
     def __game_loop(self):
-        if random.random() < 0.3 and self.required_asteroid_value()*0.8 > self.__asteroid_value():
+        if self.__should_spawn_on_tick():
             self.__spawn_asteroid()
 
         for asteroid in self.asteroids.sprites():
             if (
                 not asteroid.rect.colliderect(self.world_border)
-                or (not asteroid.rect.colliderect)
+                or (not asteroid.rect.colliderect(self.visible_area) and asteroid.distance_to(self.spaceship) < self.__safe_radius)
                 ):
                 asteroid.force_kill()
 
@@ -167,7 +170,7 @@ class Play(State):
 
     def __spawn_asteroid(self) -> None:
         window_size = config.PIXEL_WINDOW_SIZE
-        start_position = p.Vector2()
+        start_position = pg.Vector2()
 
         while True:
             if random.randint(0, 1):
@@ -178,7 +181,7 @@ class Play(State):
                 start_position.x = random.choice([-32, window_size[0]+32])
                 start_position.y = random.randint(0, window_size[1])
 
-            if (self.spaceship.position-start_position).magnitude() > self.__safe_radius:
+            if self.spaceship.distance_to(start_position) > self.__safe_radius:
                 break
 
         if random.random() < self.score*0.00002:
@@ -200,17 +203,21 @@ class Play(State):
 
 
 
+    def __should_spawn_on_tick(self) -> bool:
+        return random.random() < 0.2+self.score*0.02 and self.__required_asteroid_value() > self.__asteroid_value()
 
-    def __show_scores(self, surface: p.Surface, name: str, score: int, offset: p.typing.Point):
+
+
+    def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point):
         score_text = add_padding(str(score), 5, pad_char='0')
 
         score_desc_surf = font.SmallFont.render(name.capitalize())
-        surface.blit(score_desc_surf, offset+p.Vector2(0, 8))
-        surface.blit(font.LargeFont.render(score_text), offset+p.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
+        surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))
+        surface.blit(font.LargeFont.render(score_text), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
 
 
 
-    def required_asteroid_value(self) -> int:
+    def __required_asteroid_value(self) -> int:
         return min(5 + int(self.score/500), 60)
     
 

@@ -1,4 +1,4 @@
-import pygame as p
+import pygame as pg
 from typing import Literal
 
 
@@ -15,16 +15,16 @@ def sign(value: int | float) -> Literal[-1, 0, 1]:
         return int(value/abs(value))
 
 
-def vector_min(*values: p.Vector2) -> p.Vector2:
+def vector_min(*values: pg.Vector2) -> pg.Vector2:
     return min(*values, key=lambda x: x.magnitude())
 
 
-def vector_max(*values: p.Vector2) -> p.Vector2:
+def vector_max(*values: pg.Vector2) -> pg.Vector2:
     return max(*values, key=lambda x: x.magnitude())
 
 
-def unit_vector(vector: p.Vector2) -> p.Vector2:
+def unit_vector(vector: pg.Vector2) -> pg.Vector2:
     if vector.magnitude():
         return vector/vector.magnitude()
     else:
-        return p.Vector2()
+        return pg.Vector2()

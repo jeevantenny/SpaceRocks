@@ -21,16 +21,16 @@
             }
         },
         "explode": {
-            "duration":12,
-            "anim_speed_multiplier": 0.7,
+            "duration": 20,
+            "anim_speed_multiplier": 1.0,
             "timeline": {
                 "0": "explode_1",
                 "1": "explode_2",
                 "2": "explode_3",
                 "3": "explode_4",
                 "4": "explode_5",
-                "5": "explode_6",
-                "7": "blank"
+                "6": "explode_6",
+                "8": "blank"
             }
         }
     }
