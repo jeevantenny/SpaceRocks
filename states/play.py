@@ -12,6 +12,7 @@ from audio import soundfx
 
 from game_objects import ObjectGroup, components
 from game_objects.entities import Spaceship, Asteroid, Bullet
+from game_objects.camera import Camera
 
 from ui import add_padding, font
 
@@ -24,7 +25,9 @@ from .menus import PauseMenu, GameOverScreen
 
 
 class Play(State):
-    __safe_radius = 150
+    __spawn_radius = 200
+    __despawn_radius = 1200
+    __clear_fov = 60
     __score_limit = 99999
 
     def __init__(self, state_stack = None):
@@ -32,7 +35,8 @@ class Play(State):
 
         self.visible_area = pg.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
         self.world_border = self.visible_area.inflate(100, 100)
-        self.background_texture = assets.load_texture("backgrounds/space_background")
+        self.background_a = assets.load_texture("backgrounds/space_background_big")
+        self.background_b = assets.load_texture("backgrounds/space_background")
         self.__info_text = font.SmallFont.render("")
 
         self.entities = ObjectGroup()
@@ -41,6 +45,8 @@ class Play(State):
         self.__center = pg.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
         self.spaceship = Spaceship(self.__center)
         self.entities.add(self.spaceship)
+
+        self.camera = Camera(self.__center)
 
         self.score = 0
         self.highscore = data.load_highscore()
@@ -79,6 +85,7 @@ class Play(State):
         if self.spaceship.operational:
             self.__game_loop()
         elif self.spaceship.alive():
+            self.camera.clear_velocity()
             for entity in self.entities:
                 if isinstance(entity, components.ObjectVelocity) and not isinstance(entity, Bullet):
                     entity.clear_velocity()
@@ -98,14 +105,12 @@ class Play(State):
 
 
     def draw(self, surface, lerp_amount=0.0):
-        surface.blit(self.background_texture)
-        # surface.fill("#333333")
+        surface.fill("#000000")
+        self.__draw_scrolling_background(surface, lerp_amount)
 
-        self.entities.draw(surface, lerp_amount)
+        self.camera.capture(surface, self.entities, lerp_amount)
 
 
-        if debug.debug_mode:
-            pg.draw.circle(surface, "orange", self.spaceship.position, self.__safe_radius, 1)
 
         if isinstance(self.state_stack.top_state, (Play, PauseMenu)): # type: ignore
             if self.__timer:
@@ -116,18 +121,33 @@ class Play(State):
             self.__show_scores(surface, "score", self.score, (10, 20+text_offset))
 
         if self.spaceship.operational and self.is_top_state():
-            surface.blit(self.__info_text, (10, config.PIXEL_WINDOW_HEIGHT-20))
+            surface.blit(self.__info_text, (10, surface.height-20))
 
 
-        return f"entity count: {self.entities.count()}, asteroid value: {self.__asteroid_value()}, combo: {self.spaceship.combo}"
-
-
-
+        return f"entity count: {self.entities.count()}, asteroid value: {self.__asteroid_value()}, camera_pos: {self.camera.position}"
 
 
 
 
 
+
+
+    def __draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
+        # Background A
+        width, height = self.background_a.size
+        camera_offset = -self.camera.lerp_position(lerp_amount)*0.1
+        camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
+        for x in range(-1, surface.width//width+1):
+            for y in range(-1, surface.height//height+1):
+                surface.blit(self.background_a, (width*x, height*y)+camera_offset)
+
+        # Background B
+        width, height = self.background_b.size
+        camera_offset = -self.camera.lerp_position(lerp_amount)*0.3
+        camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
+        for x in range(-1, surface.width//width+1):
+            for y in range(-1, surface.height//height+1):
+                surface.blit(self.background_b, (width*x, height*y)+camera_offset)
 
 
 
@@ -138,14 +158,13 @@ class Play(State):
             self.__spawn_asteroid()
 
         for asteroid in self.asteroids.sprites():
-            if (
-                not asteroid.rect.colliderect(self.world_border)
-                or (not asteroid.rect.colliderect(self.visible_area) and asteroid.distance_to(self.spaceship) < self.__safe_radius)
-                ):
+            if asteroid.distance_to(self.spaceship) > self.__despawn_radius:
                 asteroid.force_kill()
 
 
         self.entities.update()
+
+        self.camera.update(self.spaceship.position)
 
 
         if not self.highscore_changed and self.spaceship.score > self.highscore:
@@ -169,25 +188,17 @@ class Play(State):
 
 
     def __spawn_asteroid(self) -> None:
-        window_size = config.PIXEL_WINDOW_SIZE
         start_position = pg.Vector2()
 
-        while True:
-            if random.randint(0, 1):
-                start_position.x = random.randint(0, window_size[0])
-                start_position.y = random.choice([-32, window_size[1]+32])
-            
-            else:
-                start_position.x = random.choice([-32, window_size[0]+32])
-                start_position.y = random.randint(0, window_size[1])
-
-            if self.spaceship.distance_to(start_position) > self.__safe_radius:
-                break
+        center_offset = pg.Vector2(self.__spawn_radius+self.spaceship.get_velocity().magnitude()*0.3, 0)
+        rotation_offset = self.spaceship.get_velocity().angle_to((0, -1))
+        center_offset.rotate_ip(random.randint(0, 360-self.__clear_fov)+rotation_offset+self.__clear_fov*0.5)
+        start_position = self.camera.position + center_offset
 
         if random.random() < self.score*0.00002:
             target_pos = self.spaceship.position
         else:
-            target_pos = self.__center
+            target_pos = self.camera.position
 
         velocity = unit_vector(target_pos-start_position)*self.__get_asteroid_speed()
         velocity.rotate_ip(random.randint(-10, 10))
@@ -204,7 +215,8 @@ class Play(State):
 
 
     def __should_spawn_on_tick(self) -> bool:
-        return random.random() < 0.2+self.score*0.02 and self.__required_asteroid_value() > self.__asteroid_value()
+        # random.random() < 0.2+self.score*0.02 and 
+        return self.__required_asteroid_value() > self.__asteroid_value()
 
 
 
@@ -218,7 +230,7 @@ class Play(State):
 
 
     def __required_asteroid_value(self) -> int:
-        return min(5 + int(self.score/500), 60)
+        return min(10 + int(self.score/200), 120)
     
 
     def __get_asteroid_speed(self) -> float:
@@ -226,7 +238,7 @@ class Play(State):
     
 
     def __asteroid_value(self) -> int:
-        return sum(asteroid.size for asteroid in self.asteroids)
+        return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < 300)
     
 
     def __set_score(self) -> None:

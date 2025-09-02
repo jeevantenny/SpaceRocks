@@ -28,19 +28,16 @@ __all__ = [
 
 
 
-class Spaceship(ObjectAnimation, BorderCollision):
+class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
     draw_layer = 2
     __rotation_speed = 30
     __asset_key = "spaceship"
-    _max_speed = 100
 
     def __init__(self, position):
         
         super().__init__(
             position=position,
             hitbox_size=(16, 16),
-            bounding_area=(0, 0, *pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE),
-            border_bounce=0.5,
 
             texture_map=assets.load_texture_map(self.__asset_key),
             anim_data=assets.load_anim_data(self.__asset_key),
@@ -123,10 +120,10 @@ class Spaceship(ObjectAnimation, BorderCollision):
         
 
 
-    def draw(self, surface, lerp_amount=0):
-        super().draw(surface, lerp_amount)
+    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
+        super().draw(surface, lerp_amount, offset)
         if debug.debug_mode:
-            lerp_pos = self._get_lerp_pos(lerp_amount)
+            lerp_pos = self._get_lerp_pos(lerp_amount)+offset
             pg.draw.line(surface, "green", lerp_pos, lerp_pos+self.get_lerp_rotation_vector(lerp_amount)*500)
                 
 
@@ -177,8 +174,9 @@ class Spaceship(ObjectAnimation, BorderCollision):
     def __release_smoke(self) -> None:
         for _ in range(5):
             direction = self.get_rotation_vector()
-            velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -3)
-            self.group.add(ShipSmoke(self.position-direction*16, velocity))
+            velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -3)+self._velocity
+            position = self.position-direction*8+self._velocity*0.5
+            self.group.add(ShipSmoke(position, velocity))
 
 
     def __ship_got_hit(self, asteroid: "Asteroid") -> bool:
@@ -200,12 +198,12 @@ class Spaceship(ObjectAnimation, BorderCollision):
 
 
 class Bullet(ObjectTexture, ObjectVelocity):
-    _max_speed = 40
     draw_layer = 1
     hitbox_size = (8, 8)
     visible_area = pg.Rect(0, 0, *pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE).inflate(100, 100)
 
-    __lifetime = 15
+    __speed = 40
+    __lifetime = 40
 
     def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter: Spaceship):
         super().__init__(
@@ -216,12 +214,10 @@ class Bullet(ObjectTexture, ObjectVelocity):
         self.shooter = shooter
 
         direction = unit_vector(pg.Vector2(direction))
-        self.accelerate(direction*self._max_speed)
+        self.accelerate(direction*self.__speed+shooter.get_velocity())
         self.move(direction*5)
 
         self.set_rotation(-direction.angle_to((0, -1)))
-
-        self.__start_pos = self.position.copy()
 
 
     def update(self):
@@ -249,11 +245,11 @@ class Bullet(ObjectTexture, ObjectVelocity):
     
 
 
-    def draw(self, surface, lerp_amount=0):
-        super().draw(surface, lerp_amount)
+    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
+        super().draw(surface, lerp_amount, offset)
 
         if debug.debug_mode:
-            for line in self.__get_collision_lines():
+            for line in self.__get_collision_lines(offset):
                 pg.draw.line(surface, "blue", *line)
 
 
@@ -279,11 +275,11 @@ class Bullet(ObjectTexture, ObjectVelocity):
         return False
     
 
-    def __get_collision_lines(self) -> list[tuple[pg.Vector2, pg.Vector2]]:
+    def __get_collision_lines(self, blit_offset=(0, 0)) -> list[tuple[pg.Vector2, pg.Vector2]]:
         sideways: pg.Vector2 = self.get_rotation_vector().rotate(90)*8
 
         line_offset = -self._velocity*2*(self.__lifetime <= type(self).__lifetime-3)
-        prev_pos = self.position-self._velocity
+        prev_pos = self.position-self._velocity+blit_offset
 
         return [
             (prev_pos+sideways, prev_pos+line_offset+sideways),
@@ -419,9 +415,8 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
 
-class DisplayPoint(ObjectTexture, ObjectHitbox):
+class DisplayPoint(ObjectTexture):
     draw_layer = 5
-    __safe_area = pg.Rect(0, 3, config.PIXEL_WINDOW_WIDTH, config.PIXEL_WINDOW_HEIGHT-3)
 
     def __init__(self, position: pg.typing.Point, points: int, combo=0):
         text = f"+{points+combo}"
@@ -432,13 +427,9 @@ class DisplayPoint(ObjectTexture, ObjectHitbox):
 
         super().__init__(
             position=position,
-            texture=texture,
-            hitbox_size=texture.size
+            texture=texture
         )
         
-
-        self.__stay_in_view()
-
         self.__lifetime = 12
 
 
@@ -451,9 +442,3 @@ class DisplayPoint(ObjectTexture, ObjectHitbox):
             self.kill()
         
         self.position.y -= sin(self.__lifetime*pi/12)*2
-    
-
-
-
-    def __stay_in_view(self) -> None:
-        self.set_position(self.rect.inflate(1, 1).clamp(self.__safe_area).center)

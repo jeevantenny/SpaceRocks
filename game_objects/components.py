@@ -48,7 +48,7 @@ class ObjectComponent(GameObject):
 class ObjectVelocity(ObjectComponent):
     "Allows game objects to have a velocity."
 
-    _max_speed = 15
+    _max_speed = 100
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -133,16 +133,16 @@ class ObjectTexture(ObjectComponent):
 
 
     
-    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
         blit_texture = self._get_blit_texture(lerp_amount)
-        lerp_pos = self._get_lerp_pos(lerp_amount)
+        lerp_pos = self._get_lerp_pos(lerp_amount) + offset
         blit_pos = lerp_pos - pg.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
 
         if debug.debug_mode:
             pg.draw.line(surface, "white", lerp_pos, lerp_pos+self.get_rotation_vector()*10)
         
-        super().draw(surface, lerp_amount)
+        super().draw(surface, lerp_amount, offset)
 
 
     
@@ -240,13 +240,13 @@ class ObjectHitbox(ObjectComponent):
 
 
 
-    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> str | None:
-        super().draw(surface, lerp_amount)
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> str | None:
+        super().draw(surface, lerp_amount, offset)
         if debug.debug_mode:
             blit_rect: pg.Rect = self.rect
             if isinstance(self, ObjectVelocity):
                 rect_center = self.position - self.get_velocity()*(1-lerp_amount)
-                blit_rect.center = rect_center
+                blit_rect.center = rect_center+offset
             pg.draw.rect(surface, "red", blit_rect, 1)
 
 

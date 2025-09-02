@@ -1,7 +1,5 @@
 import pygame as pg
-from typing import Iterable, Callable
-
-import debug
+from typing import Iterable, Iterator, Callable
 
 
 
@@ -74,7 +72,7 @@ class GameObject(pg.sprite.Sprite):
         ...
 
 
-    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
         "Draws to the sprite onto a surface. The sprite must have a texture. "
         ...
 
@@ -102,7 +100,7 @@ class ObjectGroup[T=GameObject](pg.sprite.AbstractGroup):
 
 
 
-    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None: # type: ignore
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None: # type: ignore
         from .components import ObjectTexture, ObjectHitbox
 
         draw_order = sorted(
@@ -111,7 +109,7 @@ class ObjectGroup[T=GameObject](pg.sprite.AbstractGroup):
         )
 
         for obj in draw_order:
-            obj.draw(surface, lerp_amount)
+            obj.draw(surface, lerp_amount, offset)
 
 
 
@@ -154,3 +152,7 @@ class ObjectGroup[T=GameObject](pg.sprite.AbstractGroup):
     def kill_all(self) -> None:
         for obj in self.sprites():
             obj.force_kill() # type: ignore
+
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self.sprites())
