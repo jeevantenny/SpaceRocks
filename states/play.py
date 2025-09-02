@@ -99,6 +99,9 @@ class Play(State):
         else:
             self.__game_over()
 
+        
+        self._join_sound_queue(self.entities.clear_sound_queue())
+
 
 
 
@@ -162,7 +165,7 @@ class Play(State):
                 asteroid.force_kill()
 
 
-        self.entities.update()
+        self.entities.update(self.camera.position)
 
         self.camera.update(self.spaceship.position)
 
@@ -174,7 +177,7 @@ class Play(State):
         self.highscore = max(self.highscore, self.score)
 
         if self.score > prev_score:
-            soundfx.play_sound("game.point", 0.3)
+            self._queue_sound("game.point", 0.3)
 
         if self.__timer:
             self.__timer -= 1

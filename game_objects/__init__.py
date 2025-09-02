@@ -1,18 +1,17 @@
 import pygame as pg
 from typing import Iterable, Iterator, Callable
 
+from math_functions import clamp
+
+from audio import soundfx
 
 
 
-def run_functions(functions: Iterable[Callable], *args, **kwargs) -> None:
-    "Runs all functions in list with same arguments."
-
-    for func in functions:
-        func(*args, **kwargs)
 
 
 
-class GameObject(pg.sprite.Sprite):
+
+class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
     def __init__(self, *, position: pg.typing.Point, group: "ObjectGroup | None" = None) -> None:
         if group:
@@ -41,7 +40,6 @@ class GameObject(pg.sprite.Sprite):
     def set_position(self, value: pg.typing.Point) -> None:
         self.position = pg.Vector2(value)
         
-
 
 
 
@@ -88,15 +86,37 @@ class GameObject(pg.sprite.Sprite):
 
 
 
-class ObjectGroup[T=GameObject](pg.sprite.AbstractGroup):
-    def __init__(self):
+class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
+    def __init__(self, full_volume_radius=200):
         super().__init__()
 
+        self.__full_volume_radius = full_volume_radius
+        self.__sound_curve_factor = 1/full_volume_radius
 
 
-    def update(self) -> None:
+
+    def update(self, sound_focus: pg.typing.Point) -> None:
         for object in self.sprites():
             object.update() # type: ignore
+            self.__process_entity_sound(object, sound_focus, object.clear_sound_queue())
+
+
+    def __process_entity_sound(self, _object: T, sound_focus: pg.typing.Point, queue: soundfx.SoundQueue) -> None:
+        volume = self.__get_sound_volume(_object.distance_to(sound_focus))
+        # if _object.__class__.__name__ == "Spaceship":
+        #     print(volume)
+
+        if volume and queue:
+            for sound_data in queue:
+                self._queue_sound(sound_data[0], sound_data[1]*volume)
+
+
+    def __get_sound_volume(self, distance: float) -> float:
+        if distance == 0:
+            return 1
+        else:
+            return clamp(1/(self.__sound_curve_factor*(distance-self.__full_volume_radius)+1)**2, 0.0, 1.0)
+
 
 
 

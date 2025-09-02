@@ -3,11 +3,10 @@ from typing import Self, Literal, Any, Deque, Generator, Callable
 from functools import wraps
 
 import game_errors
-import config
 from input_device import InputInterpreter
 from custom_types import Timer
 
-from file_processing import assets
+from audio import soundfx
 
 
 
@@ -51,7 +50,7 @@ def stack_method(func: Callable):
 
 
 
-class State:
+class State(soundfx.HasSoundQueue):
     "A state that a game is in. Use to separate different menus and gameplay."
 
     enter_duration = 0
@@ -60,6 +59,7 @@ class State:
     _initialized = False
 
     def __init__(self, state_stack: "StateStack | None" = None):
+        super().__init__()
         self.state_stack: StateStack | None = None
         if state_stack is not None:
             state_stack.push(self)
@@ -130,8 +130,9 @@ class State:
 
 
 
-class StateStack:
+class StateStack(soundfx.HasSoundQueue):
     def __init__(self, states: list[State] | None = None):
+        super().__init__()
         self.__container: Deque[State]
         if states is not None:
             self.__container = Deque(states)
@@ -213,6 +214,8 @@ class StateStack:
             
         else:
             self.top_state.update() # type: ignore
+        
+        self._join_sound_queue(self.top_state.clear_sound_queue())
 
 
     @stack_method

@@ -20,7 +20,7 @@ from . import State
 
 
 def darken_surface(surface: pg.Surface) -> None:
-    surface.fill("#225588", special_flags=pg.BLEND_RGB_MULT)
+    surface.fill("#335588", special_flags=pg.BLEND_RGB_MULT)
 
 
 
@@ -203,7 +203,7 @@ class ShowScore(State):
     def update(self):
         if self.display_score < self.score:
             self.display_score = increment_score(self.display_score, self.score, 0.15)
-            soundfx.play_sound("game.point", 0.3)
+            self._queue_sound("game.point", 0.3)
         elif self.__timer:
             self.__timer -= 1
         else:

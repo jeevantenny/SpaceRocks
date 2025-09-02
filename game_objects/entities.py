@@ -137,7 +137,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         if not self.__thrust:
             self.accelerate(-direction*0.5)
 
-        soundfx.play_sound("entity.ship.shoot")
+        self._queue_sound("entity.ship.shoot")
         controller_rumble("gun_fire")
 
 
@@ -157,7 +157,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         
         intensity = intensity = min(abs(vel)*0.15, 1)
         
-        soundfx.play_sound("entity.ship.bounce", intensity)
+        self._queue_sound("entity.ship.bounce", intensity)
         if intensity > 0.1:
             controller_rumble("small_pulse", intensity*0.5)
 
@@ -168,7 +168,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         self.__thrust = False
         self.clear_velocity()
         self.set_angular_vel(0)
-        soundfx.play_sound("entity.asteroid.medium_explode", 1.0)
+        self._queue_sound("entity.asteroid.medium_explode")
     
 
     def __release_smoke(self) -> None:
@@ -372,7 +372,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         if not self.health:
             self.kill()
         else:
-            soundfx.play_sound("entity.asteroid.small_explode")
+            self._queue_sound("entity.asteroid.small_explode")
 
 
 
@@ -388,9 +388,9 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             self.__spawn_small_asteroid()
 
         if self.size == 1:
-            soundfx.play_sound("entity.asteroid.small_explode", 0.7)
+            self._queue_sound("entity.asteroid.small_explode", 0.7)
         elif self.size == 2:
-            soundfx.play_sound("entity.asteroid.medium_explode", 0.7)
+            self._queue_sound("entity.asteroid.medium_explode", 0.7)
 
 
     def __spawn_small_asteroid(self):

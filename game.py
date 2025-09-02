@@ -15,6 +15,7 @@ from input_device import KeyboardMouse, Controller, InputInterpreter
 from ui import font
 from states import StateStack, menus, test
 from file_processing import assets
+from audio import soundfx
 
 
 
@@ -159,6 +160,8 @@ class Game:
     def update(self) -> None:
         self.state_stack.update()
         self.input_interpreter.controller.update()
+
+        soundfx.play_sound_queue(self.state_stack.clear_sound_queue())
 
 
 
