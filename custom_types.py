@@ -51,8 +51,8 @@ class GameSound:
 
 
 class Timer:
-    def __init__(self, duration: int, loop=False, exec_after: Callable[[], None] | None = None):
-        self.__duration = duration
+    def __init__(self, duration_ticks: int, loop=False, exec_after: Callable[[], None] | None = None):
+        self.__duration = duration_ticks
         self.loop = loop
         self.__exec_after = exec_after
         self.__time_left = 0.0

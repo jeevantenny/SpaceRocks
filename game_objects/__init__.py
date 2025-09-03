@@ -1,7 +1,7 @@
 import pygame as pg
 from typing import Iterable, Iterator, Callable
 
-from math_functions import clamp
+from math_functions import clamp, format_angle
 
 from audio import soundfx
 
@@ -25,9 +25,13 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
 
     @property
-    def group(self) -> "ObjectGroup | None":
+    def primary_group(self) -> "ObjectGroup | None":
         if groups:=self.groups():
             return groups[0] # type: ignore
+        
+
+    def add_to_groups(self, _object: "GameObject") -> None:
+        _object.add(*self.groups())
         
 
 
@@ -49,14 +53,12 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
     
     def distance_to(self, other: "GameObject | pg.Vector2") -> float:
-        if isinstance(other, GameObject):
-            other_pos = other.position
-        elif isinstance(other, pg.Vector2):
-            other_pos = other
-        else:
-            raise TypeError(f"'other' should be of type 'GameObject' or 'pygame.Vector2', not '{type(other).__name__}'")
-        
-        return (self.position - other_pos).magnitude()
+        return self.position.distance_to(self.__get_other_pos(other))
+    
+
+    def angle_to(self, other: "GameObject | pg.Vector2") -> float:
+        angle = pg.Vector2(0, -1).angle_to(self.__get_other_pos(other)-self.position)
+        return format_angle(angle)
 
 
     
@@ -73,6 +75,14 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
         "Draws to the sprite onto a surface. The sprite must have a texture. "
         ...
+
+
+    
+    def __get_other_pos(self, other: "GameObject | pg.typing.Point") -> pg.Vector2:
+        if isinstance(other, GameObject):
+            return other.position
+        else:
+            return pg.Vector2(other)
 
 
 
@@ -164,13 +174,13 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
         if not issubclass(object_type, GameObject):
             raise ValueError(f"Class {object_type.__name__} is not a GameObject type.")
         
-        for obj in self.sprites():
+        for obj in self:
             if isinstance(obj, object_type):
                 obj.force_kill()
     
 
     def kill_all(self) -> None:
-        for obj in self.sprites():
+        for obj in self:
             obj.force_kill() # type: ignore
 
 

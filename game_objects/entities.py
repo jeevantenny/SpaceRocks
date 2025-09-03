@@ -1,11 +1,12 @@
 import pygame as pg
+from typing import Literal, Optional
 import random
 from math import sin, pi
-from typing import Literal
 
 import config
 import debug
-from math_functions import clamp, unit_vector
+from custom_types import Timer
+from math_functions import clamp, unit_vector, sign, vector_direction
 from input_device import InputInterpreter, controller_rumble
 
 from file_processing import assets
@@ -15,6 +16,7 @@ from audio import soundfx
 
 from ui.font import SmallFont
 
+from . import GameObject
 from .components import *
 from .particles import ShipSmoke
 
@@ -30,7 +32,7 @@ __all__ = [
 
 class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
     draw_layer = 2
-    __rotation_speed = 30
+    _rotation_speed = 30
     __asset_key = "spaceship"
 
     def __init__(self, position):
@@ -46,47 +48,13 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
         self.score = 0
         self.combo = 0
-        self.operational = True
+        self.health = True
 
         self.__thrust = False
         self.__thruster_audio_chan: pg.Channel | None = None
+        self.__turn_direction: Literal[-1, 0, 1] = 0
 
-
-    
-
-
-    def userinput(self, inputs: InputInterpreter):
-        if not self.operational:
-            return
-
-        if not inputs.keyboard_mouse.hold_keys[pg.K_LCTRL]:
-            
-            self.__thrust = inputs.check_input("ship_forward")
-
-            if inputs.check_input("left") and -self._angular_vel < self.__rotation_speed:
-                if self._angular_vel > 0:
-                    self._angular_vel = 0
-                
-                self._angular_vel -= 5
-
-            if inputs.check_input("right") and self._angular_vel < self.__rotation_speed:
-                if self._angular_vel < 0:
-                    self._angular_vel = 0
-                
-                self._angular_vel += 5
-            
-
-            # If both left and right are clicked or neither is
-            if inputs.check_input("right") == inputs.check_input("left"):
-                self._angular_vel = 0
-            
-            # if not self.__thrust and inputs.check_input("ship_backward"):
-            #     if self._velocity.magnitude() > 0.5:
-            #         self.accelerate(unit_vector(self._velocity)*-0.2)
-
-
-            if  inputs.check_input("shoot") and self.alive():
-                self.shoot()
+        self._attack_types: list[type[GameObject]] = [Asteroid]
 
                 
 
@@ -96,19 +64,25 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             self.accelerate(pg.Vector2(0, -1).rotate(self.rotation))
             self.__release_smoke()
             if self.__thruster_audio_chan is None:
-                self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.6, -1)
+                self.__start_thrust_sound()
             else:
                 self.__thruster_audio_chan.set_volume(clamp(abs(self.rotation)*0.002+0.3, 0, 1))
 
         elif self.__thruster_audio_chan is not None:
-            self.__thruster_audio_chan.fadeout(100)
-            self.__thruster_audio_chan = None
+            self.__stop_thruster_sound()
+
+
+        if self._angular_vel*self.__turn_direction <= 0:
+            self._angular_vel = 0
+        if self.__turn_direction and abs(self._angular_vel) < self._rotation_speed:
+            self._angular_vel += 5*self.__turn_direction
         
+
         super().update()
 
             
         
-        if not self.operational:
+        if not self.health:
             if self.animations_complete:
                 self.force_kill()
             return
@@ -117,6 +91,10 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             if isinstance(obj, Asteroid):
                 if self.__ship_got_hit(obj):
                     break
+
+
+        self.__thrust = False
+        self.__turn_direction = 0
         
 
 
@@ -133,7 +111,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
     def shoot(self) -> None:
         direction = self.get_rotation_vector()
-        self.group.add(Bullet(self.position, direction, self))
+        self.primary_group.add(Bullet(self.position, direction, self, self._attack_types))
         if not self.__thrust:
             self.accelerate(-direction*0.5)
 
@@ -142,7 +120,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
     
-    def boost(self) -> bool:
+    def boost_speed(self) -> bool:
         return self._velocity.magnitude() > self._max_speed-3
 
     
@@ -161,14 +139,39 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         if intensity > 0.1:
             controller_rumble("small_pulse", intensity*0.5)
 
-
     
     def kill(self):
-        self.operational = False
+        self.health = False
         self.__thrust = False
         self.clear_velocity()
         self.set_angular_vel(0)
         self._queue_sound("entity.asteroid.medium_explode")
+
+
+    def force_kill(self):
+        self.__stop_thruster_sound()
+        super().force_kill()
+
+
+    def _thrust(self) -> None:
+        self.__thrust = True
+
+
+    def _turn(self, direction: Literal[-1, 1]) -> None:
+        self.__turn_direction = sign(self.__turn_direction+direction)
+
+
+    def __start_thrust_sound(self) -> None:
+        self.__stop_thruster_sound()
+        self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.6, -1)
+
+
+
+    def __stop_thruster_sound(self) -> None:
+        if self.__thruster_audio_chan is not None:
+            self.__thruster_audio_chan.fadeout(100)
+            self.__thruster_audio_chan = None
+
     
 
     def __release_smoke(self) -> None:
@@ -176,14 +179,14 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             direction = self.get_rotation_vector()
             velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -3)+self._velocity
             position = self.position-direction*8+self._velocity*0.5
-            self.group.add(ShipSmoke(position, velocity))
+            self.primary_group.add(ShipSmoke(position, velocity))
 
 
     def __ship_got_hit(self, asteroid: "Asteroid") -> bool:
         if asteroid.health:
-            if asteroid.size == 1 and self.boost():
+            if asteroid.size == 1 and self.boost_speed():
                 self.score += asteroid.points
-                self.group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points))
+                self.primary_group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points))
                 asteroid.kill()
                 return False
             else:
@@ -191,6 +194,141 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
                 return True
         else:
             return False
+        
+
+
+
+
+class PlayerShip(Spaceship):
+    def __init__(self, position):
+        super().__init__(position)
+        self._attack_types: list[type[GameObject]] = [Asteroid, EnemyShip]
+
+
+
+    def userinput(self, inputs: InputInterpreter):
+        if self.health and not inputs.keyboard_mouse.hold_keys[pg.K_LCTRL]:            
+            if inputs.check_input("ship_forward"):
+                self._thrust()
+
+            if inputs.check_input("left"):
+                self._turn(-1)
+
+            if inputs.check_input("right"):
+                self._turn(1)
+            
+            if  inputs.check_input("shoot") and self.alive():
+                self.shoot()
+
+
+
+
+
+
+class EnemyShip(Spaceship):
+    __pursuit_speed = 20
+    def __init__(self, position):
+        super().__init__(position)
+        self._attack_types: list[type[GameObject]] = [Asteroid, PlayerShip]
+
+        self.__player: Optional[PlayerShip] = None
+        self.__target_angle = None
+        self.__current_objective: Literal["track_player", "slow_down"] = "track_player"
+
+        self.__shoot_cooldown = Timer(4)
+
+
+    def __process_behavior(self) -> None:
+        if self.__player is None:
+            if self.primary_group is not None:
+                self.__player = self.primary_group.get_type(PlayerShip)[0]
+            else:
+                return
+                
+        if self.health:
+            player_distance = self.distance_to(self.__player)
+            match self.__current_objective:
+                case "track_player":
+                    self._move_to_position(self.__player.position)
+                    
+                    # if player_distance < 100:
+                    #     self._shoot_when_ready()
+                    if self.speed > 40:
+                        self.__current_objective = "slow_down"
+                        print(self.__current_objective)
+                
+                case "slow_down":
+                    self._slow_down()
+                    # if self.speed < 8:
+                    #     self.__current_objective = "track_player"
+                    #     print(self.__current_objective)
+                    
+            
+
+
+
+
+    def __turn_to_position(self, position: pg.Vector2) -> Literal[-1, 0, 1]:
+        return self.__turn_to_direction(self.angle_to(position))
+        
+    
+    def __turn_to_direction(self, direction: float) -> Literal[-1, 0, 1]:
+        turn_by = direction-self.rotation
+        if abs(turn_by) > 5:
+            turn_value = sign(turn_by)
+            if abs(turn_by) > 180:
+                turn_value *= -1
+            self._turn(turn_value)
+            return turn_value
+        else:
+            return 0
+
+
+    
+    def _move_in_direction(self, direction: float) -> None:
+        if self.speed == 0:
+            thrust_dir = direction
+        else:
+            
+            thrust_dir = direction
+        
+        if abs(direction-self.rotation) < 10:
+            speed_in_direction = self._velocity.dot(pg.Vector2(0, -1).rotate(direction))
+            if speed_in_direction < self.__pursuit_speed:
+                self._thrust()
+
+        self.__turn_to_direction(thrust_dir)
+
+
+    def _move_to_position(self, position: pg.Vector2) -> None:
+        self._move_in_direction(self.angle_to(position))
+
+
+
+    def _slow_down(self) -> None:
+        self._move_in_direction(vector_direction(-self._velocity))
+
+
+
+    
+    def _shoot_when_ready(self) -> None:
+        if self.__shoot_cooldown.complete:
+            self.shoot()
+            self.__shoot_cooldown.start()
+            
+
+
+
+
+
+    def update(self):
+        self.__process_behavior()
+        super().update()
+        self.__shoot_cooldown.update()
+
+        if self.distance_to(self.__player) > 2000:
+            print("Removed enemy ship")
+            self.force_kill()
 
 
 
@@ -205,7 +343,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
     __speed = 40
     __lifetime = 40
 
-    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter: Spaceship):
+    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter: Spaceship, attack_types: list[type[GameObject]]):
         super().__init__(
             position=position,
             texture=assets.load_texture_map("particles")["bullet"]
@@ -218,6 +356,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
         self.move(direction*5)
 
         self.set_rotation(-direction.angle_to((0, -1)))
+        self.__attack_types = attack_types
 
 
     def update(self):
@@ -230,12 +369,15 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
 
         hit = False
-        for obj in self.group.sprites():
-            if (isinstance(obj, Asteroid)
-                and obj.health
+        for obj in self.primary_group:
+            if (type(obj) in self.__attack_types
+                and getattr(obj, 'health', True)
                 and self.__collision_check(obj)
                 ):
-                self.damage_asteroid(obj)
+                if isinstance(obj, Asteroid):
+                    self.damage_asteroid(obj)
+                else:
+                    obj.kill()
                 hit = True
 
         if hit:
@@ -261,15 +403,15 @@ class Bullet(ObjectTexture, ObjectVelocity):
         asteroid.accelerate(self._velocity*0.1/asteroid.size)
         if not asteroid.health:
             self.shooter.score += asteroid.points + self.shooter.combo
-            self.group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo))
+            self.primary_group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo))
             self.shooter.combo += 1
 
 
 
 
-    def __collision_check(self, asteroid: "Asteroid") -> bool:
+    def __collision_check(self, _object: GameObject) -> bool:
         for line in self.__get_collision_lines():
-            if asteroid.rect.clipline(*line):
+            if _object.rect.clipline(*line):
                 return True
         
         return False
@@ -402,8 +544,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             pos.rotate_ip(rotate_angle)
             new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1)
             new_rock.set_velocity(self._velocity+pos)
-            for group in self.groups():
-                group.add(new_rock)
+            self.add_to_groups(new_rock)
 
 
 

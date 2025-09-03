@@ -55,6 +55,12 @@ class ObjectVelocity(ObjectComponent):
         self._velocity = pg.Vector2(0, 0)
 
 
+    
+    @property
+    def speed(self) -> float:
+        return self._velocity.magnitude()
+
+
 
     def update(self) -> None:
         super().update()
@@ -105,7 +111,7 @@ class ObjectTexture(ObjectComponent):
     def rotation(self, value: int) -> None:
         value = value%360
         if value > 180:
-            value = value-360
+            value -= 360
         
         self.__rotation = value
 
@@ -234,7 +240,7 @@ class ObjectHitbox(ObjectComponent):
     
 
     def colliding_objects(self) -> Generator[GameObject, Any, None]:
-        for obj in self.group:
+        for obj in self.primary_group:
             if obj is not self and isinstance(obj, ObjectCollision) and obj.do_collision() and self.rect.colliderect(obj.rect):
                 yield obj
 
@@ -275,10 +281,10 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
 
         obj_rect = self.rect
         
-        if self.group is None:
+        if self.primary_group is None:
             return None
         
-        for other_obj in self.group.sprites():
+        for other_obj in self.primary_group.sprites():
             if other_obj is not self and isinstance(other_obj, ObjectCollision):
 
                 rect = other_obj.rect
@@ -313,7 +319,7 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
         x_change = None
         resultant_vel = pg.Vector2(0, 0)
         
-        if self.group is None:
+        if self.primary_group is None:
             return None
         
         for other_obj in self.colliding_objects():

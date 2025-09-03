@@ -11,7 +11,7 @@ from file_processing import assets, data
 from audio import soundfx
 
 from game_objects import ObjectGroup, components
-from game_objects.entities import Spaceship, Asteroid, Bullet
+from game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
 from game_objects.camera import Camera
 
 from ui import add_padding, font
@@ -43,7 +43,7 @@ class Play(State):
         self.asteroids = ObjectGroup[Asteroid]()
 
         self.__center = pg.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
-        self.spaceship = Spaceship(self.__center)
+        self.spaceship = PlayerShip(self.__center)
         self.entities.add(self.spaceship)
 
         self.camera = Camera(self.__center)
@@ -75,14 +75,22 @@ class Play(State):
             if inputs.keyboard_mouse.action_keys[pg.K_c]:
                 self.spaceship.combo += 50
 
+
+            if inputs.keyboard_mouse.action_keys[pg.K_j]:
+                self.state_stack.pop()
+                Play(self.state_stack)
+
+        # if inputs.keyboard_mouse.action_keys[pg.K_e]:
+        #     self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
+
         self.spaceship.userinput(inputs)
 
-        if self.spaceship.operational and inputs.check_input("pause"):
+        if self.spaceship.health and inputs.check_input("pause"):
             PauseMenu(self.state_stack)
 
 
     def update(self):
-        if self.spaceship.operational:
+        if self.spaceship.health:
             self.__game_loop()
         elif self.spaceship.alive():
             self.camera.clear_velocity()
@@ -123,7 +131,7 @@ class Play(State):
             self.__show_scores(surface, "highscore", self.highscore, (10, 4+text_offset))
             self.__show_scores(surface, "score", self.score, (10, 20+text_offset))
 
-        if self.spaceship.operational and self.is_top_state():
+        if self.spaceship.health and self.is_top_state():
             surface.blit(self.__info_text, (10, surface.height-20))
 
 
@@ -167,7 +175,12 @@ class Play(State):
 
         self.entities.update(self.camera.position)
 
-        self.camera.update(self.spaceship.position)
+        # enemy_ships = self.entities.get_type(EnemyShip)
+        # if enemy_ships:
+        #     self.camera.set_target(enemy_ships[0].position)
+        # else:
+        self.camera.set_target(self.spaceship.position)
+        self.camera.update()
 
 
         if not self.highscore_changed and self.spaceship.score > self.highscore:
@@ -269,3 +282,4 @@ class Play(State):
     def quit(self) -> None:
         self.__set_score()
         data.save_highscore(self.highscore)
+        self.entities.kill_all()

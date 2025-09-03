@@ -3,7 +3,7 @@ import pygame as pg
 from . import ObjectGroup
 
 
-import config
+import debug
 from math_functions import clamp, unit_vector
 
 
@@ -20,24 +20,29 @@ class Camera:
         self.__position = pg.Vector2(start_pos)
         self.__velocity = pg.Vector2(0, 0)
         self.__following = True
+        self.__target_pos = self.position
 
 
 
     
     @property
     def position(self) -> pg.Vector2:
-        return self.__position
+        return self.__position.copy()
 
 
 
-    def update(self, target_pos: pg.typing.Point) -> None:
-        displacement = target_pos-self.position
+    def set_target(self, position: pg.typing.Point) -> None:
+        self.__target_pos = pg.Vector2(position)
+
+
+    def update(self) -> None:
+        displacement = self.__target_pos-self.position
         direction = unit_vector(displacement)
         distance = displacement.magnitude()
 
         if self.__following:
             if distance < 5:
-                self.set_position(target_pos)
+                self.set_position(self.__target_pos)
                 self.__following = False
                 self.clear_velocity()
             else:
@@ -59,7 +64,8 @@ class Camera:
 
         entities.draw(surface, lerp_amount, blit_offset)
         pg.draw.rect(surface, "red", (*blit_offset, *surface.size), 1)
-        pg.draw.circle(surface, "white", pg.Vector2(surface.size)*0.2, 2)
+        if debug.debug_mode:
+            pg.draw.circle(surface, "white", self.__target_pos+blit_offset, 2)
     
 
 

@@ -23,7 +23,7 @@ class Game:
     "The Core part of the Game Engine."
 
     def __init__(self) -> None:
-        pg.mixer.pre_init(channels=32, buffer=1024)
+        pg.mixer.pre_init(channels=128, buffer=1024)
         pg.init()
         pg.joystick.init()
 
@@ -41,12 +41,12 @@ class Game:
     def __setup_engine(self) -> None:
         self.run = True
 
-        self.window = pg.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
-        self.pixel_scaled_window = pg.Surface(pg.Vector2(self.window.size)/config.PIXEL_SCALE)
+        self.__set_screen_mode(False)
+        self.pixel_scaled_window = pg.Surface(pg.Vector2(self.screen.size)/config.PIXEL_SCALE)
         pg.display.set_caption(config.WINDOW_CAPTION)
         pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
+        self.__fullscreen = False
 
-        self.game_surface = pg.Surface((pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE))
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
         font.init()
 
@@ -61,6 +61,16 @@ class Game:
         self.debug_font = pg.font.SysFont("arial", 20)
     
         self.__setup = True
+
+
+
+    def __set_screen_mode(self, fullscreen: bool) -> None:
+        if fullscreen:
+            self.screen = pg.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF|FULLSCREEN)
+        else:
+            self.screen = pg.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
+        
+        self.__fullscreen = fullscreen
 
 
 
@@ -148,6 +158,10 @@ class Game:
         if keyboard.hold_keys[pg.K_LCTRL] and keyboard.action_keys[pg.K_d]:
             debug.debug_mode = not debug.debug_mode
 
+        
+        if keyboard.hold_keys[K_LALT] and keyboard.action_keys[K_F11]:
+            self.__set_screen_mode(not self.__fullscreen)
+
 
         if debug.debug_mode:
             if self.state_stack.top_state is not None and keyboard.hold_keys[K_LCTRL] and keyboard.action_keys[pg.K_BACKSPACE]:
@@ -169,14 +183,14 @@ class Game:
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
             debug_message = self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
-            pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.window)
+            pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.screen)
 
             if debug.debug_mode:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}"
                 if debug_message is not None:
                     blit_text = f"{blit_text}, {debug_message}"
 
-                self.window.blit(self.debug_font.render(blit_text, False, "white", "black"))
+                self.screen.blit(self.debug_font.render(blit_text, False, "white", "black"))
 
 
 

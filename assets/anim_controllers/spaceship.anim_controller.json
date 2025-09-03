@@ -12,7 +12,7 @@
         "main": {
             "animations": ["main"],
             "transitions": {
-                "explode": "not obj.operational"
+                "explode": "not obj.health"
             }
         },
         "explode": {
