@@ -1,6 +1,6 @@
 """Contains constants for initializing game window."""
 
-VERSION_NUM = (0, 3, 2)
+VERSION_NUM = (0, 3, 3)
 
 WINDOW_CAPTION = "JJJ Asteroids"
 WINDOW_ICON_PATH = "window_icon"

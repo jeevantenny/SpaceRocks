@@ -63,8 +63,8 @@ class Camera:
         blit_offset = pg.Vector2(surface.size)*0.5 - lerp_pos
 
         entities.draw(surface, lerp_amount, blit_offset)
-        pg.draw.rect(surface, "red", (*blit_offset, *surface.size), 1)
         if debug.debug_mode:
+            pg.draw.rect(surface, "red", (*blit_offset, *surface.size), 1)
             pg.draw.circle(surface, "white", self.__target_pos+blit_offset, 2)
     
 
