@@ -16,7 +16,7 @@ from file_processing import load_json
 
 
 def controller_rumble(pattern_name: str, intensity=0.5, wait_until_clear=False) -> None:
-    if Controller.current_instance is not None:
+    if Controller.current_instance is not None and  InputInterpreter.current_input_type() == "controller":
         Controller.current_instance.rumble(pattern_name, intensity, wait_until_clear)
 
 
@@ -252,20 +252,45 @@ class Controller:
 
 
 
+
+
+
 class InputInterpreter:
     __keybinds: KeybindsType = load_json("data/keybinds")
     __action_icons = load_json("data/action_icons")
     __current_instance: "InputInterpreter | None" = None
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
-        self.keyboard_mouse = keyboard_mouse
+        self.__current_input_type: InputType
+
+        self.__keyboard_mouse = keyboard_mouse
         if controller is None:
             self.controller = Controller(None)
         else:
             self.controller = controller
         
-        self.__current_input_type: InputType = "keyboard_mouse"
         type(self).__current_instance = self
+
+
+    @property
+    def keyboard_mouse(self) -> KeyboardMouse:
+        return self.__keyboard_mouse
+    
+    @property
+    def controller(self) -> Controller | None:
+        return self.__controller
+    @controller.setter
+    def controller(self, value: Controller | None) -> None:
+        self.__controller = value
+        if self.controller.device_name is not None:
+            self.__current_input_type = "controller"
+        else:
+            self.__current_input_type = "keyboard_mouse"
+
+
+    @classmethod
+    def current_input_type(cls) -> InputType:
+        return cls.__current_instance.__current_input_type
 
 
     
@@ -284,12 +309,12 @@ class InputInterpreter:
 
 
     def get_userinput(self, events: list[pg.Event]) -> None:
-        self.keyboard_mouse.get_userinput(events)
-        if self.controller.action_buttons["any"]:
+        self.__keyboard_mouse.get_userinput(events)
+        if self.__controller.action_buttons["any"]:
             self.__current_input_type = "controller"
 
-        self.controller.get_userinput(events)
-        if self.keyboard_mouse.action_keys["any"]:
+        self.__controller.get_userinput(events)
+        if self.__keyboard_mouse.action_keys["any"]:
             self.__current_input_type = "keyboard_mouse"
 
 
@@ -300,19 +325,19 @@ class InputInterpreter:
             if bind_data["input_device"] == "keyboard_mouse":
                 key_code = pg.key.key_code(bind_data["key"])
                 if bind_data["type"] == "hold":
-                    results.append(bool(self.keyboard_mouse.hold_keys[key_code]))
+                    results.append(bool(self.__keyboard_mouse.hold_keys[key_code]))
                 else:
-                    results.append(self.keyboard_mouse.action_keys[key_code])
+                    results.append(self.__keyboard_mouse.action_keys[key_code])
         
 
             elif bind_data["input_device"] == "controller":
                 match bind_data["type"]:
                     case "action_button":
-                        results.append(self.controller.action_buttons[bind_data["value"]])
+                        results.append(self.__controller.action_buttons[bind_data["value"]])
                     
                     case "hold_button":
-                        # print(self.controller.hold_keys)
-                        results.append(bool(self.controller.hold_keys[bind_data["value"]]))
+                        # print(self.__controller.hold_keys)
+                        results.append(bool(self.__controller.hold_keys[bind_data["value"]]))
 
                     case "stick" | "trigger":
                         side = bind_data["side"]
@@ -320,11 +345,11 @@ class InputInterpreter:
 
                         if bind_data["type"] == "stick":
                             axis = bind_data["axis"]
-                            value = self.controller.get_stick_value(side, axis)
+                            value = self.__controller.get_stick_value(side, axis)
                         elif side == "right":
-                            value = self.controller.right_trigger
+                            value = self.__controller.right_trigger
                         else:
-                            value = self.controller.left_trigger
+                            value = self.__controller.left_trigger
 
                         results.append(abs(value) > abs(target_value) and sign(value) == sign(target_value))
         
@@ -334,15 +359,19 @@ class InputInterpreter:
 
 
     def __get_all_action_icons(self) -> dict[str, str]:
-        icons: dict[str, str]
         if self.__current_input_type == "keyboard_mouse":
-            icons = self.__action_icons[self.__current_input_type]
+            return self.__action_icons[self.__current_input_type]
         else:
-            icons = self.__action_icons["controllers"][self.controller.device_name]
-            if "same_as" in icons:
-                icons = self.__action_icons["controllers"][icons["same_as"]]
+            return self.__get_controller_icon_names(self.controller.device_name)
+    
+
+    def __get_controller_icon_names(self, controller_name: str) -> dict[str, str]:
+        icons = self.__action_icons["controllers"][controller_name]
+        if "same_as" in icons:
+            icons = self.__get_controller_icon_names(icons["same_as"]) | icons
         
         return icons
+
 
 
 

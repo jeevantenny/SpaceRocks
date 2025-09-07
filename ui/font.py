@@ -78,12 +78,12 @@ class FontWithIcons(Font):
     def render(cls, text, size=1):
         elements = cls.__get_text_elements(text)
         surface_width = sum([e.width+1 for e in elements])+1
-        surface = assets.colorkey_surface((surface_width, 10))
-        # surface.fill("green")
+        surface_height = max(elements, key=lambda x: x.height).height
+        surface = assets.colorkey_surface((surface_width, surface_height))
 
         x_offset = 0
         for e in elements:
-            surface.blit(e, (x_offset, 0))
+            surface.blit(e, (x_offset, (surface_height-e.height)*0.5))
             x_offset += e.width+1
         
         return pg.transform.scale_by(surface, size)

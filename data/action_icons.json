@@ -12,23 +12,22 @@
         "default": "Nintendo Switch Joy-Con (L/R)",
 
         "Nintendo Switch Joy-Con (L/R)": {
-            "ship_forward": "K_w",
+            "ship_forward": "sw_r_bumper",
             "shoot": "sw_a",
             "left": "K_a",
             "right": "K_d",
-            "pause": "K_esc",
-            "select": "K_return"
+            "pause": "sw_plus",
+            "select": "sw_a"
         },
         "Nintendo Switch Joy-Con (L)": {
-            "ship_forward": "K_w",
+            "same_as": "Nintendo Switch Joy-Con (L/R)",
             "shoot": "sw_al_right",
-            "left": "K_a",
-            "right": "K_d",
-            "pause": "K_esc",
-            "select": "K_return"
+            "pause": "sw_minus",
+            "select": "sw_al_right"
         },
         "Nintendo Switch Joy-Con (R)": {
-            "same_as": "Nintendo Switch Joy-Con (L)"
+            "same_as": "Nintendo Switch Joy-Con (L)",
+            "pause": "sw_plus"
         },
         "Xbox 360 Controller": {
             "same_as": "Nintendo Switch Joy-Con (L/R)"

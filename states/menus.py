@@ -5,8 +5,6 @@ import random
 import config
 from misc import increment_score
 
-from audio import soundfx
-
 from game_objects.entities import Bullet, Asteroid, DisplayPoint, ShipSmoke
 from game_objects.components import ObjectAnimation
 
@@ -148,7 +146,7 @@ class GameOverScreen(State):
 
     
     def userinput(self, inputs):
-        if inputs.check_input("select"):
+        if inputs.check_input("select") or inputs.keyboard_mouse.action_keys[pg.K_SPACE]:
             self.__timer = 0
 
     
@@ -187,7 +185,7 @@ class ShowScore(State):
 
 
     def userinput(self, inputs):
-        if inputs.check_input("select"):
+        if inputs.check_input("select") or inputs.keyboard_mouse.action_keys[pg.K_SPACE]:
             if self.__timer:
                 self.display_score = self.score
                 self.__timer = 0
