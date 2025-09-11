@@ -10,7 +10,7 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
     try:
         return load_json(path, False)["highscore"]
     except FileNotFoundError:
-        return load_json(path)["highscore"]
+        return 0
 
 
 def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:

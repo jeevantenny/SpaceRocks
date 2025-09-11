@@ -177,7 +177,10 @@ class ShowScore(State):
         self.new_highscore = str(score_data[2])
         self.display_score = 0
 
-        self.__timer = 30
+        if self.score == 0:
+            self.__timer = 0
+        else:
+            self.__timer = 30
 
         self.__info_text = font.SmallFont.render("")
 

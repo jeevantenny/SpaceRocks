@@ -16,9 +16,7 @@ data_paths = [
     "assets\\textures\\game_objects",
     "assets\\textures\\ui",
 
-
-    "data",
-    "user_data"
+    "data"
 ]
 
 datas = [(path, path) for path in data_paths]
