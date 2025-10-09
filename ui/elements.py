@@ -3,14 +3,15 @@ import pygame as pg
 from custom_types import Animation
 
 from file_processing import assets
+import ui
 
 
 
 class TitleText:
     __asset_key = "ui_elements"
     
-    def __init__(self, corner_pos: pg.typing.Point, animation_name: str):
-        self.corner_pos = pg.Vector2(corner_pos)
+    def __init__(self, centre_offset: pg.typing.Point, animation_name: str):
+        self.__centre_offset = pg.Vector2(centre_offset)
         self.__texture_map = assets.load_texture_map(self.__asset_key)
         self.__animations = {}
 
@@ -31,6 +32,8 @@ class TitleText:
     @property
     def animations_complete(self) -> bool:
         return self.__current_animation.complete
+    
+
         
 
 
@@ -52,4 +55,4 @@ class TitleText:
     
 
     def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        surface.blit(self.__get_texture(lerp_amount), self.corner_pos)
+        ui.blit_to_centre(self.__get_texture(lerp_amount), surface, self.__centre_offset)

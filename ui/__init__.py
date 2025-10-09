@@ -10,7 +10,7 @@ from file_processing import assets
 
 
 
-def add_padding(text: str, length: int, side: Literal["left", "right"] = "right", pad_char=' ') -> str:
+def add_text_padding(text: str, length: int, side: Literal["left", "right"] = "right", pad_char=' ') -> str:
     "Returns string with a minimum length containing the text and padding."
 
     if side == "left":
@@ -35,3 +35,9 @@ def load_icon(icon_name) -> pg.Surface:
         return assets.load_texture_map("icons")[working_name]
     except KeyError:
         raise ValueError(f"Invalid icon name '{icon_name}'")
+
+
+
+def blit_to_centre(source: pg.Surface, dest: pg.Surface, offset: pg.typing.Point = (0, 0)):
+    blit_bos = (pg.Vector2(dest.size)-source.size)*0.5 + offset
+    dest.blit(source, blit_bos)

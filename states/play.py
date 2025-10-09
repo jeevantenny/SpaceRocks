@@ -14,7 +14,7 @@ from game_objects import ObjectGroup, components
 from game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
 from game_objects.camera import Camera
 
-from ui import add_padding, font
+from ui import add_text_padding, font
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
@@ -237,7 +237,7 @@ class Play(State):
 
 
     def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point):
-        score_text = add_padding(str(score), 5, pad_char='0')
+        score_text = add_text_padding(str(score), 5, pad_char='0')
 
         score_desc_surf = font.SmallFont.render(name.capitalize())
         surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))

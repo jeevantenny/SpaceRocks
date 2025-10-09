@@ -13,7 +13,7 @@ import debug
 from input_device import KeyboardMouse, Controller, InputInterpreter
 
 from ui import font
-from states import StateStack, menus, test
+from states import StateStack, menus
 from file_processing import assets
 from audio import soundfx
 
@@ -100,7 +100,7 @@ class Game:
         self.error = False
         
 
-        self.thread = threading.Thread(target=self.display_loop)
+        self.thread = threading.Thread(name="display_loop", target=self.display_loop)
         try:
             self.thread.start()
             self.game_process_loop()

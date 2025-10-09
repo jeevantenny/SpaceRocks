@@ -24,10 +24,7 @@ def vector_max(*values: pg.Vector2) -> pg.Vector2:
 
 
 def unit_vector(vector: pg.Vector2) -> pg.Vector2:
-    if vector.magnitude():
-        return vector.normalize()
-    else:
-        return pg.Vector2()
+    return vector and vector.normalize()
     
 
 def format_angle[T=int|float](angle: T) -> T:

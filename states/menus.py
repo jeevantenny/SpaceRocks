@@ -8,7 +8,8 @@ from misc import increment_score
 from game_objects.entities import Bullet, Asteroid, DisplayPoint, ShipSmoke
 from game_objects.components import ObjectAnimation
 
-from ui import add_padding, font, elements
+import ui
+from ui import font, elements
 
 from . import State
 
@@ -30,7 +31,7 @@ class TitleScreen(State):
         super().__init__(state_stack)
         self.prev_state: Play
 
-        self.title = elements.TitleText((92, 60), "main_entrance_a")
+        self.title = elements.TitleText((0, -50), "main_entrance_a")
         version_text = ".".join(map(str, config.VERSION_NUM))
         self.version_text_surface = font.SmallFont.render(f"version {version_text}   pygame-ce {pg.ver}", 1, "#ffffff", "#333333")
 
@@ -87,7 +88,7 @@ class TitleScreen(State):
 
         if self.title.current_anim_name == "main_glint":
             surface.blit(self.version_text_surface, (3, config.PIXEL_WINDOW_HEIGHT-11))
-            surface.blit(self.__info_text, ((config.PIXEL_WINDOW_WIDTH-self.__info_text.width)*0.5, 170))
+            ui.blit_to_centre(self.__info_text, surface, (0, 50))
 
 
 
@@ -98,7 +99,7 @@ class PauseMenu(State):
     def __init__(self, state_stack = None):
         super().__init__(state_stack)
 
-        self.title = elements.TitleText((92, 70), "main_entrance_b")
+        self.title = elements.TitleText((0, -35), "main_entrance_b")
         self.__exit_menu = False
         self.__info_text = font.SmallFont.render("")
 
@@ -125,7 +126,7 @@ class PauseMenu(State):
         darken_surface(surface)
         self.title.draw(surface, lerp_amount)
         if not self.__exit_menu:
-            surface.blit(self.__info_text, (115, 170))
+            ui.blit_to_centre(self.__info_text, surface, (0, 50))
 
 
 
@@ -140,7 +141,7 @@ class GameOverScreen(State):
 
         self.score_data = score_data
         self.display_score = 0
-        self.title = elements.TitleText((92, 110), "game_over")
+        self.title = elements.TitleText((0, 0), "game_over")
 
         self._initialized = True
 
@@ -174,7 +175,7 @@ class ShowScore(State):
         super().__init__(state_stack)
         self.score = score_data[0]
         self.highscore = str(score_data[1])
-        self.new_highscore = str(score_data[2])
+        self.new_highscore = score_data[2]
         self.display_score = 0
 
         if self.score == 0:
@@ -217,7 +218,7 @@ class ShowScore(State):
         darken_surface(surface)
 
         if self.__timer:
-            text_surface = font.LargeFont.render(add_padding(str(self.display_score), 5, pad_char='0'), 2)
+            text_surface = font.LargeFont.render(ui.add_text_padding(str(self.display_score), 5, pad_char='0'), 2)
             surface.blit(text_surface, (99, 101))
         else:
             self.__display_score(surface, "Highscore", self.highscore, (102, 50))
@@ -232,7 +233,7 @@ class ShowScore(State):
         text_surface = font.SmallFont.render(name, 2)
         surface.blit(text_surface, position+(60, 0)-pg.Vector2(text_surface.width, 0)*0.5)
 
-        number_surface = font.LargeFont.render(add_padding(str(score), 5, pad_char='0'), 2)
+        number_surface = font.LargeFont.render(ui.add_text_padding(str(score), 5, pad_char='0'), 2)
         surface.blit(number_surface, position+(0, 15))
 
         
