@@ -7,6 +7,7 @@ I made this game to test out a new framework I made for any games I would want t
 ## Features
 - Infinitely scrolling world in all directions
 - Soundfx volume scale with distance.
+- Press **Alt**+**F11** to toggle fullscreen mode
 - Support for select number of controllers
 
 ## Controls

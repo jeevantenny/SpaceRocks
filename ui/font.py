@@ -39,12 +39,9 @@ class Font:
         main.set_colorkey(assets.COLORKEY)
         background = sized_font.render(text, False, color_b, assets.COLORKEY)
         
-        surface = pg.Surface(main.get_size()+pg.Vector2(1, 1)*cls._shadow_offset)
-        surface.fill(assets.COLORKEY)
-
+        surface = assets.colorkey_surface(main.get_size()+pg.Vector2(1, 1)*cls._shadow_offset)
         surface.blit(background, pg.Vector2(1, 1)*cls._shadow_offset*size)
         surface.blit(main, (0, 0))
-        surface.set_colorkey(assets.COLORKEY)
 
         
         return surface

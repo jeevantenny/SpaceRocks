@@ -182,11 +182,12 @@ class Game:
     def draw(self) -> None:
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
-            debug_message = self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
+            self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
             pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.screen)
 
             if debug.debug_mode:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}"
+                debug_message = self.state_stack.debug_info()
                 if debug_message is not None:
                     blit_text = f"{blit_text}, {debug_message}"
 

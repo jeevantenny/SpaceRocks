@@ -37,6 +37,7 @@ def draw_wrapper(draw_func: Callable):
 
 
 def stack_method(func: Callable):
+    "Code in the method is only executed if the stack has at least one state."
     @wraps(func)
     def wrapper(self: type["StateStack"], *args, **kwargs):
         if self.top_state is not None:
@@ -95,7 +96,7 @@ class State(soundfx.HasSoundQueue):
         self.update_on_enter(1-exit_amount)
 
 
-    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> str | None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         "Draws the contents of the game onto the window in every frame."
         pass
 
@@ -109,6 +110,11 @@ class State(soundfx.HasSoundQueue):
         "Called to draw while exiting state."
         self.draw_on_enter(1-exit_amount)
 
+    
+    def debug_info(self) -> str | None:
+        "Returns information to be displayed at the top of the window."
+        pass
+
 
     def is_top_state(self) -> bool:
         "Returns weather the current state is at the top of it's stack."
@@ -117,7 +123,7 @@ class State(soundfx.HasSoundQueue):
 
     def quit(self) -> None:
         "Saves any data that needs to be saved."
-        pass
+        return None
 
 
     def __repr__(self) -> str:
@@ -219,9 +225,14 @@ class StateStack(soundfx.HasSoundQueue):
 
 
     @stack_method
-    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> str | None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         "Draws the top state for every frame."
-        return self.top_state.draw(surface, lerp_amount) # type: ignore
+        self.top_state.draw(surface, lerp_amount)
+
+
+    @stack_method
+    def debug_info(self) -> str | None:
+        return self.top_state.debug_info()
     
 
     @stack_method

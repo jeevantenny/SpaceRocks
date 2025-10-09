@@ -62,6 +62,13 @@ class TitleScreen(State):
     
         else:
             self.prev_state.spaceship.userinput(inputs)
+
+        
+        
+        if inputs.current_input_type() == "keyboard_mouse":
+            self.__info_text = font.FontWithIcons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+        else:
+            self.__info_text = font.FontWithIcons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
 
 
@@ -79,8 +86,9 @@ class TitleScreen(State):
             self.prev_state.update()
             if self.title.animations_complete:
                 self.state_stack.pop()
-        
-        self.__info_text = font.FontWithIcons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+
+
+
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)

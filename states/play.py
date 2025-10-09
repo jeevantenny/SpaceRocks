@@ -25,6 +25,9 @@ from .menus import PauseMenu, GameOverScreen
 
 
 class Play(State):
+    """
+    Contains the game-loop which handles the main gameplay.
+    """
     __spawn_radius = 200
     __despawn_radius = 1200
     __clear_fov = 60
@@ -135,6 +138,10 @@ class Play(State):
             surface.blit(self.__info_text, (10, surface.height-20))
 
 
+
+
+
+    def debug_info(self) -> str | None:
         return f"entity count: {self.entities.count()}, asteroid value: {self.__asteroid_value()}, camera_pos: {self.camera.position}"
 
 
@@ -179,7 +186,7 @@ class Play(State):
         # if enemy_ships:
         #     self.camera.set_target(enemy_ships[0].position)
         # else:
-        self.camera.set_target(self.spaceship.position)
+        self.camera.set_target(self.spaceship.position + self.spaceship.get_velocity()*2)
         self.camera.update()
 
 

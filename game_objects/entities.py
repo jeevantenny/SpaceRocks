@@ -221,6 +221,10 @@ class PlayerShip(Spaceship):
                 self.shoot()
 
 
+    def kill(self):
+        pass
+
+
 
 
 
