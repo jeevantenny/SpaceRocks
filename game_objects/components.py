@@ -55,6 +55,10 @@ class ObjectVelocity(ObjectComponent):
         self._velocity = pg.Vector2(0, 0)
 
 
+
+    def get_data(self):
+        return super().get_data() | {"velocity": tuple(self._velocity)}
+
     
     @property
     def speed(self) -> float:
@@ -102,6 +106,11 @@ class ObjectTexture(ObjectComponent):
         self.texture = texture
         self.__rotation = 0
         self._angular_vel = 0
+
+
+    def get_data(self):
+        return super().get_data() | {"rotation": self.__rotation,
+                                     "angular_vel": self._angular_vel}
 
 
     @property
@@ -229,7 +238,11 @@ class ObjectHitbox(ObjectComponent):
 
     def __init__(self, *, hitbox_size: pg.typing.Point, **kwargs):
         super().__init__(**kwargs)
-        self.__hitbox_size = hitbox_size
+        self.__hitbox_size = tuple(hitbox_size)
+
+
+    def get_data(self):
+        return super().get_data() | {"hitbox": self.__hitbox_size}
 
 
     @property
@@ -257,6 +270,9 @@ class ObjectHitbox(ObjectComponent):
 
 
 
+
+
+
 class ObjectCollision(ObjectHitbox, ObjectVelocity):
     "Gives objects a hitbox which can be used for collision."
 
@@ -268,6 +284,8 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
         self.__bounce = bounce*0.5
 
 
+    def get_data(self):
+        return super().get_data() | {"Obj_coll_bounce": self.__bounce}
 
 
     def update(self) -> None:
@@ -401,6 +419,11 @@ class BorderCollision(ObjectHitbox, ObjectVelocity):
         self.__bounding_area = pg.Rect(bounding_area)
         self.__bounce = border_bounce
 
+
+    def get_data(self):
+        return super().get_data() | {"bord_coll_bounce": self.__bounce,
+                                     "bounding_topleft": self.__bounding_area.topleft,
+                                     "bounding_bottomright": self.__bounding_area.bottomright}
 
 
     def get_bounding_area(self) -> None:

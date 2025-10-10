@@ -3,10 +3,9 @@ Contains various types that will be used throughout the game.
 """
 
 import pygame as pg
+from typing import Self, Literal, Callable, Generator, Any, NamedTuple
 import random
-from typing import Self, Literal, Callable, Generator, Any
 from collections import defaultdict
-from functools import lru_cache
 
 
 
@@ -14,6 +13,8 @@ from functools import lru_cache
 
 ActionKeys = defaultdict[int | str, bool]
 HoldKeys = defaultdict[int, int]
+
+LevelData = dict
 
 InputType = Literal["controller", "keyboard_mouse"]
 BindData = dict[Literal["input_device", "key", "type", "value", "icon"] | str, InputType | str]
@@ -355,3 +356,14 @@ class AnimController:
     
     def __test_condition(self, obj, condition: str) -> bool:
         return bool(eval(condition, None, locals()))
+    
+
+
+
+
+
+class SaveData(NamedTuple):
+    level_name: str
+    score: int
+    entity_data: list[dict]
+    ship_data: dict

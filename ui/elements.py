@@ -10,8 +10,8 @@ import ui
 class TitleText:
     __asset_key = "ui_elements"
     
-    def __init__(self, centre_offset: pg.typing.Point, animation_name: str):
-        self.__centre_offset = pg.Vector2(centre_offset)
+    def __init__(self, center_offset: pg.typing.Point, animation_name: str):
+        self.__center_offset = pg.Vector2(center_offset)
         self.__texture_map = assets.load_texture_map(self.__asset_key)
         self.__animations = {}
 
@@ -55,4 +55,4 @@ class TitleText:
     
 
     def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        ui.blit_to_centre(self.__get_texture(lerp_amount), surface, self.__centre_offset)
+        ui.blit_to_center(self.__get_texture(lerp_amount), surface, self.__center_offset)

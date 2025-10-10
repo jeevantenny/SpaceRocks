@@ -11,7 +11,7 @@ from file_processing import load_json
 
 
 
-
+INPUT_FORMAT_DIR = "data/input_devices"
 
 
 
@@ -62,8 +62,8 @@ class KeyboardMouse:
 
 
 class Controller:
-    __controller_mappings = load_json("data/controller_mappings")
-    __rumble_patterns = load_json("data/rumble_patterns")
+    __controller_mappings = load_json(f"{INPUT_FORMAT_DIR}/controller_mappings")
+    __rumble_patterns = load_json(f"{INPUT_FORMAT_DIR}/rumble_patterns")
     __stick_dead_zone = 0.3
 
     current_instance: "Controller | None" = None
@@ -256,8 +256,8 @@ class Controller:
 
 
 class InputInterpreter:
-    __keybinds: KeybindsType = load_json("data/keybinds")
-    __action_icons = load_json("data/action_icons")
+    __keybinds: KeybindsType = load_json(f"{INPUT_FORMAT_DIR}/keybinds")
+    __action_icons = load_json(f"{INPUT_FORMAT_DIR}/action_icons")
     __current_instance: "InputInterpreter | None" = None
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):

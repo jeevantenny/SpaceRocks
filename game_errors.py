@@ -13,4 +13,4 @@ class InitializationError(Exception):
 
 class DuplicateStateError(Exception):
     def __init__(self, state):
-        super().__init__(f"{state} instance is already in state stack.")
+        super().__init__(f"The current instance of the '{type(state).__name__}' state is already in state stack.")

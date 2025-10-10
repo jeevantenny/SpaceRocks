@@ -1,5 +1,5 @@
 import pygame as pg
-from typing import Iterable, Iterator, Callable
+from typing import Iterator, Self
 
 from math_functions import clamp, format_angle
 
@@ -20,6 +20,16 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
             super().__init__()
         
         self.position = pg.Vector2(position)
+
+
+    @classmethod
+    def init_from_data(cls, object_data: dict) -> Self:
+        raise NotImplementedError
+    
+
+    def get_data(self) -> dict:
+        return {"id": id(self),
+                "position": tuple(self.position)}
 
         
 
@@ -97,7 +107,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
 
 class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
-    def __init__(self, full_volume_radius=200):
+    def __init__(self, full_volume_radius=180):
         super().__init__()
 
         self.__full_volume_radius = full_volume_radius
@@ -122,10 +132,10 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 
 
     def __get_sound_volume(self, distance: float) -> float:
-        if distance == 0:
-            return 1
+        if distance <= self.__full_volume_radius:
+            return 1.0
         else:
-            return clamp(1/(self.__sound_curve_factor*(distance-self.__full_volume_radius)+1)**2, 0.0, 1.0)
+            return 1/(1+distance-self.__full_volume_radius)
 
 
 

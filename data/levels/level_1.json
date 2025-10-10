@@ -1,0 +1,11 @@
+{
+    "name": "idk",
+    "base_color": "#000000",
+    "parl_a": "backgrounds/space_background_big",
+    "parl_b": "backgrounds/space_background",
+
+    "asteroid_density": 15,
+
+    "clear_score": 1000,
+    "next_level": "level_2"
+}

@@ -56,6 +56,12 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
         self._attack_types: list[type[GameObject]] = [Asteroid]
 
+
+    def get_data(self):
+        return super().get_data() | {"score": self.score,
+                                     "combo": self.combo,
+                                     "thrust": self.__thrust}
+
                 
 
 
@@ -241,6 +247,11 @@ class EnemyShip(Spaceship):
         self.__current_objective: Literal["track_player", "slow_down"] = "track_player"
 
         self.__shoot_cooldown = Timer(4)
+
+
+
+    def get_data(self):
+        raise NotImplementedError
 
 
     def __process_behavior(self) -> None:

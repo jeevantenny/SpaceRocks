@@ -1,9 +1,21 @@
 import os
 
+from custom_types import LevelData
+
 from . import load_json, save_json, get_resource_path
 
 
 HIGHSCORE_DATA_PATH = "user_data/highscore"
+LEVELS_DIR = "data/levels"
+
+
+
+
+def load_level(name: str) -> LevelData:
+    level_data = load_json(f"{LEVELS_DIR}/{name}")
+
+
+    return level_data
 
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:

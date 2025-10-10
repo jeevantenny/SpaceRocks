@@ -1,4 +1,5 @@
 import pygame as pg
+from typing import Self
 import random
 
 import config
@@ -6,9 +7,9 @@ import debug
 
 from math_functions import unit_vector
 from misc import increment_score
+from custom_types import LevelData, SaveData
 
 from file_processing import assets, data
-from audio import soundfx
 
 from game_objects import ObjectGroup, components
 from game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
@@ -16,7 +17,7 @@ from game_objects.camera import Camera
 
 from ui import add_text_padding, font
 
-from . import State
+from . import State, StateStack
 from .menus import PauseMenu, GameOverScreen
 
 
@@ -33,31 +34,65 @@ class Play(State):
     __clear_fov = 60
     __score_limit = 99999
 
-    def __init__(self, state_stack = None):
+    def __init__(self, level_name: str, state_stack = None):
         super().__init__(state_stack)
 
+        self.__setup(data.load_level(level_name))
+
+        self.spaceship = PlayerShip(self.__center)
+        self.entities.add(self.spaceship)
+
+        self._initialized = True
+
+
+    def reinit_next_level(self, level_name: str) -> None:
+        self._initialized = False
+
+        self.entities.remove(self.spaceship)
+        self.__setup(data.load_level(level_name))
+        self.entities.add(self.spaceship)
+        self.score = self.spaceship.score
+
+        self._initialized = True
+
+
+    
+    @classmethod
+    def init_from_save(cls, sava_data: SaveData, state_stack: StateStack | None) -> Self:
+        self: Play = cls.__new__(cls)
+        super().__init__(self)
+        self.__setup(data.load_level("level_1"))
+
+        return self
+
+
+
+    def __setup(self, level_data: LevelData) -> None:
+        "Initializes Play object with attributes required by all initializers. Spaceship needs to be made separately."
         self.visible_area = pg.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
         self.world_border = self.visible_area.inflate(100, 100)
-        self.background_a = assets.load_texture("backgrounds/space_background_big")
-        self.background_b = assets.load_texture("backgrounds/space_background")
+
+        self.__base_color = level_data["base_color"]
+        self.__parl_a = assets.load_texture(level_data["parl_a"])
+        self.__parl_b = assets.load_texture(level_data["parl_b"])
         self.__info_text = font.SmallFont.render("")
 
         self.entities = ObjectGroup()
         self.asteroids = ObjectGroup[Asteroid]()
 
-        self.__center = pg.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
-        self.spaceship = PlayerShip(self.__center)
-        self.entities.add(self.spaceship)
-
-        self.camera = Camera(self.__center)
-
         self.score = 0
         self.highscore = data.load_highscore()
         self.highscore_changed = False
+        
+        self.__center = pg.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
+        self.camera = Camera(self.__center)
 
         self.__timer = 10
 
-        self._initialized = True
+
+
+
+
 
 
     def userinput(self, inputs):
@@ -85,6 +120,10 @@ class Play(State):
 
         if debug.Cheats.enemy_ship and inputs.keyboard_mouse.action_keys[pg.K_e]:
             self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
+
+
+        if inputs.keyboard_mouse.action_keys[pg.K_b]:
+            print(self.spaceship.get_data())
 
         self.spaceship.userinput(inputs)
 
@@ -119,7 +158,7 @@ class Play(State):
 
 
     def draw(self, surface, lerp_amount=0.0):
-        surface.fill("#000000")
+        surface.fill(self.__base_color)
         self.__draw_scrolling_background(surface, lerp_amount)
 
         self.camera.capture(surface, self.entities, lerp_amount)
@@ -152,20 +191,20 @@ class Play(State):
 
     def __draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         # Background A
-        width, height = self.background_a.size
+        width, height = self.__parl_a.size
         camera_offset = -self.camera.lerp_position(lerp_amount)*0.1
         camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
         for x in range(-1, surface.width//width+1):
             for y in range(-1, surface.height//height+1):
-                surface.blit(self.background_a, (width*x, height*y)+camera_offset)
+                surface.blit(self.__parl_a, (width*x, height*y)+camera_offset)
 
         # Background B
-        width, height = self.background_b.size
+        width, height = self.__parl_b.size
         camera_offset = -self.camera.lerp_position(lerp_amount)*0.3
         camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
         for x in range(-1, surface.width//width+1):
             for y in range(-1, surface.height//height+1):
-                surface.blit(self.background_b, (width*x, height*y)+camera_offset)
+                surface.blit(self.__parl_b, (width*x, height*y)+camera_offset)
 
 
 

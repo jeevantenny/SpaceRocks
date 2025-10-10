@@ -27,7 +27,7 @@ def darken_surface(surface: pg.Surface) -> None:
 class TitleScreen(State):
     def __init__(self, state_stack = None):
         from .play import Play
-        Play(state_stack)
+        Play("level_1", state_stack)
         super().__init__(state_stack)
         self.prev_state: Play
 
@@ -96,7 +96,7 @@ class TitleScreen(State):
 
         if self.title.current_anim_name == "main_glint":
             surface.blit(self.version_text_surface, (3, config.PIXEL_WINDOW_HEIGHT-11))
-            ui.blit_to_centre(self.__info_text, surface, (0, 50))
+            ui.blit_to_center(self.__info_text, surface, (0, 50))
 
 
 
@@ -134,7 +134,7 @@ class PauseMenu(State):
         darken_surface(surface)
         self.title.draw(surface, lerp_amount)
         if not self.__exit_menu:
-            ui.blit_to_centre(self.__info_text, surface, (0, 50))
+            ui.blit_to_center(self.__info_text, surface, (0, 50))
 
 
 
@@ -205,7 +205,7 @@ class ShowScore(State):
                 from .play import Play
 
                 self.state_stack.quit()
-                Play(self.state_stack)
+                Play("level_1", self.state_stack)
                 
 
 

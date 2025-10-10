@@ -38,6 +38,6 @@ def load_icon(icon_name) -> pg.Surface:
 
 
 
-def blit_to_centre(source: pg.Surface, dest: pg.Surface, offset: pg.typing.Point = (0, 0)):
+def blit_to_center(source: pg.Surface, dest: pg.Surface, offset: pg.typing.Point = (0, 0)):
     blit_bos = (pg.Vector2(dest.size)-source.size)*0.5 + offset
     dest.blit(source, blit_bos)
