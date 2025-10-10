@@ -83,8 +83,8 @@ class Play(State):
                 self.state_stack.pop()
                 Play(self.state_stack)
 
-        # if inputs.keyboard_mouse.action_keys[pg.K_e]:
-        #     self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
+        if debug.Cheats.enemy_ship and inputs.keyboard_mouse.action_keys[pg.K_e]:
+            self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
 
         self.spaceship.userinput(inputs)
 

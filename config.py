@@ -1,6 +1,6 @@
 """Contains constants for initializing game window."""
 
-VERSION_NUM = (0, 3, 6)
+VERSION_NUM = (0, 3, 7)
 
 WINDOW_CAPTION = "JJJ Asteroids"
 WINDOW_ICON_PATH = "window_icon"
@@ -16,5 +16,5 @@ PIXEL_WINDOW_HEIGHT = WINDOW_HEIGHT//PIXEL_SCALE
 
 PIXEL_WINDOW_SIZE = (PIXEL_WINDOW_WIDTH, PIXEL_WINDOW_HEIGHT)
 
-MAX_FPS = 60
+FRAMERATE = 60
 TICKRATE = 20

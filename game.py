@@ -211,7 +211,7 @@ class Game:
     def next_frame(self) -> None:
         pg.display.flip()
 
-        self.frame_clock.tick(config.MAX_FPS)
+        self.frame_clock.tick(config.FRAMERATE)
         self.prev_frame = perf_counter()
 
 
