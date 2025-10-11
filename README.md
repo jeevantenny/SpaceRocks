@@ -9,12 +9,13 @@ I made this game to test out a new framework I made for any games I would want t
 - Soundfx volume scale with distance.
 - Press **Alt**+**F11** to toggle fullscreen mode
 - Support for select number of controllers
+- Progress is not lost when game window is closed. Player can continue from exactly where they left off.
 
 ## Controls
 ### Keyboard
 - **W** to move forward
 - **A**-**D** to turn
-- **SPACE** to shoot
+- **SPACE** to shoot 2952077102448 2952077102448
 
 ### Controller
 - **Right Trigger**/**Bumper** to move forward

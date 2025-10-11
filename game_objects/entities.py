@@ -41,15 +41,31 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             position=position,
             hitbox_size=(16, 16),
 
-            texture_map=assets.load_texture_map(self.__asset_key),
-            anim_data=assets.load_anim_data(self.__asset_key),
-            controller_data=assets.load_anim_controller_data(self.__asset_key)
+            texture_map_path=self.__asset_key,
+            anim_path=self.__asset_key,
+            controller_path=self.__asset_key
         )
 
         self.score = 0
         self.combo = 0
-        self.health = True
 
+        self.__init_base()
+
+                
+
+    def __init_from_data__(self, object_data, group=None):
+        super().__init_from_data__(object_data, group)
+
+        self.score = object_data["score"]
+        self.combo = object_data["combo"]
+
+        self.__init_base()
+        self._set_anim_state("main")
+
+
+
+    def __init_base(self):
+        self.health = True
         self.__thrust = False
         self.__thruster_audio_chan: pg.Channel | None = None
         self.__turn_direction: Literal[-1, 0, 1] = 0
@@ -58,11 +74,11 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
     def get_data(self):
+        print(id(self))
         return super().get_data() | {"score": self.score,
-                                     "combo": self.combo,
-                                     "thrust": self.__thrust}
+                                     "combo": self.combo}
 
-                
+
 
 
     def update(self) -> None:
@@ -122,7 +138,6 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             self.accelerate(-direction*0.5)
 
         self._queue_sound("entity.ship.shoot")
-        controller_rumble("gun_fire")
 
 
     
@@ -142,8 +157,6 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         intensity = intensity = min(abs(vel)*0.15, 1)
         
         self._queue_sound("entity.ship.bounce", intensity)
-        if intensity > 0.1:
-            controller_rumble("small_pulse", intensity*0.5)
 
     
     def kill(self):
@@ -206,8 +219,8 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
 class PlayerShip(Spaceship):
-    def __init__(self, position):
-        super().__init__(position)
+    def __init__(self, position, **kwargs):
+        super().__init__(position, **kwargs)
         self._attack_types: list[type[GameObject]] = [Asteroid, EnemyShip]
 
 
@@ -227,9 +240,20 @@ class PlayerShip(Spaceship):
                 self.shoot()
 
 
+    def _thrust(self):
+        super()._thrust()
+        controller_rumble("ship_thrusters", 0.25, True)
+
+
+    def shoot(self):
+        super().shoot()
+        controller_rumble("gun_fire")
+
+
     def kill(self):
         if not debug.Cheats.invincible:
             super().kill()
+            controller_rumble("large_explosion_b", 0.9)
 
 
 
@@ -375,6 +399,29 @@ class Bullet(ObjectTexture, ObjectVelocity):
         self.__attack_types = attack_types
 
 
+    
+    def __init_from_data__(self, object_data, group=None):
+        super().__init_from_data__(object_data, assets.load_texture_map("particles")["bullet"], group)
+
+        self.__attack_types = object_data["attack_types"]
+        self.__shooter_id = object_data["shooter_id"]
+
+    
+    def post_init(self, object_dict):
+        if True:
+            self.shooter = object_dict[self.__shooter_id]
+        else:
+            raise Exception("Bullet cannot find shooter object.")
+
+
+    
+    def get_data(self):
+        print(id(self.shooter))
+        return super().get_data() | {"shooter_id": id(self.shooter),
+                                     "attack_types": self.__attack_types}
+
+
+
     def update(self):
         super().update()
         self.__lifetime -= 1
@@ -494,9 +541,9 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             hitbox_size=self.size_data[size]["hitbox"],
             bounce=0.95,
 
-            texture_map=assets.load_texture_map(self.__asset_key),
-            anim_data=assets.load_anim_data(self.__asset_key),
-            controller_data=assets.load_anim_controller_data(self.__asset_key)
+            texture_map_path=self.__asset_key,
+            anim_path=self.__asset_key,
+            controller_path=self.__asset_key
         )
 
         self.size = size
@@ -507,6 +554,23 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         self.explode_pos: pg.Vector2 | None = None
 
         self.points = self.size_data[size]["points"]
+
+
+    
+    def __init_from_data__(self, object_data, group=None):
+        super().__init_from_data__(object_data, group)
+
+        self.size = object_data["size"]
+        self.health = object_data["health"]
+        self.explode_pos: pg.Vector2 | None = None
+        
+        self.points = self.size_data[self.size]["points"]
+
+
+
+    def get_data(self):
+        return super().get_data() | {"size": self.size,
+                                     "health": self.health}
 
     
     def update(self):
@@ -550,6 +614,8 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         elif self.size == 2:
             self._queue_sound("entity.asteroid.medium_explode", 0.7)
 
+        self.save_entity_progress = False
+
 
     def __spawn_small_asteroid(self):
         positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
@@ -573,6 +639,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
 class DisplayPoint(ObjectTexture):
+    save_entity_progress=False
     draw_layer = 5
 
     def __init__(self, position: pg.typing.Point, points: int, combo=0):

@@ -12,6 +12,7 @@ from audio import soundfx
 
 
 class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
+    save_entity_progress=True
 
     def __init__(self, *, position: pg.typing.Point, group: "ObjectGroup | None" = None) -> None:
         if group:
@@ -21,14 +22,39 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         
         self.position = pg.Vector2(position)
 
+        
+
+    def __init_from_data__(self, object_data: dict, group: "ObjectGroup | None" = None) -> None:
+        if not self.save_entity_progress:
+            raise NotImplementedError(f"{type(self).__name__} should not be reconstructed from data.")
+
+        if group:
+            super().__init__(group)
+        else:
+            super().__init__()
+        
+        self.position = pg.Vector2(object_data["position"])
+
+
+    def post_init(self, object_dict: dict[str, "GameObject"]) -> None:
+        pass
+
 
     @classmethod
-    def init_from_data(cls, object_data: dict) -> Self:
-        raise NotImplementedError
-    
+    def init_from_data(cls, object_data: dict, group: "ObjectGroup | None" = None) -> "GameObject":
+        obj_cls = object_data["class"]
+        obj: GameObject = obj_cls.__new__(obj_cls)
+        obj.__init_from_data__(object_data)
+        return obj
+
+
 
     def get_data(self) -> dict:
+        if not self.save_entity_progress:
+            raise NotImplementedError(f"{type(self).__name__} should not be saved in save data.")
+        
         return {"id": id(self),
+                "class": type(self),
                 "position": tuple(self.position)}
 
         

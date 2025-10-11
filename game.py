@@ -13,7 +13,7 @@ import debug
 from input_device import KeyboardMouse, Controller, InputInterpreter
 
 from ui import font
-from states import StateStack, menus
+from states import StateStack, init_state
 from file_processing import assets
 from audio import soundfx
 
@@ -52,7 +52,7 @@ class Game:
 
 
         self.state_stack = StateStack()
-        menus.TitleScreen(self.state_stack)
+        init_state.Initializer(self.state_stack)
         # test.TestState(self.state_stack)
 
         game_speed = 1
@@ -77,8 +77,11 @@ class Game:
 
     def set_controllers(self) -> None:
         if pg.joystick.get_count():
-            self.input_interpreter.controller = Controller(pg.joystick.Joystick(0))
-            print(f"Connected {self.input_interpreter.controller.device_name}")
+            try:
+                self.input_interpreter.controller = Controller(pg.joystick.Joystick(0))
+                print(f"Connected {self.input_interpreter.controller.device_name}")
+            except pg.error:
+                self.input_interpreter.controller = Controller()
         else:
             self.input_interpreter.controller = Controller()
 

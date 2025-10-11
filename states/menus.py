@@ -5,8 +5,7 @@ import random
 import config
 from misc import increment_score
 
-from game_objects.entities import Bullet, Asteroid, DisplayPoint, ShipSmoke
-from game_objects.components import ObjectAnimation
+from file_processing import data
 
 import ui
 from ui import font, elements
@@ -26,10 +25,7 @@ def darken_surface(surface: pg.Surface) -> None:
 
 class TitleScreen(State):
     def __init__(self, state_stack = None):
-        from .play import Play
-        Play("level_1", state_stack)
         super().__init__(state_stack)
-        self.prev_state: Play
 
         self.title = elements.TitleText((0, -50), "main_entrance_a")
         version_text = ".".join(map(str, config.VERSION_NUM))
@@ -92,7 +88,7 @@ class TitleScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
-        self.title.draw(surface, lerp_amount)
+        self.title.draw(surface)
 
         if self.title.current_anim_name == "main_glint":
             surface.blit(self.version_text_surface, (3, config.PIXEL_WINDOW_HEIGHT-11))

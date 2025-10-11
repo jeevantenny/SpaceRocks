@@ -1,0 +1,11 @@
+{
+    "texture": "game_objects/particles",
+    "mappings": {
+        "smoke_1": [10, 1, 3, 3],
+        "smoke_2": [14, 1, 4, 4],
+        "smoke_4": [19, 1, 5, 5],
+        "smoke_5": [25, 1, 6, 6],
+        "smoke_6": [10, 8, 6, 6],
+        "smoke_7": [17, 8, 7, 7]
+    }
+}

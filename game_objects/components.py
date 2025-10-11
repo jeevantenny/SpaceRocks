@@ -5,6 +5,8 @@ from time import sleep
 from custom_types import AnimData, ControllerData, Animation, AnimController
 from math_functions import unit_vector, vector_min
 
+from file_processing import assets
+
 from . import GameObject
 
 import debug
@@ -53,6 +55,12 @@ class ObjectVelocity(ObjectComponent):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._velocity = pg.Vector2(0, 0)
+
+
+    
+    def __init_from_data__(self, object_data, group = None):
+        super().__init_from_data__(object_data, group)
+        self._velocity = pg.Vector2(object_data["velocity"])
 
 
 
@@ -106,6 +114,13 @@ class ObjectTexture(ObjectComponent):
         self.texture = texture
         self.__rotation = 0
         self._angular_vel = 0
+
+
+    def __init_from_data__(self, object_data, texture: pg.Surface, group = None):
+        super().__init_from_data__(object_data, group)
+        self.texture = texture
+        self.__rotation = object_data["rotation"]
+        self._angular_vel = object_data["angular_vel"]
 
 
     def get_data(self):
@@ -191,15 +206,46 @@ class ObjectAnimation(ObjectTexture):
     _anim_data_dir = "assets/animations"
     _controller_data_dir = "assets/anim_controllers"
 
-    def __init__(self, *, texture_map: dict[str, pg.Surface], anim_data: dict[str, str | dict[str, AnimData]], controller_data: ControllerData, **kwargs):
+    def __init__(self, *, texture_map_path: str, anim_path: str, controller_path: str, **kwargs):
         super().__init__(texture=None, **kwargs)
 
-        self.__texture_map = texture_map
+        self.__texture_map_path = texture_map_path
+        self.__anim_path = anim_path
+        self.__controller_path = controller_path
+
+        self.__init_base()
+
+
+
+    def __init_from_data__(self, object_data, group=None):
+        super().__init_from_data__(object_data, None, group)
+
+        self.__texture_map_path = object_data["texture_map_path"]
+        self.__anim_path = object_data["anim_path"]
+        self.__controller_path = object_data["controller_path"]
+
+        self.__init_base()
+
+
+
+    def __init_base(self) -> None:
+        self.__texture_map = assets.load_texture_map(self.__texture_map_path)
+
+        anim_data = assets.load_anim_data(self.__anim_path)
         animations = {}
         for name, data in anim_data["animations"].items():
             animations[name] = Animation(name, data)
 
-        self.__controller = AnimController(controller_data, animations)
+        self.__controller = AnimController(assets.load_anim_controller_data(self.__controller_path), animations)
+
+    
+
+
+
+    def get_data(self):
+        return super().get_data() | {"texture_map_path": self.__texture_map_path,
+                                     "anim_path": self.__anim_path,
+                                     "controller_path": self.__controller_path}
 
 
     def update(self):
@@ -221,6 +267,9 @@ class ObjectAnimation(ObjectTexture):
         self.texture = self.__controller.get_frame(self.__texture_map, lerp_amount)
         return super()._get_blit_texture(lerp_amount)
     
+    def _set_anim_state(self, state_name: str) -> None:
+        self.__controller.set_state(state_name)
+    
 
 
 
@@ -241,8 +290,14 @@ class ObjectHitbox(ObjectComponent):
         self.__hitbox_size = tuple(hitbox_size)
 
 
+    def __init_from_data__(self, object_data, group = None):
+        super().__init_from_data__(object_data, group)
+
+        self.__hitbox_size = object_data["hitbox_size"]
+
+
     def get_data(self):
-        return super().get_data() | {"hitbox": self.__hitbox_size}
+        return super().get_data() | {"hitbox_size": self.__hitbox_size}
 
 
     @property
@@ -284,8 +339,14 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
         self.__bounce = bounce*0.5
 
 
+    def __init_from_data__(self, object_data, group=None):
+        super().__init_from_data__(object_data, group)
+
+        self.__bounce = object_data["obj_coll_bounce"]
+
+
     def get_data(self):
-        return super().get_data() | {"Obj_coll_bounce": self.__bounce}
+        return super().get_data() | {"obj_coll_bounce": self.__bounce}
 
 
     def update(self) -> None:
@@ -420,10 +481,16 @@ class BorderCollision(ObjectHitbox, ObjectVelocity):
         self.__bounce = border_bounce
 
 
+    def __init_from_data__(self, object_data, group=None):
+        super().__init_from_data__(object_data, group)
+
+        self.__bounding_area = pg.Rect(object_data["bounding_area"])
+        self.__bounce = object_data["border_coll_bounce"]
+
+
     def get_data(self):
-        return super().get_data() | {"bord_coll_bounce": self.__bounce,
-                                     "bounding_topleft": self.__bounding_area.topleft,
-                                     "bounding_bottomright": self.__bounding_area.bottomright}
+        return super().get_data() | {"bounding_area": tuple(self.__bounding_area),
+                                     "border_coll_bounce": self.__bounce}
 
 
     def get_bounding_area(self) -> None:

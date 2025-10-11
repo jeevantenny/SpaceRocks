@@ -11,7 +11,7 @@ from custom_types import LevelData, SaveData
 
 from file_processing import assets, data
 
-from game_objects import ObjectGroup, components
+from game_objects import GameObject, ObjectGroup, components
 from game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
 from game_objects.camera import Camera
 
@@ -37,7 +37,7 @@ class Play(State):
     def __init__(self, level_name: str, state_stack = None):
         super().__init__(state_stack)
 
-        self.__setup(data.load_level(level_name))
+        self.__setup(level_name)
 
         self.spaceship = PlayerShip(self.__center)
         self.entities.add(self.spaceship)
@@ -49,7 +49,7 @@ class Play(State):
         self._initialized = False
 
         self.entities.remove(self.spaceship)
-        self.__setup(data.load_level(level_name))
+        self.__setup(level_name)
         self.entities.add(self.spaceship)
         self.score = self.spaceship.score
 
@@ -58,20 +58,43 @@ class Play(State):
 
     
     @classmethod
-    def init_from_save(cls, sava_data: SaveData, state_stack: StateStack | None) -> Self:
-        self: Play = cls.__new__(cls)
-        super().__init__(self)
-        self.__setup(data.load_level("level_1"))
+    def init_from_save(cls, save_data: SaveData, state_stack: StateStack | None) -> Self:
+        self = cls.__new__(cls)
+        super().__init__(self, state_stack)
+        self.__setup(save_data.level_name)
 
-        return self
+        object_dict = {}
+
+        for entity_data in save_data.entity_data:
+            entity = GameObject.init_from_data(entity_data)
+            self.entities.add(entity)
+            if isinstance(entity, Asteroid):
+                self.asteroids.add(entity)
+            elif isinstance(entity, PlayerShip):
+                self.spaceship = entity
+
+            object_dict[entity_data["id"]] = entity
+
+        
+        for entity in self.entities.sprites():
+            entity.post_init(object_dict)
+
+
+        self.camera.set_position(self.spaceship.position)
+        self.score = save_data.score
+
+        self._initialized = True
 
 
 
-    def __setup(self, level_data: LevelData) -> None:
+    def __setup(self, level_name: str) -> None:
         "Initializes Play object with attributes required by all initializers. Spaceship needs to be made separately."
         self.visible_area = pg.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
         self.world_border = self.visible_area.inflate(100, 100)
 
+        level_data = data.load_level(level_name)
+
+        self.__level_name = level_name
         self.__base_color = level_data["base_color"]
         self.__parl_a = assets.load_texture(level_data["parl_a"])
         self.__parl_b = assets.load_texture(level_data["parl_b"])
@@ -122,13 +145,13 @@ class Play(State):
             self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
 
 
-        if inputs.keyboard_mouse.action_keys[pg.K_b]:
-            print(self.spaceship.get_data())
-
         self.spaceship.userinput(inputs)
 
         if self.spaceship.health and inputs.check_input("pause"):
             PauseMenu(self.state_stack)
+
+
+    
 
 
     def update(self):
@@ -321,11 +344,28 @@ class Play(State):
                 obj.set_angular_vel(0)
 
         GameOverScreen((self.score, self.highscore, self.highscore_changed), self.state_stack)
+        
+
+
+
+    def __save_progress(self) -> None:
+        entity_data = [entity.get_data()
+                       for entity in self.entities.sprites()
+                       
+                       if entity.save_entity_progress]
+        
+        save_data = SaveData(self.__level_name, self.spaceship.score, entity_data)
+        data.save_progress(save_data)
+
 
 
 
 
     def quit(self) -> None:
         self.__set_score()
-        data.save_highscore(self.highscore)
+        if self.spaceship.health and self.spaceship.score:
+            self.__save_progress()
+        else:
+            data.save_highscore(self.highscore)
+            data.delete_progress()
         self.entities.kill_all()

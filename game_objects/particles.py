@@ -10,18 +10,14 @@ from .components import *
 
 
 class ShipSmoke(ObjectAnimation, ObjectVelocity):
-    __texture_map_name = "particles"
+    save_entity_progress=False
     def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point):
-        texture_map = {}
-        for name, texture in assets.load_texture_map(self.__texture_map_name).items():
-            if "smoke" in name:
-                texture_map[name.removeprefix("smoke")] = texture
         
         super().__init__(
             position=position,
-            texture_map=texture_map,
-            anim_data=load_json(f"{self._anim_data_dir}/basic.animation"),
-            controller_data=load_json(f"{self._controller_data_dir}/basic.anim_controller")
+            texture_map_path="smoke",
+            anim_path="basic",
+            controller_path="basic"
         )
 
         self.accelerate(velocity)

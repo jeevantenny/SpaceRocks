@@ -366,4 +366,3 @@ class SaveData(NamedTuple):
     level_name: str
     score: int
     entity_data: list[dict]
-    ship_data: dict
