@@ -36,7 +36,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         self.position = pg.Vector2(object_data["position"])
 
 
-    def post_init(self, object_dict: dict[str, "GameObject"]) -> None:
+    def post_init_from_data(self, object_dict: dict[str, "GameObject"]) -> None:
         pass
 
 

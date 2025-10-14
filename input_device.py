@@ -142,7 +142,10 @@ class Controller:
                     self.__action_buttons[button_name] = True
                     self.__action_buttons["any"] = True
                     self.__hold_buttons[button_name] = 1
-                    # print(button_name)
+
+                #     print(event.button, button_name)
+                # else:
+                #     print(event.button)
                 
             if event.type == JOYBUTTONUP:
                 button_name = self.__mappings["buttons"].get(str(event.button))
@@ -174,7 +177,6 @@ class Controller:
                             else:
                                 self.__right_trigger = 0.0
     
-        # print(self.__hold_buttons)
 
 
 

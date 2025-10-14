@@ -3,7 +3,7 @@ Contains various types that will be used throughout the game.
 """
 
 import pygame as pg
-from typing import Self, Literal, Callable, Generator, Any, NamedTuple
+from typing import Self, Any, Literal, Callable, Generator, NamedTuple, TypedDict
 import random
 from collections import defaultdict
 
@@ -358,6 +358,17 @@ class AnimController:
         return bool(eval(condition, None, locals()))
     
 
+
+
+class LevelData(NamedTuple):
+    level_name: str
+    base_color: str
+    parl_a_path: str
+    parl_b_path: str
+
+    asteroid_density: int
+    clear_score: int
+    next_level: str
 
 
 

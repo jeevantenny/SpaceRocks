@@ -53,7 +53,7 @@ def load_progress() -> SaveData | None:
         return None
     
     except pickle.UnpicklingError:
-        raise ValueError("Progress got corrupted")
+        raise ValueError("Save File got corrupted")
     
 
 

@@ -1,4 +1,5 @@
 import pygame as pg
+from time import sleep
 from typing import Self, Literal, Any, Deque, Generator, Callable
 from functools import wraps
 
@@ -11,28 +12,11 @@ from audio import soundfx
 
 
 __all__ = [
-    "draw_wrapper",
     "State",
     "StateStack",
     "menus",
     "play"
 ]
-
-
-
-def draw_wrapper(draw_func: Callable):
-    """
-    Added to the draw method of a state that checks if the state has been initialized before
-    running the method.
-    """
-    @wraps(draw_func)
-    def wrapper(self: type[State], surface: pg.Surface, lerp_amount=0) -> str | None:
-        if self._initialized:
-            return draw_func(self, surface, lerp_amount)
-        else:
-            return None
-    
-    return wrapper
 
 
 
@@ -57,15 +41,14 @@ class State(soundfx.HasSoundQueue):
     enter_duration = 0
     exit_duration = 0
     take_input_on_transition = True
+
     _initialized = False
 
-    def __init__(self, state_stack: "StateStack | None" = None):
+
+    def __init__(self):
         super().__init__()
         self.state_stack: StateStack | None = None
-        if state_stack is not None:
-            state_stack.push(self)
 
-        type(self).draw = draw_wrapper(type(self).draw) # type: ignore
 
 
     @property
@@ -74,6 +57,18 @@ class State(soundfx.HasSoundQueue):
             return self.state_stack[self.state_stack.index(self)-1]
         else:
             return None
+        
+
+    @property
+    def initialized(self) -> bool:
+        return False
+    
+
+    def add_to_stack(self, state_stack: "StateStack") -> None:
+        if not isinstance(state_stack, StateStack):
+            raise TypeError(f"state_stack must be of type '{StateStack.__name__}")
+        
+        state_stack.push(self)
 
 
     def userinput(self, inputs: InputInterpreter) -> None:

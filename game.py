@@ -58,7 +58,7 @@ class Game:
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed
 
-        self.debug_font = pg.font.SysFont("arial", 20)
+        self.debug_font = pg.font.SysFont("arial", 15)
     
         self.__setup = True
 
@@ -158,17 +158,21 @@ class Game:
         keyboard = self.input_interpreter.keyboard_mouse
 
 
-        if keyboard.hold_keys[pg.K_LCTRL] and keyboard.action_keys[pg.K_d]:
-            debug.debug_mode = not debug.debug_mode
-
         
         if keyboard.hold_keys[K_LALT] and keyboard.action_keys[K_F11]:
             self.__set_screen_mode(not self.__fullscreen)
 
 
-        if debug.debug_mode:
-            if self.state_stack.top_state is not None and keyboard.hold_keys[K_LCTRL] and keyboard.action_keys[pg.K_BACKSPACE]:
+        if keyboard.hold_keys[pg.K_LCTRL] and keyboard.action_keys[pg.K_d]:
+            debug.debug_mode = not debug.debug_mode
+
+
+        if debug.debug_mode and keyboard.hold_keys[K_LCTRL]:
+            if self.state_stack.top_state is not None and keyboard.action_keys[K_BACKSPACE]:
                 self.state_stack.pop()
+
+            if keyboard.action_keys[K_v]:
+                print(self.state_stack)
 
         self.state_stack.userinput(self.input_interpreter)
 
@@ -189,10 +193,10 @@ class Game:
             pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.screen)
 
             if debug.debug_mode:
-                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}"
+                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {type(self.state_stack.top_state).__name__}"
                 debug_message = self.state_stack.debug_info()
-                if debug_message is not None:
-                    blit_text = f"{blit_text}, {debug_message}"
+                if debug_message:
+                    blit_text = f"{blit_text}\n{debug_message}"
 
                 self.screen.blit(self.debug_font.render(blit_text, False, "white", "black"))
 

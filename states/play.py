@@ -7,7 +7,7 @@ import debug
 
 from math_functions import unit_vector
 from misc import increment_score
-from custom_types import LevelData, SaveData
+from custom_types import LevelData, SaveData, Timer
 
 from file_processing import assets, data
 
@@ -34,8 +34,10 @@ class Play(State):
     __clear_fov = 60
     __score_limit = 99999
 
-    def __init__(self, level_name: str, state_stack = None):
-        super().__init__(state_stack)
+
+
+    def __init__(self, level_name: str):
+        super().__init__()
 
         self.__setup(level_name)
 
@@ -58,9 +60,9 @@ class Play(State):
 
     
     @classmethod
-    def init_from_save(cls, save_data: SaveData, state_stack: StateStack | None) -> Self:
+    def init_from_save(cls, save_data: SaveData) -> Self:
         self = cls.__new__(cls)
-        super().__init__(self, state_stack)
+        super().__init__(self)
         self.__setup(save_data.level_name)
 
         object_dict = {}
@@ -77,13 +79,15 @@ class Play(State):
 
         
         for entity in self.entities.sprites():
-            entity.post_init(object_dict)
+            entity.post_init_from_data(object_dict)
 
 
         self.camera.set_position(self.spaceship.position)
         self.score = save_data.score
 
         self._initialized = True
+
+        return self
 
 
 
@@ -109,6 +113,8 @@ class Play(State):
         
         self.__center = pg.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
         self.camera = Camera(self.__center)
+
+        self.__game_over_timer = Timer(27, False, self.__game_over)
 
         self.__timer = 10
 
@@ -137,10 +143,6 @@ class Play(State):
                 self.spaceship.combo += 50
 
 
-            if inputs.keyboard_mouse.action_keys[pg.K_j]:
-                self.state_stack.pop()
-                Play(self.state_stack)
-
         if debug.Cheats.enemy_ship and inputs.keyboard_mouse.action_keys[pg.K_e]:
             self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
 
@@ -148,7 +150,7 @@ class Play(State):
         self.spaceship.userinput(inputs)
 
         if self.spaceship.health and inputs.check_input("pause"):
-            PauseMenu(self.state_stack)
+            PauseMenu().add_to_stack(self.state_stack)
 
 
     
@@ -157,23 +159,25 @@ class Play(State):
     def update(self):
         if self.spaceship.health:
             self.__game_loop()
-        elif self.spaceship.alive():
+        elif self.__game_over_timer.complete:
+            self.__game_over_timer.start()
             self.camera.clear_velocity()
-            for entity in self.entities:
+            for entity in self.entities.sprites():
+                if isinstance(entity, Bullet):
+                    entity.force_kill()
+                    continue
+
                 if isinstance(entity, components.ObjectVelocity) and not isinstance(entity, Bullet):
                     entity.clear_velocity()
                 if isinstance(entity, Asteroid):
                     entity.set_angular_vel(0)
-                    if not entity.health:
-                        entity.update()
-                else:
-                    entity.update()
         
         else:
-            self.__game_over()
+            self.entities.update(self.camera.position)
 
         
         self._join_sound_queue(self.entities.clear_sound_queue())
+        self.__game_over_timer.update()
 
 
 
@@ -204,7 +208,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, asteroid value: {self.__asteroid_value()}, camera_pos: {self.camera.position}"
+        return f"entity count: {self.entities.count()}, camera_pos: {self.camera.position}"
 
 
 
@@ -343,7 +347,7 @@ class Play(State):
             if isinstance(obj, components.ObjectTexture):
                 obj.set_angular_vel(0)
 
-        GameOverScreen((self.score, self.highscore, self.highscore_changed), self.state_stack)
+        GameOverScreen((self.score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
         
 
 

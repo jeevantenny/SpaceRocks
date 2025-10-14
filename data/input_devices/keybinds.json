@@ -26,6 +26,11 @@
             "input_device": "controller",
             "type": "action_button",
             "value": "menu"
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "alt_menu"
         }
     ],
     "ship_forward": [
@@ -42,7 +47,7 @@
         {
             "input_device": "controller",
             "type": "trigger",
-            "side": "left",
+            "side": "right",
             "value": 0.5
         }
     ],

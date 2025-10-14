@@ -2,6 +2,8 @@
 
 
 data_paths = [
+    "assets",
+
     "assets\\anim_controllers",
     "assets\\animations",
     "assets\\fonts",
@@ -16,7 +18,8 @@ data_paths = [
     "assets\\textures\\game_objects",
     "assets\\textures\\ui",
 
-    "data"
+    "data\\input_devices",
+    "data\\levels"
 ]
 
 datas = [(path, path) for path in data_paths]

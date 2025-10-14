@@ -24,8 +24,8 @@ def darken_surface(surface: pg.Surface) -> None:
 
 
 class TitleScreen(State):
-    def __init__(self, state_stack = None):
-        super().__init__(state_stack)
+    def __init__(self):
+        super().__init__()
 
         self.title = elements.TitleText((0, -50), "main_entrance_a")
         version_text = ".".join(map(str, config.VERSION_NUM))
@@ -100,8 +100,8 @@ class TitleScreen(State):
 
 
 class PauseMenu(State):
-    def __init__(self, state_stack = None):
-        super().__init__(state_stack)
+    def __init__(self):
+        super().__init__()
 
         self.title = elements.TitleText((0, -35), "main_entrance_b")
         self.__exit_menu = False
@@ -136,8 +136,8 @@ class PauseMenu(State):
 
 
 class GameOverScreen(State):
-    def __init__(self, score_data: tuple[int, int, bool], state_stack = None):
-        super().__init__(state_stack)
+    def __init__(self, score_data: tuple[int, int, bool]):
+        super().__init__()
         from .play import Play
         self.prev_state: Play
 
@@ -158,7 +158,7 @@ class GameOverScreen(State):
     def update(self):
         if self.__timer == 0:
             self.state_stack.pop()
-            ShowScore(self.score_data, self.state_stack)
+            ShowScore(self.score_data).add_to_stack(self.state_stack)
         else:
             self.__timer -= 1
 
@@ -175,8 +175,8 @@ class GameOverScreen(State):
 
 
 class ShowScore(State):
-    def __init__(self, score_data: tuple[int, int, bool], state_stack = None):
-        super().__init__(state_stack)
+    def __init__(self, score_data: tuple[int, int, bool]):
+        super().__init__()
         self.score = score_data[0]
         self.highscore = str(score_data[1])
         self.new_highscore = score_data[2]
@@ -201,7 +201,7 @@ class ShowScore(State):
                 from .play import Play
 
                 self.state_stack.quit()
-                Play("level_1", self.state_stack)
+                Play("level_1").add_to_stack(self.state_stack)
                 
 
 

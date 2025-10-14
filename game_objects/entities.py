@@ -74,7 +74,6 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
     def get_data(self):
-        print(id(self))
         return super().get_data() | {"score": self.score,
                                      "combo": self.combo}
 
@@ -110,9 +109,9 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             return
 
         for obj in self.colliding_objects():
-            if isinstance(obj, Asteroid):
-                if self.__ship_got_hit(obj):
-                    break
+            if isinstance(obj, Asteroid) and obj.health:
+                self.kill()
+                break
 
 
         self.__thrust = False
@@ -153,10 +152,6 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             vel = self._velocity.y
         else:
             return
-        
-        intensity = intensity = min(abs(vel)*0.15, 1)
-        
-        self._queue_sound("entity.ship.bounce", intensity)
 
     
     def kill(self):
@@ -377,7 +372,6 @@ class EnemyShip(Spaceship):
 
 class Bullet(ObjectTexture, ObjectVelocity):
     draw_layer = 1
-    hitbox_size = (8, 8)
     visible_area = pg.Rect(0, 0, *pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE).inflate(100, 100)
 
     __speed = 40
@@ -407,8 +401,8 @@ class Bullet(ObjectTexture, ObjectVelocity):
         self.__shooter_id = object_data["shooter_id"]
 
     
-    def post_init(self, object_dict):
-        if True:
+    def post_init_from_data(self, object_dict):
+        if self.__shooter_id in object_dict:
             self.shooter = object_dict[self.__shooter_id]
         else:
             raise Exception("Bullet cannot find shooter object.")
@@ -481,7 +475,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
     
 
     def __get_collision_lines(self, blit_offset=(0, 0)) -> list[tuple[pg.Vector2, pg.Vector2]]:
-        sideways: pg.Vector2 = self.get_rotation_vector().rotate(90)*8
+        sideways: pg.Vector2 = self.get_rotation_vector().rotate(90)*9
 
         line_offset = -self._velocity*2*(self.__lifetime <= type(self).__lifetime-3)
         prev_pos = self.position-self._velocity+blit_offset
@@ -515,13 +509,13 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     size_data = {
         1: {
             "texture": "small",
-            "hitbox": (13, 13),
+            "hitbox": (12, 12),
             "health": 1,
             "points": 3
         },
         2: {
             "texture": "medium",
-            "hitbox": (28, 28),
+            "hitbox": (26, 26),
             "health": 2,
             "points": 5
         },
@@ -561,6 +555,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         super().__init_from_data__(object_data, group)
 
         self.size = object_data["size"]
+        self._set_hitbox_size(self.size_data[self.size]["hitbox"])
         self.health = object_data["health"]
         self.explode_pos: pg.Vector2 | None = None
         

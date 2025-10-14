@@ -29,6 +29,7 @@ def load_texture(path: str, file_type="png") -> pg.Surface:
     texture_path = get_resource_path(f"{TEXTURES_DIR}/{path}.{file_type}")
     texture = pg.image.load(texture_path).convert()
     texture.set_colorkey(COLORKEY)
+    # print(path)
     return texture
 
 
@@ -80,12 +81,15 @@ def load_sound(name: str) -> GameSound:
     
     sound_data = __sound_definition[name]
     
-    sounds = [pg.Sound(f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}") for path in sound_data["sounds"]]
+    sounds = []
+    for path in sound_data["sounds"]:
+        final_path = get_resource_path(f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}")
+        sounds.append(pg.Sound(final_path))
 
     return GameSound(name, sounds)
 
 
 
 def load_music(path: str):
-    pg.mixer_music.load(f"{SOUNDS_DIR}/{path}.ogg")
+    pg.mixer_music.load(get_resource_path(f"{SOUNDS_DIR}/{path}.ogg"))
     

@@ -287,7 +287,7 @@ class ObjectHitbox(ObjectComponent):
 
     def __init__(self, *, hitbox_size: pg.typing.Point, **kwargs):
         super().__init__(**kwargs)
-        self.__hitbox_size = tuple(hitbox_size)
+        self._set_hitbox_size(hitbox_size)
 
 
     def __init_from_data__(self, object_data, group = None):
@@ -305,6 +305,10 @@ class ObjectHitbox(ObjectComponent):
         rect = pg.FRect(0, 0, *self.__hitbox_size)
         rect.center = self.position
         return rect
+    
+
+    def _set_hitbox_size(self, size: pg.typing.Point):
+        self.__hitbox_size = tuple(size)
     
 
     def colliding_objects(self) -> Generator[GameObject, Any, None]:

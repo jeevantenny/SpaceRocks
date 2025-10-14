@@ -1,5 +1,7 @@
 import sys, os
 import json
+from functools import wraps, lru_cache
+from typing import Callable
 
 
 def get_resource_path(path: str) -> str:
@@ -26,3 +28,18 @@ def save_json(data: dict, path: str) -> None:
 
     with open(f"{path}.json", 'w') as fp:
         json.dump(data, fp, indent=4)
+
+
+
+def asset_cache(func: Callable):
+
+    pass_cache = "cache" in func.__code__.co_varnames
+
+    @wraps
+    def wrapper(*args, cache=False, **kwargs):
+        if pass_cache:
+            result = func(*args, cache=False, **kwargs)
+        else:
+            result = func(*args, **kwargs)
+        
+        
