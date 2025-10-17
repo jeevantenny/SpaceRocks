@@ -21,8 +21,15 @@ if not os.path.exists("user_data"):
 def load_level(name: str) -> LevelData:
     level_data = load_json(f"{LEVELS_DIR}/{name}")
 
-
-    return level_data
+    return LevelData(level_data.get("base_color", "#000000"),
+                     level_data["parl_a"],
+                     level_data["parl_b"],
+                     level_data["background_palette"],
+                     level_data.get("asteroid_palette", None),
+                     level_data["asteroid_density"],
+                     level_data["asteroid_velocity"],
+                     level_data["clear_score"],
+                     level_data["next_level"])
 
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:

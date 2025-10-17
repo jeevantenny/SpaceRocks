@@ -32,7 +32,8 @@ __all__ = [
 
 class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
     draw_layer = 2
-    _rotation_speed = 30
+    distance_based_sound=False
+    _rotation_speed = 40
     __asset_key = "spaceship"
 
     def __init__(self, position):
@@ -96,7 +97,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         if self._angular_vel*self.__turn_direction <= 0:
             self._angular_vel = 0
         if self.__turn_direction and abs(self._angular_vel) < self._rotation_speed:
-            self._angular_vel += 5*self.__turn_direction
+            self._angular_vel += 8*self.__turn_direction
         
 
         super().update()
@@ -376,6 +377,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
     __speed = 40
     __lifetime = 40
+    _max_speed = 100 + __speed
 
     def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter: Spaceship, attack_types: list[type[GameObject]]):
         super().__init__(
@@ -391,6 +393,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
         self.set_rotation(-direction.angle_to((0, -1)))
         self.__attack_types = attack_types
+        self.__distance_traveled = 0.0
 
 
     
@@ -399,6 +402,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
         self.__attack_types = object_data["attack_types"]
         self.__shooter_id = object_data["shooter_id"]
+        self.__distance_traveled = 0.0
 
     
     def post_init_from_data(self, object_dict):
@@ -418,6 +422,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
     def update(self):
         super().update()
+        self.__distance_traveled += self.__speed
         self.__lifetime -= 1
         if self.__lifetime == 0:
             self.kill()
@@ -477,7 +482,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
     def __get_collision_lines(self, blit_offset=(0, 0)) -> list[tuple[pg.Vector2, pg.Vector2]]:
         sideways: pg.Vector2 = self.get_rotation_vector().rotate(90)*9
 
-        line_offset = -self._velocity*2*(self.__lifetime <= type(self).__lifetime-3)
+        line_offset = -self.get_rotation_vector()*min(self.__distance_traveled*0.5, self.__speed*2)
         prev_pos = self.position-self._velocity+blit_offset
 
         return [
@@ -509,13 +514,13 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     size_data = {
         1: {
             "texture": "small",
-            "hitbox": (12, 12),
+            "hitbox": (11, 11),
             "health": 1,
             "points": 3
         },
         2: {
             "texture": "medium",
-            "hitbox": (26, 26),
+            "hitbox": (25, 25),
             "health": 2,
             "points": 5
         },
@@ -529,7 +534,12 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
     __asset_key = "asteroid"
 
-    def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point, size: Literal[1, 2, 3] = 1):
+    def __init__(self,
+                 position: pg.typing.Point,
+                 velocity: pg.typing.Point,
+                 size: Literal[1, 2, 3] = 1,
+                 palette_swap: str | None = None):
+
         super().__init__(
             position=position,
             hitbox_size=self.size_data[size]["hitbox"],
@@ -537,7 +547,8 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
             texture_map_path=self.__asset_key,
             anim_path=self.__asset_key,
-            controller_path=self.__asset_key
+            controller_path=self.__asset_key,
+            palette_swap=palette_swap
         )
 
         self.size = size
@@ -619,7 +630,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
         for pos in positions:
             pos.rotate_ip(rotate_angle)
-            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1)
+            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1, self._palette_swap)
             new_rock.set_velocity(self._velocity+pos)
             self.add_to_groups(new_rock)
 

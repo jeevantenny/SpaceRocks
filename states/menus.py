@@ -17,8 +17,8 @@ from . import State
 
 
 
-def darken_surface(surface: pg.Surface) -> None:
-    surface.fill("#335588", special_flags=pg.BLEND_RGB_MULT)
+def darken_surface(surface: pg.Surface, color="#335588") -> None:
+    surface.fill(color, special_flags=pg.BLEND_RGB_MULT)
 
 
 

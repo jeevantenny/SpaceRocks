@@ -137,7 +137,7 @@ class ObjectTexture(ObjectComponent):
         if value > 180:
             value -= 360
         
-        self.__rotation = value
+        self.__rotation = int(value)
 
 
     def set_angular_vel(self, amount: float) -> None:
@@ -206,12 +206,19 @@ class ObjectAnimation(ObjectTexture):
     _anim_data_dir = "assets/animations"
     _controller_data_dir = "assets/anim_controllers"
 
-    def __init__(self, *, texture_map_path: str, anim_path: str, controller_path: str, **kwargs):
+    def __init__(self, *,
+                 texture_map_path: str,
+                 anim_path: str,
+                 controller_path: str,
+                 palette_swap: str | None = None,
+                 **kwargs):
+
         super().__init__(texture=None, **kwargs)
 
         self.__texture_map_path = texture_map_path
         self.__anim_path = anim_path
         self.__controller_path = controller_path
+        self._palette_swap = palette_swap
 
         self.__init_base()
 
@@ -223,13 +230,14 @@ class ObjectAnimation(ObjectTexture):
         self.__texture_map_path = object_data["texture_map_path"]
         self.__anim_path = object_data["anim_path"]
         self.__controller_path = object_data["controller_path"]
+        self._palette_swap = object_data["palette_swap"]
 
         self.__init_base()
 
 
 
     def __init_base(self) -> None:
-        self.__texture_map = assets.load_texture_map(self.__texture_map_path)
+        self.__texture_map = assets.load_texture_map(self.__texture_map_path, self._palette_swap)
 
         anim_data = assets.load_anim_data(self.__anim_path)
         animations = {}
@@ -245,7 +253,8 @@ class ObjectAnimation(ObjectTexture):
     def get_data(self):
         return super().get_data() | {"texture_map_path": self.__texture_map_path,
                                      "anim_path": self.__anim_path,
-                                     "controller_path": self.__controller_path}
+                                     "controller_path": self.__controller_path,
+                                     "palette_swap": self._palette_swap}
 
 
     def update(self):

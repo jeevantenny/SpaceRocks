@@ -30,9 +30,11 @@ class Play(State):
     Contains the game-loop which handles the main gameplay.
     """
     __spawn_radius = 200
-    __despawn_radius = 1200
+    __despawn_radius = 500
     __clear_fov = 60
     __score_limit = 99999
+
+    colors = ["#442200", "#884400", "#993300", "#005588", "#99ddee"]
 
 
 
@@ -41,7 +43,7 @@ class Play(State):
 
         self.__setup(level_name)
 
-        self.spaceship = PlayerShip(self.__center)
+        self.spaceship = PlayerShip((0, 0))
         self.entities.add(self.spaceship)
 
         self._initialized = True
@@ -96,12 +98,13 @@ class Play(State):
         self.visible_area = pg.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
         self.world_border = self.visible_area.inflate(100, 100)
 
-        level_data = data.load_level(level_name)
+        self.__level_data = data.load_level(level_name)
 
         self.__level_name = level_name
-        self.__base_color = level_data["base_color"]
-        self.__parl_a = assets.load_texture(level_data["parl_a"])
-        self.__parl_b = assets.load_texture(level_data["parl_b"])
+        self.__base_color = self.__level_data.base_color
+        self.__parl_a = assets.palette_swap(assets.load_texture(self.__level_data.parl_a), self.__level_data.background_palette)
+        self.__parl_b = assets.palette_swap(assets.load_texture(self.__level_data.parl_b), self.__level_data.background_palette)
+
         self.__info_text = font.SmallFont.render("")
 
         self.entities = ObjectGroup()
@@ -111,8 +114,7 @@ class Play(State):
         self.highscore = data.load_highscore()
         self.highscore_changed = False
         
-        self.__center = pg.Vector2(config.PIXEL_WINDOW_SIZE)*0.5
-        self.camera = Camera(self.__center)
+        self.camera = Camera((0, 0))
 
         self.__game_over_timer = Timer(27, False, self.__game_over)
 
@@ -167,7 +169,7 @@ class Play(State):
                     entity.force_kill()
                     continue
 
-                if isinstance(entity, components.ObjectVelocity) and not isinstance(entity, Bullet):
+                if isinstance(entity, components.ObjectVelocity):
                     entity.clear_velocity()
                 if isinstance(entity, Asteroid):
                     entity.set_angular_vel(0)
@@ -218,20 +220,20 @@ class Play(State):
 
     def __draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         # Background A
-        width, height = self.__parl_a.size
+        width, height = self.__parl_b.size
         camera_offset = -self.camera.lerp_position(lerp_amount)*0.1
         camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
         for x in range(-1, surface.width//width+1):
             for y in range(-1, surface.height//height+1):
-                surface.blit(self.__parl_a, (width*x, height*y)+camera_offset)
+                surface.blit(self.__parl_b, (width*x, height*y)+camera_offset)
 
         # Background B
-        width, height = self.__parl_b.size
+        width, height = self.__parl_a.size
         camera_offset = -self.camera.lerp_position(lerp_amount)*0.3
         camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
         for x in range(-1, surface.width//width+1):
             for y in range(-1, surface.height//height+1):
-                surface.blit(self.__parl_b, (width*x, height*y)+camera_offset)
+                surface.blit(self.__parl_a, (width*x, height*y)+camera_offset)
 
 
 
@@ -295,7 +297,8 @@ class Play(State):
         asteroid = Asteroid(
             start_position,
             velocity,
-            random.randint(1, 2) # type: ignore
+            random.randint(1, 2),
+            self.__level_data.asteroid_palette
         )
 
         self.entities.add(asteroid)
@@ -323,7 +326,7 @@ class Play(State):
     
 
     def __get_asteroid_speed(self) -> float:
-        return random.random()*self.score*0.005+1
+        return random.random()*self.score*0.005 + 1
     
 
     def __asteroid_value(self) -> int:

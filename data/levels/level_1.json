@@ -1,7 +1,9 @@
 {
     "base_color": "#000000",
-    "parl_a": "backgrounds/space_background_big",
-    "parl_b": "backgrounds/space_background",
+    "parl_a": "backgrounds/space_background",
+    "parl_b": "backgrounds/space_background_big",
+    "background_palette": "default_background",
+    "asteroid_palette": "red_rocks",
 
     "asteroid_density": 15,
     "asteroid_velocity": [3, 5],

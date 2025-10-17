@@ -13,6 +13,7 @@ from audio import soundfx
 
 class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
     save_entity_progress=True
+    distance_based_sound=True
 
     def __init__(self, *, position: pg.typing.Point, group: "ObjectGroup | None" = None) -> None:
         if group:
@@ -148,13 +149,14 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 
 
     def __process_entity_sound(self, _object: T, sound_focus: pg.typing.Point, queue: soundfx.SoundQueue) -> None:
-        volume = self.__get_sound_volume(_object.distance_to(sound_focus))
-        # if _object.__class__.__name__ == "Spaceship":
-        #     print(volume)
-
-        if volume and queue:
-            for sound_data in queue:
-                self._queue_sound(sound_data[0], sound_data[1]*volume)
+        if _object.distance_based_sound:
+            volume = self.__get_sound_volume(_object.distance_to(sound_focus))
+            if volume and queue:
+                for sound_data in queue:
+                    self._queue_sound(sound_data[0], sound_data[1]*volume)
+        
+        else:
+            self._join_sound_queue(queue)
 
 
     def __get_sound_volume(self, distance: float) -> float:
