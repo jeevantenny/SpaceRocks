@@ -1,0 +1,16 @@
+/.venv
+/space-game
+/.vscode
+/.VSCodeCounter
+
+/build
+/dist
+/assets/blockbench
+/test_folder
+
+/user_data
+
+__pycache__
+
+
+test.py
