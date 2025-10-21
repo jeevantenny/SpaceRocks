@@ -218,6 +218,7 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
     
 
     def kill_all(self) -> None:
+        "Removes all objects in this group and any other group those objects belong to."
         for obj in self:
             obj.force_kill() # type: ignore
 

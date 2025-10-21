@@ -3,10 +3,9 @@
     "parl_a": "backgrounds/space_background",
     "parl_b": "backgrounds/space_background_big",
     "background_palette": "default_background",
-    "asteroid_palette": "red_rocks",
 
     "asteroid_density": 15,
-    "asteroid_velocity": [3, 5],
+    "asteroid_speed": [3, 5],
 
     "clear_score": 1000,
     "next_level": "level_2"

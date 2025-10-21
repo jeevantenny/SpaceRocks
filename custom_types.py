@@ -361,14 +361,16 @@ class AnimController:
 
 
 class LevelData(NamedTuple):
+    level_name: str
     base_color: str
     parl_a: str
     parl_b: str
     background_palette: str
     asteroid_palette: str
+    background_tint: str
 
     asteroid_density: int
-    asteroid_velocity: int
+    asteroid_speed: int
     clear_score: int
     next_level: str
 

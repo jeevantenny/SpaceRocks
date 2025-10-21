@@ -8,6 +8,7 @@ data_paths = [
     "assets\\animations",
     "assets\\fonts",
     "assets\\texture_maps",
+    "assets\\palette_swaps",
 
     "assets\\sounds\\entity\\asteroid",
     "assets\\sounds\\entity\\spaceship",

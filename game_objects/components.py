@@ -246,6 +246,10 @@ class ObjectAnimation(ObjectTexture):
 
         self.__controller = AnimController(assets.load_anim_controller_data(self.__controller_path), animations)
 
+
+    @property
+    def animations_complete(self) -> bool:
+        return self.__controller.animations_complete
     
 
 
@@ -259,16 +263,11 @@ class ObjectAnimation(ObjectTexture):
 
     def update(self):
         super().update()
-        self.update_animations()
+        self._update_animations()
 
 
-    def update_animations(self):
+    def _update_animations(self):
         self.__controller.update(self)
-
-
-    @property
-    def animations_complete(self) -> bool:
-        return self.__controller.animations_complete
     
 
 
@@ -485,6 +484,7 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
 
 
 class BorderCollision(ObjectHitbox, ObjectVelocity):
+    "Allows objects to collide with a set border - UNUSED"
 
 
     def __init__(self, *, bounding_area: pg.typing.RectLike, border_bounce=0.0, **kwargs):

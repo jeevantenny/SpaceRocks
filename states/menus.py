@@ -17,11 +17,6 @@ from . import State
 
 
 
-def darken_surface(surface: pg.Surface, color="#335588") -> None:
-    surface.fill(color, special_flags=pg.BLEND_RGB_MULT)
-
-
-
 
 class TitleScreen(State):
     def __init__(self):
@@ -33,8 +28,6 @@ class TitleScreen(State):
 
         self.__start_gameplay = False
         self.__info_text = font.SmallFont.render("")
-
-        self._initialized = True
 
 
 
@@ -107,8 +100,6 @@ class PauseMenu(State):
         self.__exit_menu = False
         self.__info_text = font.SmallFont.render("")
 
-        self._initialized = True
-
 
 
     def userinput(self, inputs):
@@ -127,7 +118,6 @@ class PauseMenu(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        darken_surface(surface)
         self.title.draw(surface, lerp_amount)
         if not self.__exit_menu:
             ui.blit_to_center(self.__info_text, surface, (0, 50))
@@ -147,8 +137,6 @@ class GameOverScreen(State):
         self.display_score = 0
         self.title = elements.TitleText((0, 0), "game_over")
 
-        self._initialized = True
-
     
     def userinput(self, inputs):
         if inputs.check_input("select") or inputs.keyboard_mouse.action_keys[pg.K_SPACE]:
@@ -165,7 +153,6 @@ class GameOverScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
-        darken_surface(surface)
         self.title.draw(surface, lerp_amount)
         
             
@@ -189,7 +176,6 @@ class ShowScore(State):
 
         self.__info_text = font.SmallFont.render("")
 
-        self._initialized = True
 
 
     def userinput(self, inputs):
@@ -219,10 +205,9 @@ class ShowScore(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        darken_surface(surface)
 
         if self.__timer:
-            text_surface = font.LargeFont.render(ui.add_text_padding(str(self.display_score), 5, pad_char='0'), 2)
+            text_surface = font.LargeFont.render(ui.add_text_padding(str(self.display_score), 5, pad_char='0'), 2, cache=False)
             surface.blit(text_surface, (99, 101))
         else:
             self.__display_score(surface, "Highscore", self.highscore, (102, 50))

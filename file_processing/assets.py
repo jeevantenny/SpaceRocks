@@ -68,7 +68,7 @@ def palette_swap(texture: pg.Surface, swap_colors: dict[str, str]) -> pg.Surface
 
 @asset_cache
 def palette_swap(texture: pg.Surface, swap_colors: dict[str, str] | str) -> pg.Surface:
-    print("Called with", texture, swap_colors)
+    # print("Called with", texture, swap_colors)
     if isinstance(swap_colors, str):
         swap_colors = load_json(f"assets/palette_swaps/{swap_colors}")
     

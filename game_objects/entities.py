@@ -33,7 +33,7 @@ __all__ = [
 class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
     draw_layer = 2
     distance_based_sound=False
-    _rotation_speed = 40
+    _rotation_speed = 30
     __asset_key = "spaceship"
 
     def __init__(self, position):
@@ -178,7 +178,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
     def __start_thrust_sound(self) -> None:
         self.__stop_thruster_sound()
-        self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.6, -1)
+        self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.7, -1)
 
 
 
@@ -414,7 +414,6 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
     
     def get_data(self):
-        print(id(self.shooter))
         return super().get_data() | {"shooter_id": id(self.shooter),
                                      "attack_types": self.__attack_types}
 
@@ -583,7 +582,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         if self.health:  
             super().update()
         else:
-            self.update_animations()
+            self._update_animations()
             self.set_velocity((0, 0))
             self.set_angular_vel(0)
             self.set_position(self.explode_pos)
@@ -653,7 +652,7 @@ class DisplayPoint(ObjectTexture):
         if combo:
             text = f"COMBO {text}"
 
-        texture = SmallFont.render(text, color_a="#dd6644" if combo else "#eeeeee")
+        texture = SmallFont.render(text, color_a="#dd6644" if combo else "#eeeeee", cache=False)
 
         super().__init__(
             position=position,

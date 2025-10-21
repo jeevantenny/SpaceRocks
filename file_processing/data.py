@@ -21,13 +21,15 @@ if not os.path.exists("user_data"):
 def load_level(name: str) -> LevelData:
     level_data = load_json(f"{LEVELS_DIR}/{name}")
 
-    return LevelData(level_data.get("base_color", "#000000"),
-                     level_data["parl_a"],
-                     level_data["parl_b"],
+    return LevelData(name,
+                     level_data.get("base_color", "#000000"),
+                     level_data.get("parl_a", "backgrounds/space_background"),
+                     level_data.get("parl_b", "backgrounds/space_background_big"),
                      level_data["background_palette"],
                      level_data.get("asteroid_palette", None),
+                     level_data.get("background_tint", "#335588"),
                      level_data["asteroid_density"],
-                     level_data["asteroid_velocity"],
+                     level_data["asteroid_speed"],
                      level_data["clear_score"],
                      level_data["next_level"])
 

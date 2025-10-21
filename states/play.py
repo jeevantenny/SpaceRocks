@@ -19,6 +19,7 @@ from ui import add_text_padding, font
 
 from . import State, StateStack
 from .menus import PauseMenu, GameOverScreen
+from .visuals import BackgroundTint
 
 
 
@@ -41,23 +42,22 @@ class Play(State):
     def __init__(self, level_name: str):
         super().__init__()
 
-        self.__setup(level_name)
+        self.__setup()
+        self.__setup_level(level_name)
+        self.__setup_game_objects()
 
         self.spaceship = PlayerShip((0, 0))
         self.entities.add(self.spaceship)
 
-        self._initialized = True
-
 
     def reinit_next_level(self, level_name: str) -> None:
-        self._initialized = False
-
-        self.entities.remove(self.spaceship)
-        self.__setup(level_name)
+        self.__setup_level(level_name)
+        self.entities.kill_all()
         self.entities.add(self.spaceship)
+        self.spaceship.set_position((0, 0))
+        self.spaceship.clear_velocity()
+        self.camera.set_position((0, 0))
         self.score = self.spaceship.score
-
-        self._initialized = True
 
 
     
@@ -65,7 +65,9 @@ class Play(State):
     def init_from_save(cls, save_data: SaveData) -> Self:
         self = cls.__new__(cls)
         super().__init__(self)
-        self.__setup(save_data.level_name)
+        self.__setup()
+        self.__setup_level(save_data.level_name)
+        self.__setup_game_objects()
 
         object_dict = {}
 
@@ -86,42 +88,40 @@ class Play(State):
 
         self.camera.set_position(self.spaceship.position)
         self.score = save_data.score
-
-        self._initialized = True
+        self.__timer = 0
 
         return self
 
 
 
-    def __setup(self, level_name: str) -> None:
+    def __setup(self) -> None:
         "Initializes Play object with attributes required by all initializers. Spaceship needs to be made separately."
-        self.visible_area = pg.Rect(0, 0, *config.PIXEL_WINDOW_SIZE)
-        self.world_border = self.visible_area.inflate(100, 100)
-
-        self.__level_data = data.load_level(level_name)
-
-        self.__level_name = level_name
-        self.__base_color = self.__level_data.base_color
-        self.__parl_a = assets.palette_swap(assets.load_texture(self.__level_data.parl_a), self.__level_data.background_palette)
-        self.__parl_b = assets.palette_swap(assets.load_texture(self.__level_data.parl_b), self.__level_data.background_palette)
 
         self.__info_text = font.SmallFont.render("")
-
-        self.entities = ObjectGroup()
-        self.asteroids = ObjectGroup[Asteroid]()
 
         self.score = 0
         self.highscore = data.load_highscore()
         self.highscore_changed = False
         
-        self.camera = Camera((0, 0))
-
         self.__game_over_timer = Timer(27, False, self.__game_over)
+        self.__game_paused = False
 
         self.__timer = 10
 
 
 
+    def __setup_level(self, level_name: str) -> None:
+        self.__level_data = data.load_level(level_name)
+
+        self.__base_color = self.__level_data.base_color
+        self.__parl_a = assets.palette_swap(assets.load_texture(self.__level_data.parl_a), self.__level_data.background_palette)
+        self.__parl_b = assets.palette_swap(assets.load_texture(self.__level_data.parl_b), self.__level_data.background_palette)
+
+
+    def __setup_game_objects(self) -> None:
+        self.entities = ObjectGroup()
+        self.asteroids = ObjectGroup[Asteroid]()
+        self.camera = Camera((0, 0))
 
 
 
@@ -145,6 +145,11 @@ class Play(State):
                 self.spaceship.combo += 50
 
 
+
+        if inputs.keyboard_mouse.action_keys[pg.K_t]:
+            self.reinit_next_level("level_2")
+
+
         if debug.Cheats.enemy_ship and inputs.keyboard_mouse.action_keys[pg.K_e]:
             self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
 
@@ -152,7 +157,7 @@ class Play(State):
         self.spaceship.userinput(inputs)
 
         if self.spaceship.health and inputs.check_input("pause"):
-            PauseMenu().add_to_stack(self.state_stack)
+            self.__pause_game()
 
 
     
@@ -181,6 +186,13 @@ class Play(State):
         self._join_sound_queue(self.entities.clear_sound_queue())
         self.__game_over_timer.update()
 
+        if self.__game_paused:
+            top_state = self.state_stack.top_state
+            if isinstance(top_state, BackgroundTint) and top_state.prev_state is self:
+                self.state_stack.pop()
+            
+            self.__game_paused = False
+
 
 
 
@@ -199,8 +211,8 @@ class Play(State):
                 text_offset = -80*(self.__timer*0.1)**2
             else:
                 text_offset = 0
-            self.__show_scores(surface, "highscore", self.highscore, (10, 4+text_offset))
-            self.__show_scores(surface, "score", self.score, (10, 20+text_offset))
+            self.__show_scores(surface, "highscore", self.highscore, (10, 4+text_offset), (self.highscore > self.score or self.score == self.spaceship.score))
+            self.__show_scores(surface, "score", self.score, (10, 20+text_offset), self.score == self.spaceship.score)
 
         if self.spaceship.health and self.is_top_state():
             surface.blit(self.__info_text, (10, surface.height-20))
@@ -312,17 +324,18 @@ class Play(State):
 
 
 
-    def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point):
+    def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point, cache=True):
         score_text = add_text_padding(str(score), 5, pad_char='0')
 
         score_desc_surf = font.SmallFont.render(name.capitalize())
         surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))
-        surface.blit(font.LargeFont.render(score_text), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
+        surface.blit(font.LargeFont.render(score_text, cache=cache), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
 
 
 
     def __required_asteroid_value(self) -> int:
-        return min(10 + int(self.score/200), 120)
+        # return min(10 + int(self.score/200), 120)
+        return self.__level_data.asteroid_density
     
 
     def __get_asteroid_speed(self) -> float:
@@ -339,6 +352,18 @@ class Play(State):
 
     
 
+
+
+
+
+
+
+
+    def __pause_game(self) -> None:
+        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
+        PauseMenu().add_to_stack(self.state_stack)
+        self.__game_paused = True
+
     
     
     def __game_over(self) -> None:
@@ -350,6 +375,7 @@ class Play(State):
             if isinstance(obj, components.ObjectTexture):
                 obj.set_angular_vel(0)
 
+        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
         GameOverScreen((self.score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
         
 
@@ -361,7 +387,7 @@ class Play(State):
                        
                        if entity.save_entity_progress]
         
-        save_data = SaveData(self.__level_name, self.spaceship.score, entity_data)
+        save_data = SaveData(self.__level_data.level_name, self.spaceship.score, entity_data)
         data.save_progress(save_data)
 
 

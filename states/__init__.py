@@ -35,6 +35,10 @@ def stack_method(func: Callable):
 
 
 
+
+
+
+
 class State(soundfx.HasSoundQueue):
     "A state that a game is in. Use to separate different menus and gameplay."
 
@@ -42,14 +46,11 @@ class State(soundfx.HasSoundQueue):
     exit_duration = 0
     take_input_on_transition = True
 
-    _initialized = False
 
-
-    def __init__(self):
+    def __init__(self, *, couple_prev=False):
         super().__init__()
         self.state_stack: StateStack | None = None
-
-
+        self.__couple_prev = couple_prev
 
     @property
     def prev_state(self) -> "State | None":

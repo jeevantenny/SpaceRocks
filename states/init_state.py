@@ -16,7 +16,7 @@ class Initializer:
         save_data = data.load_progress()
 
         if save_data is None:
-            Play("level_1").add_to_stack(state_stack)
+            Play("level_2").add_to_stack(state_stack)
             TitleScreen().add_to_stack(state_stack)
         
         else:

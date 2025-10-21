@@ -1,6 +1,5 @@
 import pygame as pg
-from typing import Literal
-from functools import partial
+from functools import partial, lru_cache
 
 from . import load_icon
 
@@ -22,14 +21,29 @@ class Font:
     _base_size: int
     _font: partial[pg.Font] | None = None
 
-    def __init__(self):
+
+    def __new__(cls):
+        raise TypeError(f"Cannot create instance of {cls.__name__}")
+
+    @classmethod
+    def init_font(cls):
         "To initialize font. Only needed to be used once."
 
-        if self._font is None:
-            type(self)._font = partial(pg.font.Font, get_resource_path(self.font_path))
+        if cls._font is None:
+            cls._font = partial(pg.font.Font, get_resource_path(cls.font_path))
+
     
     @classmethod
-    def render(cls, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011") -> pg.Surface:
+    def render(cls, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011", cache=True) -> pg.Surface:
+        if cache:
+            return cls.__render_cached(text, size, color_a, color_b)
+        else:
+            return cls.__render(text, size, color_a, color_b)
+
+        
+    
+    @classmethod
+    def __render(cls, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011") -> pg.Surface:
         if cls._font is None:
             raise game_errors.InitializationError(cls)
 
@@ -43,8 +57,13 @@ class Font:
         surface.blit(background, pg.Vector2(1, 1)*cls._shadow_offset*size)
         surface.blit(main, (0, 0))
 
-        
         return surface
+
+
+    @classmethod
+    @lru_cache(8)
+    def __render_cached(cls, text, size, color_a, color_b) -> pg.Surface:
+        return cls.__render(text, size, color_a, color_b)
 
 
 
@@ -123,6 +142,6 @@ class FontWithIcons(Font):
 
 
 def init():
-    LargeFont()
-    SmallFont()
-    FontWithIcons()
+    LargeFont.init_font()
+    SmallFont.init_font()
+    FontWithIcons.init_font()
