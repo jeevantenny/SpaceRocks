@@ -14,7 +14,7 @@ from audio import soundfx
 
 
 
-from ui.font import SmallFont
+from ui.font import small_font
 
 from . import GameObject
 from .components import *
@@ -652,7 +652,7 @@ class DisplayPoint(ObjectTexture):
         if combo:
             text = f"COMBO {text}"
 
-        texture = SmallFont.render(text, color_a="#dd6644" if combo else "#eeeeee", cache=False)
+        texture = small_font.render(text, color_a="#dd6644" if combo else "#eeeeee", cache=False)
 
         super().__init__(
             position=position,

@@ -32,7 +32,7 @@ def load_texture(path: str, palette_swap_name: str | None = None, file_type="png
     texture.set_colorkey(COLORKEY)
     if palette_swap_name is not None:
         texture = palette_swap(texture, palette_swap_name)
-    # print(path)
+    print(path)
     return texture
 
 
@@ -66,7 +66,6 @@ def palette_swap(texture: pg.Surface, load_swap_file: str) -> pg.Surface: ...
 @overload
 def palette_swap(texture: pg.Surface, swap_colors: dict[str, str]) -> pg.Surface: ...
 
-@asset_cache
 def palette_swap(texture: pg.Surface, swap_colors: dict[str, str] | str) -> pg.Surface:
     # print("Called with", texture, swap_colors)
     if isinstance(swap_colors, str):

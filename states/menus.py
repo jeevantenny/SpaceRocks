@@ -24,10 +24,10 @@ class TitleScreen(State):
 
         self.title = elements.TitleText((0, -50), "main_entrance_a")
         version_text = ".".join(map(str, config.VERSION_NUM))
-        self.version_text_surface = font.SmallFont.render(f"version {version_text}   pygame-ce {pg.ver}", 1, "#ffffff", "#333333")
+        self.version_text_surface = font.small_font.render(f"version {version_text}   pygame-ce {pg.ver}", 1, "#ffffff", "#333333")
 
         self.__start_gameplay = False
-        self.__info_text = font.SmallFont.render("")
+        self.__info_text = font.small_font.render("")
 
 
 
@@ -55,9 +55,9 @@ class TitleScreen(State):
         
         
         if inputs.current_input_type() == "keyboard_mouse":
-            self.__info_text = font.FontWithIcons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
-            self.__info_text = font.FontWithIcons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
 
 
@@ -98,7 +98,7 @@ class PauseMenu(State):
 
         self.title = elements.TitleText((0, -35), "main_entrance_b")
         self.__exit_menu = False
-        self.__info_text = font.SmallFont.render("")
+        self.__info_text = font.small_font.render("")
 
 
 
@@ -113,7 +113,7 @@ class PauseMenu(State):
         if self.__exit_menu and self.title.animations_complete:
             self.state_stack.pop()
         
-        self.__info_text = font.FontWithIcons.render("Press<select> to continue")
+        self.__info_text = font.font_with_icons.render("Press<select> to continue")
     
 
     def draw(self, surface, lerp_amount=0):
@@ -174,7 +174,7 @@ class ShowScore(State):
         else:
             self.__timer = 30
 
-        self.__info_text = font.SmallFont.render("")
+        self.__info_text = font.small_font.render("")
 
 
 
@@ -199,7 +199,7 @@ class ShowScore(State):
         elif self.__timer:
             self.__timer -= 1
         else:
-            self.__info_text = font.FontWithIcons.render("Play Again<select>")
+            self.__info_text = font.font_with_icons.render("Play Again<select>")
 
 
 
@@ -207,7 +207,7 @@ class ShowScore(State):
         self.prev_state.draw(surface)
 
         if self.__timer:
-            text_surface = font.LargeFont.render(ui.add_text_padding(str(self.display_score), 5, pad_char='0'), 2, cache=False)
+            text_surface = font.large_font.render(ui.add_text_padding(str(self.display_score), 5, pad_char='0'), 2, cache=False)
             surface.blit(text_surface, (99, 101))
         else:
             self.__display_score(surface, "Highscore", self.highscore, (102, 50))
@@ -219,10 +219,10 @@ class ShowScore(State):
 
     def __display_score(self, surface: pg.Surface, name: str, score: int, position=(0, 0)) -> None:
         position = pg.Vector2(position)
-        text_surface = font.SmallFont.render(name, 2)
+        text_surface = font.small_font.render(name, 2)
         surface.blit(text_surface, position+(60, 0)-pg.Vector2(text_surface.width, 0)*0.5)
 
-        number_surface = font.LargeFont.render(ui.add_text_padding(str(score), 5, pad_char='0'), 2)
+        number_surface = font.large_font.render(ui.add_text_padding(str(score), 5, pad_char='0'), 2)
         surface.blit(number_surface, position+(0, 15))
 
         

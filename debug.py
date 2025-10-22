@@ -7,3 +7,4 @@ class Cheats():
     invincible = False
     instance_respawn = False
     enemy_ship = False
+    test_state = False

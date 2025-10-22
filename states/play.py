@@ -88,6 +88,7 @@ class Play(State):
 
         self.camera.set_position(self.spaceship.position)
         self.score = save_data.score
+
         self.__timer = 0
 
         return self
@@ -97,14 +98,13 @@ class Play(State):
     def __setup(self) -> None:
         "Initializes Play object with attributes required by all initializers. Spaceship needs to be made separately."
 
-        self.__info_text = font.SmallFont.render("")
+        self.__info_text = font.small_font.render("")
 
         self.score = 0
         self.highscore = data.load_highscore()
         self.highscore_changed = False
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
-        self.__game_paused = False
 
         self.__timer = 10
 
@@ -114,8 +114,8 @@ class Play(State):
         self.__level_data = data.load_level(level_name)
 
         self.__base_color = self.__level_data.base_color
-        self.__parl_a = assets.palette_swap(assets.load_texture(self.__level_data.parl_a), self.__level_data.background_palette)
-        self.__parl_b = assets.palette_swap(assets.load_texture(self.__level_data.parl_b), self.__level_data.background_palette)
+        self.__parl_a = assets.load_texture(self.__level_data.parl_a, self.__level_data.background_palette)
+        self.__parl_b = assets.load_texture(self.__level_data.parl_b, self.__level_data.background_palette)
 
 
     def __setup_game_objects(self) -> None:
@@ -185,13 +185,6 @@ class Play(State):
         
         self._join_sound_queue(self.entities.clear_sound_queue())
         self.__game_over_timer.update()
-
-        if self.__game_paused:
-            top_state = self.state_stack.top_state
-            if isinstance(top_state, BackgroundTint) and top_state.prev_state is self:
-                self.state_stack.pop()
-            
-            self.__game_paused = False
 
 
 
@@ -282,7 +275,7 @@ class Play(State):
         if self.__timer:
             self.__timer -= 1
 
-        self.__info_text = font.FontWithIcons.render("Press<pause> to pause")
+        self.__info_text = font.font_with_icons.render("Press<pause> to pause")
 
 
 
@@ -327,9 +320,9 @@ class Play(State):
     def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point, cache=True):
         score_text = add_text_padding(str(score), 5, pad_char='0')
 
-        score_desc_surf = font.SmallFont.render(name.capitalize())
+        score_desc_surf = font.small_font.render(name.capitalize())
         surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))
-        surface.blit(font.LargeFont.render(score_text, cache=cache), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
+        surface.blit(font.large_font.render(score_text, cache=cache), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
 
 
 
@@ -362,7 +355,6 @@ class Play(State):
     def __pause_game(self) -> None:
         BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
         PauseMenu().add_to_stack(self.state_stack)
-        self.__game_paused = True
 
     
     
