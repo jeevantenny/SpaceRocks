@@ -4,9 +4,10 @@
     "parl_b": "backgrounds/space_background_big",
     "background_palette": "default_background",
 
-    "asteroid_density": 15,
-    "asteroid_speed": [3, 5],
+    "asteroid_density": [10, 20],
+    "asteroid_speed_mult": 0.005,
+    "asteroid_frequency": 0.2,
 
-    "clear_score": 1000,
+    "score_range": [0, 1000],
     "next_level": "level_2"
 }

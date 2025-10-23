@@ -37,6 +37,6 @@ class HasSoundQueue:
     def clear_sound_queue(self) -> SoundQueue:
         queue = self.__sound_queue
         self.__sound_queue = []
-        if len(queue) > pg.mixer.get_num_channels():
-            raise OverflowError("Too many sounds in queue")
+        # if len(queue) > pg.mixer.get_num_channels():
+        #     raise OverflowError("Too many sounds in queue")
         return queue

@@ -370,8 +370,9 @@ class LevelData(NamedTuple):
     background_tint: str
 
     asteroid_density: int
-    asteroid_speed: int
-    clear_score: int
+    asteroid_speed_mult: float
+    asteroid_frequency: float
+    score_range: tuple[int, int]
     next_level: str
 
 

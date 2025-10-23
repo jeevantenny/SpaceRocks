@@ -135,7 +135,7 @@ class GameOverScreen(State):
 
         self.score_data = score_data
         self.display_score = 0
-        self.title = elements.TitleText((0, 0), "game_over")
+        self.title = font.title_font.render("game over")
 
     
     def userinput(self, inputs):
@@ -153,7 +153,7 @@ class GameOverScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
-        self.title.draw(surface, lerp_amount)
+        ui.blit_to_center(self.title, surface)
         
             
 

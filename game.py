@@ -53,7 +53,6 @@ class Game:
 
         self.state_stack = StateStack()
         init_state.Initializer(self.state_stack)
-        # test.TestState(self.state_stack)
 
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed

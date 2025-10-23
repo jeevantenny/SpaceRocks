@@ -2,6 +2,7 @@ import os
 import pickle
 
 from custom_types import LevelData, SaveData
+from game_errors import SaveFileError
 
 from . import load_json, save_json, get_resource_path
 
@@ -19,7 +20,10 @@ if not os.path.exists("user_data"):
 
 
 def load_level(name: str) -> LevelData:
-    level_data = load_json(f"{LEVELS_DIR}/{name}")
+    try:
+        level_data = load_json(f"{LEVELS_DIR}/{name}")
+    except FileNotFoundError:
+        raise ValueError(f"Invalid level name '{name}'")
 
     return LevelData(name,
                      level_data.get("base_color", "#000000"),
@@ -28,10 +32,14 @@ def load_level(name: str) -> LevelData:
                      level_data["background_palette"],
                      level_data.get("asteroid_palette", None),
                      level_data.get("background_tint", "#335588"),
+
                      level_data["asteroid_density"],
-                     level_data["asteroid_speed"],
-                     level_data["clear_score"],
+                     level_data["asteroid_speed_mult"],
+                     level_data.get("asteroid_frequency", 0.2),
+
+                     tuple(level_data["score_range"]),
                      level_data["next_level"])
+
 
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
@@ -56,13 +64,15 @@ def load_progress() -> SaveData | None:
     try:
         with open(SAVE_DATA_PATH, "rb") as fp:
             save_data = pickle.load(fp)
+            if not isinstance(save_data, SaveData):
+                raise SaveFileError
             return save_data
     
     except (FileNotFoundError, EOFError):
         return None
     
-    except pickle.UnpicklingError:
-        raise ValueError("Save File got corrupted")
+    except (pickle.UnpicklingError, SaveFileError):
+        raise SaveFileError("Save data got corrupted")
     
 
 

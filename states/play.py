@@ -2,10 +2,8 @@ import pygame as pg
 from typing import Self
 import random
 
-import config
 import debug
-
-from math_functions import unit_vector
+from math_functions import clamp
 from misc import increment_score
 from custom_types import LevelData, SaveData, Timer
 
@@ -17,7 +15,7 @@ from game_objects.camera import Camera
 
 from ui import add_text_padding, font
 
-from . import State, StateStack
+from . import State
 from .menus import PauseMenu, GameOverScreen
 from .visuals import BackgroundTint
 
@@ -57,7 +55,9 @@ class Play(State):
         self.spaceship.set_position((0, 0))
         self.spaceship.clear_velocity()
         self.camera.set_position((0, 0))
+
         self.score = self.spaceship.score
+        self.__level_cleared = False
 
 
     
@@ -105,6 +105,7 @@ class Play(State):
         self.highscore_changed = False
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
+        self.__level_cleared = False
 
         self.__timer = 10
 
@@ -147,7 +148,8 @@ class Play(State):
 
 
         if inputs.keyboard_mouse.action_keys[pg.K_t]:
-            self.reinit_next_level("level_2")
+            self.reinit_next_level(self.__level_data.next_level)
+            self.spaceship.score = self.__level_data.score_range[0]
 
 
         if debug.Cheats.enemy_ship and inputs.keyboard_mouse.action_keys[pg.K_e]:
@@ -212,10 +214,8 @@ class Play(State):
 
 
 
-
-
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, camera_pos: {self.camera.position}"
+        return f"entity count: {self.entities.count()}, required_rock_density: {self.__asteroid_density()/self.__required_asteroid_density():.0%}, cam_x: {self.camera.position.x:.0f}, cam_y: {self.camera.position.y:.0f}"
 
 
 
@@ -245,8 +245,14 @@ class Play(State):
 
 
     def __game_loop(self):
-        if self.__should_spawn_on_tick():
-            self.__spawn_asteroid()
+        if not self.__level_cleared:
+            if self.__should_spawn_on_tick():
+                self.__spawn_asteroid()
+            
+            if self.spaceship.score >= self.__level_data.score_range[1]:
+                self.__level_cleared = True
+                self.reinit_next_level(self.__level_data.next_level)
+
 
         for asteroid in self.asteroids.sprites():
             if asteroid.distance_to(self.spaceship) > self.__despawn_radius:
@@ -296,8 +302,9 @@ class Play(State):
         else:
             target_pos = self.camera.position
 
-        velocity = unit_vector(target_pos-start_position)*self.__get_asteroid_speed()
-        velocity.rotate_ip(random.randint(-10, 10))
+        velocity = target_pos-start_position
+        velocity.scale_to_length(self.__get_asteroid_speed())
+        velocity.rotate_ip(random.randint(-40, 40))
 
         asteroid = Asteroid(
             start_position,
@@ -313,7 +320,7 @@ class Play(State):
 
     def __should_spawn_on_tick(self) -> bool:
         # random.random() < 0.2+self.score*0.02 and 
-        return self.__required_asteroid_value() > self.__asteroid_value()
+        return random.random() < self.__level_data.asteroid_frequency and self.__required_asteroid_density() > self.__asteroid_density()
 
 
 
@@ -326,16 +333,17 @@ class Play(State):
 
 
 
-    def __required_asteroid_value(self) -> int:
-        # return min(10 + int(self.score/200), 120)
-        return self.__level_data.asteroid_density
+    def __required_asteroid_density(self) -> int:
+        # return clamp(10 + int((self.score-self.__level_data.score_range[0])/200), 5, 120)
+        increment_percent = max((self.score-self.__level_data.score_range[0])/(self.__level_data.score_range[1]-self.__level_data.score_range[0]), 0)
+        return self.__level_data.asteroid_density[0] + (self.__level_data.asteroid_density[1]-self.__level_data.asteroid_density[0])*increment_percent
     
 
     def __get_asteroid_speed(self) -> float:
-        return random.random()*self.score*0.005 + 1
+        return random.random()*(self.score-self.__level_data.score_range[0])*self.__level_data.asteroid_speed_mult + 1
     
 
-    def __asteroid_value(self) -> int:
+    def __asteroid_density(self) -> int:
         return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < 300)
     
 
@@ -388,7 +396,7 @@ class Play(State):
 
     def quit(self) -> None:
         self.__set_score()
-        if self.spaceship.health and self.spaceship.score:
+        if not debug.Cheats.dont_save_progress and self.spaceship.health and self.spaceship.score:
             self.__save_progress()
         else:
             data.save_highscore(self.highscore)

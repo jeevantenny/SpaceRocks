@@ -1,6 +1,7 @@
 import pygame as pg
 
 from debug import Cheats
+from game_errors import SaveFileError
 
 from file_processing import data
 
@@ -21,11 +22,14 @@ class Initializer:
         if Cheats.test_state:
             TestState().add_to_stack(state_stack)
             return
-
-        save_data = data.load_progress()
+        try:
+            save_data = data.load_progress()
+        except SaveFileError as e:
+            save_data = None
+            print(*e.args)
 
         if save_data is None:
-            Play("level_2").add_to_stack(state_stack)
+            Play("level_1").add_to_stack(state_stack)
             TitleScreen().add_to_stack(state_stack)
         
         else:
