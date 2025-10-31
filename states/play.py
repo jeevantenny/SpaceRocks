@@ -139,8 +139,8 @@ class Play(State):
                     self.spaceship.score += asteroid.points
                     asteroid.kill(False)
 
-            if inputs.keyboard_mouse.action_keys[pg.K_p]:
-                self.spaceship.score += 1000
+            if inputs.keyboard_mouse.action_keys[pg.K_b]:
+                self.spaceship.score += 100
 
             if inputs.keyboard_mouse.action_keys[pg.K_c]:
                 self.spaceship.combo += 50
@@ -292,9 +292,9 @@ class Play(State):
     def __spawn_asteroid(self) -> None:
         start_position = pg.Vector2()
 
-        center_offset = pg.Vector2(self.__spawn_radius+self.spaceship.get_velocity().magnitude()*0.3, 0)
+        center_offset = pg.Vector2(self.__spawn_radius+self.spaceship.get_speed()*0.3, 0)
         rotation_offset = self.spaceship.get_velocity().angle_to((0, -1))
-        center_offset.rotate_ip(random.randint(0, 360-self.__clear_fov)+rotation_offset+self.__clear_fov*0.5)
+        center_offset.rotate_ip(random.randint(0, 360-self.__clear_fov) + self.__clear_fov*0.5 + rotation_offset)
         start_position = self.camera.position + center_offset
 
         if random.random() < self.score*0.00002:

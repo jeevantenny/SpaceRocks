@@ -1,11 +1,10 @@
 import pygame as pg
-from typing import Literal
-import random
 
 import config
 from misc import increment_score
 
 from file_processing import data
+from custom_types import Timer
 
 import ui
 from ui import font, elements
@@ -22,7 +21,7 @@ class TitleScreen(State):
     def __init__(self):
         super().__init__()
 
-        self.title = elements.TitleText((0, -50), "main_entrance_a")
+        self.title = elements.TitleText(config.WINDOW_CAPTION, "main_entrance_a")
         version_text = ".".join(map(str, config.VERSION_NUM))
         self.version_text_surface = font.small_font.render(f"version {version_text}   pygame-ce {pg.ver}", 1, "#ffffff", "#333333")
 
@@ -35,7 +34,7 @@ class TitleScreen(State):
 
     def userinput(self, inputs):
         if not self.__start_gameplay:
-            if self.title.current_anim_name == "main_glint":
+            if self.title.animations_complete:
                 self.prev_state.spaceship.userinput(inputs)
 
                 if (
@@ -47,7 +46,7 @@ class TitleScreen(State):
                     or inputs.check_input("right")
                     ):
                     self.__start_gameplay = True
-                    self.title.set_current_animation("main_exit")
+                    self.title.set_effect("main_exit")
     
         else:
             self.prev_state.spaceship.userinput(inputs)
@@ -67,8 +66,6 @@ class TitleScreen(State):
         self.title.update()
         if not self.__start_gameplay:
             if self.title.animations_complete:
-                self.title.set_current_animation("main_glint")
-            if self.title.current_anim_name == "main_glint":
                 self.prev_state.spaceship.update()
 
         else:
@@ -79,11 +76,12 @@ class TitleScreen(State):
 
 
 
-    def draw(self, surface, lerp_amount=0):
-        self.prev_state.draw(surface, lerp_amount)
-        self.title.draw(surface)
 
-        if self.title.current_anim_name == "main_glint":
+    def draw(self, surface, lerp_amount=0):
+        self.prev_state.draw(surface, lerp_amount*self.__start_gameplay)
+        ui.blit_to_center(self.title.render(), surface, (0, -50))
+
+        if not self.__start_gameplay and self.title.animations_complete:
             surface.blit(self.version_text_surface, (3, config.PIXEL_WINDOW_HEIGHT-11))
             ui.blit_to_center(self.__info_text, surface, (0, 50))
 
@@ -96,31 +94,40 @@ class PauseMenu(State):
     def __init__(self):
         super().__init__()
 
-        self.title = elements.TitleText((0, -35), "main_entrance_b")
+        self.title = elements.TitleText(config.WINDOW_CAPTION, "main_entrance_b")
         self.__exit_menu = False
-        self.__info_text = font.small_font.render("")
+        self.__info_text_a = font.small_font.render("")
+        self.__info_text_b = font.small_font.render("")
 
 
 
     def userinput(self, inputs):
         if self.title.animations_complete and (inputs.check_input("pause") or inputs.check_input("select")):
-            self.title.set_current_animation("main_exit")
+            self.title.set_effect("main_exit")
             self.__exit_menu = True
+
+        
+        
+        if inputs.current_input_type() == "keyboard_mouse":
+            self.__info_text_b = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+        else:
+            self.__info_text_b = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+        
+        self.__info_text_a = font.font_with_icons.render("Press<select> to continue")
 
 
     def update(self):
         self.title.update()
         if self.__exit_menu and self.title.animations_complete:
             self.state_stack.pop()
-        
-        self.__info_text = font.font_with_icons.render("Press<select> to continue")
     
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        self.title.draw(surface, lerp_amount)
+        ui.blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
-            ui.blit_to_center(self.__info_text, surface, (0, 50))
+            ui.blit_to_center(self.__info_text_a, surface, (0, 50))
+            ui.blit_to_center(self.__info_text_b, surface, (0, 30))
 
 
 
@@ -135,7 +142,7 @@ class GameOverScreen(State):
 
         self.score_data = score_data
         self.display_score = 0
-        self.title = font.title_font.render("game over")
+        self.title = elements.TitleText("game over", "main_entrance_a")
 
     
     def userinput(self, inputs):
@@ -144,6 +151,7 @@ class GameOverScreen(State):
 
     
     def update(self):
+        self.title.update()
         if self.__timer == 0:
             self.state_stack.pop()
             ShowScore(self.score_data).add_to_stack(self.state_stack)
@@ -153,7 +161,7 @@ class GameOverScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
-        ui.blit_to_center(self.title, surface)
+        ui.blit_to_center(self.title.render(), surface)
         
             
 

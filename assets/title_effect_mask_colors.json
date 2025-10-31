@@ -1,0 +1,23 @@
+{
+    "#59595f": {
+        "default_color": "#ff00ff"
+    },
+    "#99ddbb": {
+        "default_color": "#ff00ff",
+        "change_colors" : {
+            "#550011": "#99ddbb",
+            "#993300": "#99ddbb"
+        }
+    },
+    "#22bbcc": {
+        "default_color": "#ff00ff",
+        "change_colors" : {
+            "#550011": "#18008f",
+            "#993300": "#0044dd",
+            "#dd6644": "#22bbcc",
+            "#080808": "#080808",
+            "#eedd88": "#99ccff",
+            "#eebb99": "#99ddbb"
+        }
+    }
+}

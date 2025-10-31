@@ -2,7 +2,7 @@
 
 VERSION_NUM = (0, 3, 7)
 
-WINDOW_CAPTION = "JJJ Asteroids"
+WINDOW_CAPTION = "SpaceRocks"
 WINDOW_ICON_PATH = "window_icon"
 
 WINDOW_WIDTH = 640

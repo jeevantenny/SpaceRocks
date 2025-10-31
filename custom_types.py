@@ -204,14 +204,6 @@ class Animation:
 
     def update(self):
         self.__anim_time.update(self.anim_speed_multiplier)
-            
-            # if not self.__flipbook and self.__anim_time >= self.duration:
-            #     if self.loop:
-            #         self.__anim_time -= self.duration
-            #     else:
-            #         self.__anim_time = self.duration
-
-
 
 
 

@@ -67,11 +67,6 @@ class ObjectVelocity(ObjectComponent):
     def get_data(self):
         return super().get_data() | {"velocity": tuple(self._velocity)}
 
-    
-    @property
-    def speed(self) -> float:
-        return self._velocity.magnitude()
-
 
 
     def update(self) -> None:
@@ -86,6 +81,10 @@ class ObjectVelocity(ObjectComponent):
 
     def set_velocity(self, value: pg.typing.Point) -> None:
         self._velocity = pg.Vector2(value)
+
+    
+    def get_speed(self) -> float:
+        return self._velocity.magnitude()
 
     def clear_velocity(self) -> None:
         self.set_velocity((0, 0))

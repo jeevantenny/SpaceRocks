@@ -114,6 +114,7 @@ class Game:
     def game_process_loop(self) -> None:
         try:
             while self.run:
+                self.get_userinput()
                 self.userinput()
                 self.update()
                 self.next_tick()
@@ -139,8 +140,8 @@ class Game:
 
 
 
-    def userinput(self) -> None:
-        "Record the user inputs for a given frame and process them."
+    def get_userinput(self) -> None:
+        "Record the user inputs for a game tick."
 
         events = pg.event.get()
         
@@ -154,10 +155,12 @@ class Game:
         
         self.input_interpreter.get_userinput(events)
 
+
+    def userinput(self) -> None:
+        "Processes user inputs recorded in a game tick."
+
         keyboard = self.input_interpreter.keyboard_mouse
 
-
-        
         if keyboard.hold_keys[K_LALT] and keyboard.action_keys[K_F11]:
             self.__set_screen_mode(not self.__fullscreen)
 

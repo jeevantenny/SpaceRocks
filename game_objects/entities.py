@@ -40,7 +40,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         
         super().__init__(
             position=position,
-            hitbox_size=(16, 16),
+            hitbox_size=(10, 10),
 
             texture_map_path=self.__asset_key,
             anim_path=self.__asset_key,
@@ -289,7 +289,7 @@ class EnemyShip(Spaceship):
                     
                     # if player_distance < 100:
                     #     self._shoot_when_ready()
-                    if self.speed > 40:
+                    if self.get_speed() > 40:
                         self.__current_objective = "slow_down"
                         print(self.__current_objective)
                 
@@ -322,7 +322,7 @@ class EnemyShip(Spaceship):
 
     
     def _move_in_direction(self, direction: float) -> None:
-        if self.speed == 0:
+        if self.get_speed() == 0:
             thrust_dir = direction
         else:
             
@@ -513,13 +513,13 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     size_data = {
         1: {
             "texture": "small",
-            "hitbox": (11, 11),
+            "hitbox": (16, 16),
             "health": 1,
             "points": 3
         },
         2: {
             "texture": "medium",
-            "hitbox": (25, 25),
+            "hitbox": (30, 30),
             "health": 2,
             "points": 5
         },

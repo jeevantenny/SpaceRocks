@@ -6,73 +6,44 @@
             "duration": 15,
             "timeline": {
                 "0": "blank",
-                "5": "main_title_entrance_1",
-                "6": "main_title_entrance_2",
-                "7": "main_title_entrance_3",
-                "8": "main_title_entrance_4",
-                "9": "main_title_entrance_5",
-                "10": "main_title_entrance_6",
-                "11": "main_title_entrance_7",
-                "12": "main_title_entrance_8",
-                "13": "main_title_entrance_9",
-                "14": "main_title_entrance_10",
-                "15": "main_title"
+                "5": "style_a_1",
+                "6": "style_a_2",
+                "7": "style_a_3",
+                "8": "style_a_4",
+                "9": "style_a_5",
+                "9.5": "style_a_6",
+                "10": "style_a_7",
+                "10.5": "style_a_8",
+                "12": "style_a_9",
+                "14": "style_a_10",
+                "15": "main"
             }
         },
         "main_entrance_b": {
             "duration": 4,
             "timeline": {
-                "0": "main_title_exit_4",
-                "1": "main_title_exit_3",
-                "2": "main_title_exit_2",
-                "3": "main_title_exit_1",
-                "4": "main_title"
+                "0": "style_b_4",
+                "1": "style_b_3",
+                "2": "style_b_2",
+                "3": "style_b_1",
+                "4": "main"
             }
         },
         "main_glint": {
             "duration": 0,
             "timeline": {
-                "0": "main_title"
+                "0": "main"
             }
 
         },
         "main_exit": {
             "duration": 4,
             "timeline": {
-                "0": "main_title_exit_1",
-                "1": "main_title_exit_2",
-                "2": "main_title_exit_3",
-                "3": "main_title_exit_4",
+                "0": "style_b_1",
+                "1": "style_b_2",
+                "2": "style_b_3",
+                "3": "style_b_4",
                 "4": "blank"
-            }
-        },
-
-
-        "pause_enter": {
-            "duration": 4,
-            "timeline": {
-                "0": "pause_title_anim_4",
-                "1": "pause_title_anim_3",
-                "2": "pause_title_anim_2",
-                "3": "pause_title_anim_1",
-                "4": "pause_title"
-            }
-        },
-        
-        "pause_exit": {
-            "duration": 4,
-            "timeline": {
-                "0": "pause_title_anim_1",
-                "1": "pause_title_anim_2",
-                "2": "pause_title_anim_3",
-                "3": "pause_title_anim_4"
-            }
-        },
-
-        "game_over": {
-            "duration": 0,
-            "timeline": {
-                "0": "game_over"
             }
         }
     }
