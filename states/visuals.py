@@ -7,6 +7,8 @@ from . import State
 
 
 class BackgroundTint(State):
+    "Tints the state behind it to a certain color."
+    
     def __init__(self, tint_color: pg.typing.ColorLike, pop_when_at_top=True):
         super().__init__()
         self.__tint_color = tint_color

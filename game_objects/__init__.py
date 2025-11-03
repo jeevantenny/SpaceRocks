@@ -1,7 +1,9 @@
-import pygame as pg
-from typing import Iterator, Self
+"Game objects represent objects that exist within the game world plus the Camera."
 
-from math_functions import clamp, format_angle
+import pygame as pg
+from typing import Iterator
+
+from math_functions import format_angle
 
 from audio import soundfx
 
@@ -12,6 +14,11 @@ from audio import soundfx
 
 
 class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
+    """
+    The base class all game objects inherit from.
+
+    Game objects represent objects that exist within the game world
+    """
     save_entity_progress=True
     distance_based_sound=True
 
@@ -26,6 +33,8 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         
 
     def __init_from_data__(self, object_data: dict, group: "ObjectGroup | None" = None) -> None:
+        "Alternate way to create game objects using data from save file."
+
         if not self.save_entity_progress:
             raise NotImplementedError(f"{type(self).__name__} should not be reconstructed from data.")
 
@@ -37,20 +46,32 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         self.position = pg.Vector2(object_data["position"])
 
 
+
+
     def post_init_from_data(self, object_dict: dict[str, "GameObject"]) -> None:
+        "Called after init_from_save to resolve links between multiple game objects."
         pass
+
+
 
 
     @classmethod
     def init_from_data(cls, object_data: dict, group: "ObjectGroup | None" = None) -> "GameObject":
+        "Called on GameObject class to create object from save data."
+
         obj_cls = object_data["class"]
         obj: GameObject = obj_cls.__new__(obj_cls)
-        obj.__init_from_data__(object_data)
+        obj.__init_from_data__(object_data, group)
         return obj
 
 
 
     def get_data(self) -> dict:
+        """
+        Returns information about game object as a dictionary that can be stored in save file. This data is
+        passed into the init_from_data method to recreate the object when loading game from a save file.
+        """
+
         if not self.save_entity_progress:
             raise NotImplementedError(f"{type(self).__name__} should not be saved in save data.")
         
@@ -63,6 +84,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
     @property
     def primary_group(self) -> "ObjectGroup | None":
+        "The first group in the list of groups that the game object is part of (if any)."
         if groups:=self.groups():
             return groups[0] # type: ignore
         
@@ -71,8 +93,16 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         _object.add(*self.groups())
         
 
+    def kill(self):
+        """
+        Removes the game object from all groups. A object may not be removed immediately. Some objects may
+        display a kill animation before being removed from the group.
+        """
+        super().kill()
+
 
     def force_kill(self):
+        "Bypasses the main kill method and removed the game object from the group immediately."
         super().kill()
 
 
@@ -94,6 +124,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
     
 
     def angle_to(self, other: "GameObject | pg.Vector2") -> float:
+        "Gets the angle from the current game object;s position to other relative to (0, -1)."
         angle = pg.Vector2(0, -1).angle_to(self.__get_other_pos(other)-self.position)
         return format_angle(angle)
 
@@ -134,11 +165,12 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
 
 class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
+    "A way of grouping game objects for calling basic methods on all objects simultaneously."
+
     def __init__(self, full_volume_radius=180):
         super().__init__()
 
         self.__full_volume_radius = full_volume_radius
-        self.__sound_curve_factor = 1/full_volume_radius
 
 
 
@@ -218,10 +250,32 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
     
 
     def kill_all(self) -> None:
-        "Removes all objects in this group and any other group those objects belong to."
+        "Force kills all objects in this group and any other group those objects belong to."
         for obj in self:
             obj.force_kill() # type: ignore
 
 
+    def make_subgroup(self) -> "ObjectSubgroup":
+        return ObjectSubgroup(self, self.__full_volume_radius)
+
+
     def __iter__(self) -> Iterator[T]:
         return iter(self.sprites())
+    
+
+
+
+class ObjectSubgroup(ObjectGroup):
+    """
+    A sprite group that contains a subset of sprites from another group. Any sprites added to
+    a subgroup will also be added to the supergroup.
+    """
+
+    def __init__(self, super_group: ObjectGroup, full_volume_radius=180):
+        super().__init__(full_volume_radius)
+        self.__super_group = super_group
+
+
+    def add(self, *sprites):
+        self.__super_group.add(*sprites)
+        super().add(*sprites)

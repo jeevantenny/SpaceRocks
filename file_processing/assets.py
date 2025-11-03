@@ -1,10 +1,12 @@
+"Contains functions that loads all assets required by the game."
+
 import pygame as pg
 from typing import overload
 from functools import lru_cache
 
 from . import get_resource_path, load_json
 
-from custom_types import GameSound, TextureMap
+from custom_types import GameSound, TextureMap, AnimData, ControllerData
 
 
 asset_cache = lru_cache(8)
@@ -32,7 +34,7 @@ def load_texture(path: str, palette_swap_name: str | None = None, file_type="png
     texture.set_colorkey(COLORKEY)
     if palette_swap_name is not None:
         texture = palette_swap(texture, palette_swap_name)
-    print(path, palette_swap_name)
+    # print(path, palette_swap_name)
     return texture
 
 
@@ -41,6 +43,7 @@ def load_texture(path: str, palette_swap_name: str | None = None, file_type="png
 
 
 def colorkey_surface(size: pg.typing.Point) -> pg.Surface:
+    "Creates a surface that is made transparent using the colorkey."
     surface = pg.Surface(size)
     surface.set_colorkey(COLORKEY)
     surface.fill(COLORKEY)
@@ -69,7 +72,8 @@ def palette_swap(texture: pg.Surface, load_swap_file: str) -> pg.Surface: ...
 def palette_swap(texture: pg.Surface, swap_colors: dict[str, str]) -> pg.Surface: ...
 
 def palette_swap(texture: pg.Surface, swap_colors: dict[str, str] | str) -> pg.Surface:
-    # print("Called with", texture, swap_colors)
+    "Swaps all colors in a surface with a corresponding color if specified."
+
     if isinstance(swap_colors, str):
         swap_colors = load_json(f"assets/palette_swaps/{swap_colors}")
     
@@ -90,12 +94,12 @@ def palette_swap(texture: pg.Surface, swap_colors: dict[str, str] | str) -> pg.S
 
 
 @asset_cache
-def load_anim_data(path: str):
+def load_anim_data(path: str) -> dict[str, AnimData]:
     return load_json(f"{ANIMATIONS_DIR}/{path}.animation")
 
 
 @asset_cache
-def load_anim_controller_data(path: str):
+def load_anim_controller_data(path: str) -> ControllerData:
     return load_json(f"{ANIM_CONTROLLERS_DIR}/{path}.anim_controller")
 
 
@@ -119,5 +123,7 @@ def load_sound(name: str) -> GameSound:
 
 
 def load_music(path: str):
+    "NOT IMPLEMENTED"
+    raise NotImplementedError
     pg.mixer_music.load(get_resource_path(f"{SOUNDS_DIR}/{path}.ogg"))
     

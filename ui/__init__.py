@@ -1,7 +1,9 @@
+"This package contains things that are useful for drawing things for the user interface."
+
 import pygame as pg
 from typing import Literal
 
-from input_device import get_action_icon_name
+from input_device import get_control_icon_name
 
 from file_processing import assets
 
@@ -25,7 +27,7 @@ def add_text_padding(text: str, length: int, side: Literal["left", "right"] = "r
 
 
 def load_icon(icon_name) -> pg.Surface:
-    action_icon_name = get_action_icon_name(icon_name)
+    action_icon_name = get_control_icon_name(icon_name)
     if action_icon_name is not None:
         working_name = action_icon_name
     else:

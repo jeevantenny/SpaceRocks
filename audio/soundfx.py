@@ -1,17 +1,17 @@
-import pygame as pg
+"Contains stuff for playing and queueing sound effects."
 
-from math_functions import clamp
+import pygame as pg
 
 from file_processing import assets
 
 
-SoundQueue = list[tuple[str, float]]
+type SoundQueue = list[tuple[str, float]]
 
 
 
 def play_sound(name: str, volume=1.0, loops=0) -> pg.Channel:
     sound = assets.load_sound(name)
-    return sound.play(clamp(volume, 0, 1), loops)
+    return sound.play(pg.math.clamp(volume, 0, 1), loops)
 
 
 
@@ -22,6 +22,7 @@ def play_sound_queue(queue: SoundQueue) -> None:
 
 
 class HasSoundQueue:
+    "Has methods for storing sounds in queue and removing theme all at once."
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__sound_queue: SoundQueue = []
@@ -31,6 +32,7 @@ class HasSoundQueue:
         self.__sound_queue.append((sound_name, volume))
 
     def _join_sound_queue(self, queue: SoundQueue) -> None:
+        "Adds all sounds from a queue."
         for sound_data in queue:
             self._queue_sound(*sound_data)
     

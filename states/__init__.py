@@ -1,5 +1,10 @@
+"""
+States define what should be run on each input, process, draw cycle. They are
+different sections in the game that determine what screen or menu the game
+should currently show.
+"""
+
 import pygame as pg
-from time import sleep
 from typing import Self, Literal, Any, Deque, Generator, Callable
 from functools import wraps
 
@@ -17,19 +22,6 @@ __all__ = [
     "menus",
     "play"
 ]
-
-
-
-def stack_method(func: Callable):
-    "Code in the method is only executed if the stack has at least one state."
-    @wraps(func)
-    def wrapper(self: type["StateStack"], *args, **kwargs):
-        if self.top_state is not None:
-            return func(self, *args, **kwargs)
-        else:
-            return None
-        
-    return wrapper
 
 
 
@@ -133,6 +125,11 @@ class State(soundfx.HasSoundQueue):
 
 
 class StateStack(soundfx.HasSoundQueue):
+    """
+    Holds all the states that are currently loaded in. States can be layered on top of
+    one another to show different overlapping menus.
+    """
+    
     def __init__(self, states: list[State] | None = None):
         super().__init__()
         self.__container: Deque[State]
@@ -193,16 +190,20 @@ class StateStack(soundfx.HasSoundQueue):
         return self.__container.index(item)
     
 
-    @stack_method
+
     def userinput(self, inputs: InputInterpreter) -> None:
         "Processes userinput for top state."
-        if self.__current_mode == "show_state" or self.top_state.take_input_on_transition:
+        if self.top_state is not None and (self.__current_mode == "show_state" or self.top_state.take_input_on_transition):
             self.top_state.userinput(inputs) # type: ignore
 
 
-    @stack_method
+
     def update(self) -> None:
         "Updates the top state for every tick."
+
+        if self.top_state is None:
+            return
+        
         if not self.__transition_timer.complete:
             self.__transition_timer.update()
             if self.__current_mode == "enter_transition":
@@ -220,18 +221,17 @@ class StateStack(soundfx.HasSoundQueue):
         self._join_sound_queue(self.top_state.clear_sound_queue())
 
 
-    @stack_method
     def draw(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         "Draws the top state for every frame."
-        self.top_state.draw(surface, lerp_amount)
+        if self.top_state is not None:
+            self.top_state.draw(surface, lerp_amount)
 
 
-    @stack_method
     def debug_info(self) -> str | None:
-        return self.top_state.debug_info()
+        if self.top_state is not None:
+            return self.top_state.debug_info()
     
 
-    @stack_method
     def quit(self) -> None:
         "Quits all states and pops them from the stack."
         while len(self) > 0:

@@ -15,7 +15,7 @@ I made this game to test out a new framework I made for any games I would want t
 ### Keyboard
 - **W** to move forward
 - **A**-**D** to turn
-- **SPACE** to shoot 2952077102448 2952077102448
+- **SPACE** to shoot
 
 ### Controller
 - **Right Trigger**/**Bumper** to move forward

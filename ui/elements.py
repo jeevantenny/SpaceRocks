@@ -11,6 +11,8 @@ from . import blit_to_center, font
 
 
 class TitleText:
+    "Uses the title_font to render text and apply an animations on it."
+
     __effect_mask_colors = assets.load_json("assets/title_effect_mask_colors")
     def __init__(self, text: str, effect_name: str) -> None:
         self.__texture_map = self.__make_title_effect("title_effect_1", font.title_font.render(text))
@@ -23,14 +25,17 @@ class TitleText:
 
     
     def update(self):
+        "Updates the animation for every game tick."
         self.__animation.update()
     
 
     def render(self, lerp_amount=0.0) -> pg.Surface:
+        "Gets the current frame of the animations."
         return self.__animation.get_frame(self.__texture_map, lerp_amount)
     
 
     def set_effect(self, effect_name: str) -> None:
+        "Sets the current animation effect to play on the text."
         self.__animation = Animation("main_entrance_a", assets.load_anim_data("ui_elements")["animations"][effect_name])
         self.__animation.restart()
 

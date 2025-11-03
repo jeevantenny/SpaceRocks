@@ -1,9 +1,11 @@
+"Contains components that game objects can inherit from to gain specific properties."
+
 import pygame as pg
 from typing import Callable, Generator, Any
 from time import sleep
 
 from custom_types import AnimData, ControllerData, Animation, AnimController
-from math_functions import unit_vector, vector_min
+from math_functions import unit_vector, vector_min, format_angle
 
 from file_processing import assets
 
@@ -22,8 +24,7 @@ __all__ = [
     "ObjectTexture",
     "ObjectAnimation",
     "ObjectHitbox",
-    "ObjectCollision",
-    "BorderCollision"
+    "ObjectCollision"
 ]
 
 
@@ -129,14 +130,11 @@ class ObjectTexture(ObjectComponent):
 
     @property
     def rotation(self) -> int:
+        "Rotation of game object ranging from -179 to 180."
         return self.__rotation
     @rotation.setter
     def rotation(self, value: int) -> None:
-        value = value%360
-        if value > 180:
-            value -= 360
-        
-        self.__rotation = int(value)
+        self.__rotation = int(format_angle(value))
 
 
     def set_angular_vel(self, amount: float) -> None:
@@ -147,9 +145,11 @@ class ObjectTexture(ObjectComponent):
         self.rotation += amount
 
     def get_rotation_vector(self) -> pg.Vector2:
+        "Gets rotation of object as a vector relative to (0, -1)."
         return pg.Vector2(0, -1).rotate(self.rotation)
     
     def get_lerp_rotation_vector(self, lerp_amount=0.0) -> pg.Vector2:
+        "Gets rotation vector taking account interpolation."
         return pg.Vector2(0, -1).rotate(self.rotation-self._angular_vel*(1-lerp_amount))
 
     def set_rotation(self, value: float) -> None:
@@ -202,6 +202,8 @@ class ObjectTexture(ObjectComponent):
 
 
 class ObjectAnimation(ObjectTexture):
+    "Gives objects a set of animations controller by an animation controller."
+
     _anim_data_dir = "assets/animations"
     _controller_data_dir = "assets/anim_controllers"
 
@@ -248,6 +250,7 @@ class ObjectAnimation(ObjectTexture):
 
     @property
     def animations_complete(self) -> bool:
+        "Returns True if all animations in the current animation controller state are complete."
         return self.__controller.animations_complete
     
 
@@ -290,6 +293,7 @@ class ObjectAnimation(ObjectTexture):
 
 
 class ObjectHitbox(ObjectComponent):
+    "Gives objects a hitbox that can be used to perform collision checks."
     draw_layer = 0
 
     def __init__(self, *, hitbox_size: pg.typing.Point, **kwargs):
@@ -319,6 +323,7 @@ class ObjectHitbox(ObjectComponent):
     
 
     def colliding_objects(self) -> Generator[GameObject, Any, None]:
+        "Returns all game objects in the primary group that collide with this object."
         for obj in self.primary_group:
             if obj is not self and isinstance(obj, ObjectCollision) and obj.do_collision() and self.rect.colliderect(obj.rect):
                 yield obj
@@ -340,7 +345,7 @@ class ObjectHitbox(ObjectComponent):
 
 
 class ObjectCollision(ObjectHitbox, ObjectVelocity):
-    "Gives objects a hitbox which can be used for collision."
+    "Allows object to collide with and bounce of other game objects."
 
     speed_bias = 0.5
 
@@ -367,6 +372,7 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
 
 
     def get_side_contacts(self) -> dict[str, bool]:
+        "Returns which sides of the hitbox are in contact with other game objects."
         output = {"top": False, "bottom": False, "left": False, "right": False}
 
         obj_rect = self.rect
@@ -395,6 +401,7 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
 
 
     def process_collision(self) -> None:
+        "Processes collision for one game tick."
         obj_rect = self.rect
         prev_pos: pg.Vector2 = self.position - self._velocity
 
@@ -467,89 +474,9 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
 
 
     def on_collide(self, collided_with) -> None:
-        "Called when entity collides with another entity"
+        "Used to perform an action upon collision."
         pass
 
 
     def do_collision(self) -> bool:
         return True
-
-
-
-
-
-
-
-
-
-class BorderCollision(ObjectHitbox, ObjectVelocity):
-    "Allows objects to collide with a set border - UNUSED"
-
-
-    def __init__(self, *, bounding_area: pg.typing.RectLike, border_bounce=0.0, **kwargs):
-        super().__init__(**kwargs)
-
-        self.__bounding_area = pg.Rect(bounding_area)
-        self.__bounce = border_bounce
-
-
-    def __init_from_data__(self, object_data, group=None):
-        super().__init_from_data__(object_data, group)
-
-        self.__bounding_area = pg.Rect(object_data["bounding_area"])
-        self.__bounce = object_data["border_coll_bounce"]
-
-
-    def get_data(self):
-        return super().get_data() | {"bounding_area": tuple(self.__bounding_area),
-                                     "border_coll_bounce": self.__bounce}
-
-
-    def get_bounding_area(self) -> None:
-       return self.__bounding_area.copy()
-
-
-    def set_bounding_area(self, area: pg.typing.RectLike) -> None:
-        self.__bounding_area = pg.Rect(area)
-
-
-    def update(self):
-        super().update()
-        if not isinstance(self, ObjectCollision):
-            self.process_collision()
-
-
-    def process_collision(self) -> None:
-        super().process_collision()
-        obj_rect: pg.Rect = self.rect
-        prev_vel = self._velocity.copy()
-
-        if obj_rect.left <= self.__bounding_area.left and self._velocity.x < 0:
-            obj_rect.left = self.__bounding_area.left
-            self._velocity.x = abs(self._velocity.x*self.__bounce)
-        
-        if obj_rect.right >= self.__bounding_area.right and self._velocity.x > 0:
-            obj_rect.right = self.__bounding_area.right
-            self._velocity.x = -abs(self._velocity.x*self.__bounce)
-        
-        if obj_rect.top <= self.__bounding_area.top and self._velocity.y < 0:
-            obj_rect.top = self.__bounding_area.top
-            self._velocity.y = abs(self._velocity.y*self.__bounce)
-        
-        if obj_rect.bottom >= self.__bounding_area.bottom and self._velocity.y > 0:
-            obj_rect.bottom = self.__bounding_area.bottom
-            self._velocity.y = -abs(self._velocity.y*self.__bounce)
-
-        
-        if prev_vel.x != self._velocity.x:
-            self.on_collide("vertical_border")
-        elif prev_vel.y != self._velocity.y:
-            self.on_collide("horizontal_border")
-
-        self.position = pg.Vector2(obj_rect.center)
-
-
-
-
-    def on_collide(self, collided_with) -> None:
-        pass

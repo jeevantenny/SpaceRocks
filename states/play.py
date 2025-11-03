@@ -1,9 +1,10 @@
+"Contains the Play state that handles the actual Gameplay."
+
 import pygame as pg
 from typing import Self
 import random
 
 import debug
-from math_functions import clamp
 from misc import increment_score
 from custom_types import LevelData, SaveData, Timer
 
@@ -26,7 +27,8 @@ from .visuals import BackgroundTint
 
 class Play(State):
     """
-    Contains the game-loop which handles the main gameplay.
+    handles the actual Gameplay. Contains a game loop that constantly updates all game objects
+    and player score.
     """
     __spawn_radius = 200
     __despawn_radius = 500
@@ -38,6 +40,8 @@ class Play(State):
 
 
     def __init__(self, level_name: str):
+        "The main initializer that starts a new game on a specific level. Mainly the first level."
+
         super().__init__()
 
         self.__setup()
@@ -49,6 +53,8 @@ class Play(State):
 
 
     def reinit_next_level(self, level_name: str) -> None:
+        "Reinitializes the current Play object for the next level without creating another Play object."
+
         self.__setup_level(level_name)
         self.entities.kill_all()
         self.entities.add(self.spaceship)
@@ -63,6 +69,11 @@ class Play(State):
     
     @classmethod
     def init_from_save(cls, save_data: SaveData) -> Self:
+        """
+        Alternate way to create a Play state by using the save data. This allows the player to
+        continue right from where they left off before they closed the application.
+        """
+
         self = cls.__new__(cls)
         super().__init__(self)
         self.__setup()
@@ -96,7 +107,7 @@ class Play(State):
 
 
     def __setup(self) -> None:
-        "Initializes Play object with attributes required by all initializers. Spaceship needs to be made separately."
+        "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
 
         self.__info_text = font.small_font.render("")
 
@@ -112,16 +123,19 @@ class Play(State):
 
 
     def __setup_level(self, level_name: str) -> None:
-        self.__level_data = data.load_level(level_name)
+        "Assigned attributes related to the current level."
 
+        self.__level_data = data.load_level(level_name)
         self.__base_color = self.__level_data.base_color
         self.__parl_a = assets.load_texture(self.__level_data.parl_a, self.__level_data.background_palette)
         self.__parl_b = assets.load_texture(self.__level_data.parl_b, self.__level_data.background_palette)
 
 
     def __setup_game_objects(self) -> None:
+        "Assigns all the object groups and the camera."
+
         self.entities = ObjectGroup()
-        self.asteroids = ObjectGroup[Asteroid]()
+        self.asteroids: ObjectGroup[Asteroid] = self.entities.make_subgroup()
         self.camera = Camera((0, 0))
 
 
@@ -146,10 +160,9 @@ class Play(State):
                 self.spaceship.combo += 50
 
 
-
-        if inputs.keyboard_mouse.action_keys[pg.K_t]:
-            self.reinit_next_level(self.__level_data.next_level)
-            self.spaceship.score = self.__level_data.score_range[0]
+            if inputs.keyboard_mouse.action_keys[pg.K_t]:
+                self.reinit_next_level(self.__level_data.next_level)
+                self.spaceship.score = self.__level_data.score_range[0]
 
 
         if debug.Cheats.enemy_ship and inputs.keyboard_mouse.action_keys[pg.K_e]:
@@ -167,15 +180,21 @@ class Play(State):
 
     def update(self):
         if self.spaceship.health:
+            # The game loop runs as long as the player ship is alive.
             self.__game_loop()
         elif self.__game_over_timer.complete:
+            # Adds a pause between when the player dies and the game over screen is shown.
+            # The timer automatically calls the game over scree once complete.
             self.__game_over_timer.start()
+
+            # Clears velocity and angular velocity
             self.camera.clear_velocity()
             for entity in self.entities.sprites():
+                # Bullets are deleted immediately
                 if isinstance(entity, Bullet):
                     entity.force_kill()
                     continue
-
+                
                 if isinstance(entity, components.ObjectVelocity):
                     entity.clear_velocity()
                 if isinstance(entity, Asteroid):
@@ -183,10 +202,17 @@ class Play(State):
         
         else:
             self.entities.update(self.camera.position)
-
+            self.__game_over_timer.update()
         
         self._join_sound_queue(self.entities.clear_sound_queue())
-        self.__game_over_timer.update()
+            
+
+        if self.__timer:
+            self.__timer -= 1
+
+        self.__info_text = font.font_with_icons.render("Press<pause> to pause")
+
+        
 
 
 
@@ -201,7 +227,7 @@ class Play(State):
 
 
 
-        if isinstance(self.state_stack.top_state, (Play, PauseMenu)): # type: ignore
+        if self.spaceship.health: # type: ignore
             if self.__timer:
                 text_offset = -80*(self.__timer*0.1)**2
             else:
@@ -209,8 +235,8 @@ class Play(State):
             self.__show_scores(surface, "highscore", self.highscore, (10, 4+text_offset), (self.highscore > self.score or self.score == self.spaceship.score))
             self.__show_scores(surface, "score", self.score, (10, 20+text_offset), self.score == self.spaceship.score)
 
-        if self.spaceship.health and self.is_top_state():
-            surface.blit(self.__info_text, (10, surface.height-20))
+            if self.is_top_state():
+                surface.blit(self.__info_text, (10, surface.height-20))
 
 
 
@@ -249,26 +275,22 @@ class Play(State):
             if self.__should_spawn_on_tick():
                 self.__spawn_asteroid()
             
+            # Moves to next level once the player has gained enough points to complete the current one.
             if self.spaceship.score >= self.__level_data.score_range[1]:
                 self.__level_cleared = True
                 self.reinit_next_level(self.__level_data.next_level)
 
-
+        # Removes any asteroids beyond the despawn radius
         for asteroid in self.asteroids.sprites():
             if asteroid.distance_to(self.spaceship) > self.__despawn_radius:
                 asteroid.force_kill()
 
 
         self.entities.update(self.camera.position)
-
-        # enemy_ships = self.entities.get_type(EnemyShip)
-        # if enemy_ships:
-        #     self.camera.set_target(enemy_ships[0].position)
-        # else:
         self.camera.set_target(self.spaceship.position + self.spaceship.get_velocity()*2)
         self.camera.update()
 
-
+        # Records wether the highscore changes self.highscore will be incremented along with the score.
         if not self.highscore_changed and self.spaceship.score > self.highscore:
             self.highscore_changed = True
         prev_score = self.score
@@ -277,11 +299,6 @@ class Play(State):
 
         if self.score > prev_score:
             self._queue_sound("game.point", 0.3)
-
-        if self.__timer:
-            self.__timer -= 1
-
-        self.__info_text = font.font_with_icons.render("Press<pause> to pause")
 
 
 
@@ -292,16 +309,15 @@ class Play(State):
     def __spawn_asteroid(self) -> None:
         start_position = pg.Vector2()
 
-        center_offset = pg.Vector2(self.__spawn_radius+self.spaceship.get_speed()*0.3, 0)
-        rotation_offset = self.spaceship.get_velocity().angle_to((0, -1))
-        center_offset.rotate_ip(random.randint(0, 360-self.__clear_fov) + self.__clear_fov*0.5 + rotation_offset)
-        start_position = self.camera.position + center_offset
+        distance_from_center = self.__spawn_radius+self.spaceship.get_speed()*0.3
+        start_position = self.camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
 
         if random.random() < self.score*0.00002:
             target_pos = self.spaceship.position
         else:
             target_pos = self.camera.position
 
+        # Make asteroid target spaceship with some deviation
         velocity = target_pos-start_position
         velocity.scale_to_length(self.__get_asteroid_speed())
         velocity.rotate_ip(random.randint(-40, 40))
@@ -313,7 +329,6 @@ class Play(State):
             self.__level_data.asteroid_palette
         )
 
-        self.entities.add(asteroid)
         self.asteroids.add(asteroid)
 
 
@@ -334,20 +349,22 @@ class Play(State):
 
 
     def __required_asteroid_density(self) -> int:
-        # return clamp(10 + int((self.score-self.__level_data.score_range[0])/200), 5, 120)
         increment_percent = max((self.score-self.__level_data.score_range[0])/(self.__level_data.score_range[1]-self.__level_data.score_range[0]), 0)
         return self.__level_data.asteroid_density[0] + (self.__level_data.asteroid_density[1]-self.__level_data.asteroid_density[0])*increment_percent
     
 
     def __get_asteroid_speed(self) -> float:
+        "Gets a random speed for the asteroid based on the current level and the player's score."
         return random.random()*(self.score-self.__level_data.score_range[0])*self.__level_data.asteroid_speed_mult + 1
     
 
     def __asteroid_density(self) -> int:
+        "The sum of the points of all asteroids loaded in."
         return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < 300)
     
 
     def __set_score(self) -> None:
+        "Updates the score to match the value stored in the spaceship object. Changes highscore if score is larger."
         self.score = min(self.spaceship.score, self.__score_limit)
         self.highscore = max(self.highscore, self.score)
 
@@ -361,12 +378,14 @@ class Play(State):
 
 
     def __pause_game(self) -> None:
+        "Adds PauseMenu state to state stack as well as some background tint."
         BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
         PauseMenu().add_to_stack(self.state_stack)
 
     
     
     def __game_over(self) -> None:
+        "Updates the score and shows the game over screen."
         self.__set_score()
         for obj in self.entities.sprites():
             if isinstance(obj, components.ObjectVelocity):
@@ -382,6 +401,7 @@ class Play(State):
 
 
     def __save_progress(self) -> None:
+        "Saves the current state of the game to a save file."
         entity_data = [entity.get_data()
                        for entity in self.entities.sprites()
                        
@@ -396,8 +416,12 @@ class Play(State):
 
     def quit(self) -> None:
         self.__set_score()
+
+        # Saves the current state of the game if the player has scored points and had not died.
         if not debug.Cheats.dont_save_progress and self.spaceship.health and self.spaceship.score:
             self.__save_progress()
+
+        # If not it will save the highscore.
         else:
             data.save_highscore(self.highscore)
             data.delete_progress()

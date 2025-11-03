@@ -3,7 +3,7 @@
 
     "animations": {
         "main_entrance_a": {
-            "duration": 15,
+            "duration": 16,
             "timeline": {
                 "0": "blank",
                 "5": "style_a_1",

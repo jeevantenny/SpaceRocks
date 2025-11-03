@@ -1,4 +1,4 @@
-import pygame as pg
+"Contains predefined fonts to be used in the game"
 
 from .font_types import Font, IconFont, TextureFont
 

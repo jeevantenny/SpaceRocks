@@ -11,20 +11,18 @@ from collections import defaultdict
 
 
 
-ActionKeys = defaultdict[int | str, bool]
-HoldKeys = defaultdict[int, int]
+type ActionKeys = defaultdict[int | str, bool]
+type HoldKeys = defaultdict[int, int]
 
-LevelData = dict
+type InputType = Literal["controller", "keyboard_mouse"]
+type BindData = dict[Literal["input_device", "key", "type", "value", "icon"] | str, InputType | str]
+type KeybindsType = dict[str, list[BindData]]
 
-InputType = Literal["controller", "keyboard_mouse"]
-BindData = dict[Literal["input_device", "key", "type", "value", "icon"] | str, InputType | str]
-KeybindsType = dict[str, list[BindData]]
+type Coordinate = tuple[float, float] | pg.Vector2
 
-Coordinate = tuple[float, float] | pg.Vector2
-
-TextureMap = dict[str, pg.Surface]
-AnimData = dict[str, dict[Literal["duration", "loop", "timeline"], float | bool | dict[str, str]]]
-ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[str, dict[Literal["animations", "transitions"], list[str] | dict[str, str]]]]
+type TextureMap = dict[str, pg.Surface]
+type AnimData = dict[str, dict[Literal["duration", "loop", "timeline"], float | bool | dict[str, str]]]
+type ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[str, dict[Literal["animations", "transitions"], list[str] | dict[str, str]]]]
 
 
 

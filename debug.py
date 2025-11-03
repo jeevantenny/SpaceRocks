@@ -1,9 +1,12 @@
+"Contains useful stuff for debugging."
+
 from functools import wraps
 from time import perf_counter
 from typing import Callable
 
-debug_mode = False
+PAUSE_ON_CRASH = True
 
+debug_mode = False
 
 class Cheats():
     invincible = False

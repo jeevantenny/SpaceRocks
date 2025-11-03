@@ -1,31 +1,26 @@
 import pygame as pg
 from typing import Literal, Optional
 import random
-from math import sin, pi
 
 import config
 import debug
 from custom_types import Timer
-from math_functions import clamp, unit_vector, sign, vector_direction
+from math_functions import unit_vector, sign, vector_direction
 from input_device import InputInterpreter, controller_rumble
 
 from file_processing import assets
 from audio import soundfx
 
-
-
-from ui.font import small_font
-
 from . import GameObject
 from .components import *
-from .particles import ShipSmoke
+from .particles import ShipSmoke, DisplayPoint
 
 
 __all__ = [
     "Spaceship",
+    "playerShip",
     "Bullet",
-    "Asteroid",
-    "DisplayPoint"
+    "Asteroid"
 ]
 
 
@@ -88,7 +83,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             if self.__thruster_audio_chan is None:
                 self.__start_thrust_sound()
             else:
-                self.__thruster_audio_chan.set_volume(clamp(abs(self.rotation)*0.002+0.3, 0, 1))
+                self.__thruster_audio_chan.set_volume(pg.math.clamp(abs(self.rotation)*0.002+0.3, 0, 1))
 
         elif self.__thruster_audio_chan is not None:
             self.__stop_thruster_sound()
@@ -257,6 +252,7 @@ class PlayerShip(Spaceship):
 
 
 class EnemyShip(Spaceship):
+    "UNUSED."
     __pursuit_speed = 20
     def __init__(self, position):
         super().__init__(position)
@@ -406,6 +402,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
     
     def post_init_from_data(self, object_dict):
+        # Finds the shooter entity and assigns it to the shooter attribute.
         if self.__shooter_id in object_dict:
             self.shooter = object_dict[self.__shooter_id]
         else:
@@ -426,11 +423,14 @@ class Bullet(ObjectTexture, ObjectVelocity):
         if self.__lifetime == 0:
             self.kill()
             self.shooter.combo = 0
+            # Combo goes back to zero if player misses.
             return
 
 
         hit = False
         for obj in self.primary_group:
+            # If the game object is a type the bullet can attack and the object is
+            # alive then damage or kill it.
             if (type(obj) in self.__attack_types
                 and getattr(obj, 'health', True)
                 and self.__collision_check(obj)
@@ -460,9 +460,11 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
 
     def damage_asteroid(self, asteroid: "Asteroid") -> None:
+        "Damages asteroid and increments the shooter's score and combo accordingly."
         asteroid.damage(1)
         asteroid.accelerate(self._velocity*0.1/asteroid.size)
         if not asteroid.health:
+            # Score increments by asteroid's points + current combo amount
             self.shooter.score += asteroid.points + self.shooter.combo
             self.primary_group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo))
             self.shooter.combo += 1
@@ -632,42 +634,3 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1, self._palette_swap)
             new_rock.set_velocity(self._velocity+pos)
             self.add_to_groups(new_rock)
-
-
-
-
-
-
-
-
-
-
-
-class DisplayPoint(ObjectTexture):
-    save_entity_progress=False
-    draw_layer = 5
-
-    def __init__(self, position: pg.typing.Point, points: int, combo=0):
-        text = f"+{points+combo}"
-        if combo:
-            text = f"COMBO {text}"
-
-        texture = small_font.render(text, color_a="#dd6644" if combo else "#eeeeee", cache=False)
-
-        super().__init__(
-            position=position,
-            texture=texture
-        )
-        
-        self.__lifetime = 12
-
-
-
-    def update(self):
-        super().update()
-
-        self.__lifetime -= 1
-        if self.__lifetime == 0:
-            self.kill()
-        
-        self.position.y -= sin(self.__lifetime*pi/12)*2

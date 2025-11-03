@@ -1,3 +1,5 @@
+"Contains functions that load data required by the game."
+
 import os
 import pickle
 

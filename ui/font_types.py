@@ -1,3 +1,5 @@
+"Defines classes for different kinds of font used in the game."
+
 import pygame as pg
 from functools import partial, lru_cache
 
@@ -15,6 +17,7 @@ from file_processing import get_resource_path, assets
 
 
 class Font:
+    "A font that renders text using a font file such as ttf."
     def __init__(self, font_path: str, base_size: int, shadow_offset: int):
         self.__font = partial(pg.font.Font, get_resource_path(font_path))
         self.__base_size =base_size
@@ -56,6 +59,7 @@ class Font:
 
 
 class TextureFont:
+    "A font that renders text using a texture map of all glyphs."
     def __init__(self, texture_map_name: str, space_width: int, letter_spacing=1, case_sensitive=False):
         self.__texture_map_name = texture_map_name
         self.__space_width = space_width
@@ -108,6 +112,12 @@ class TextureFont:
 
 
 class IconFont(Font):
+    """
+    A font that can render with icons between blocks of text. Icons can be specified using <icon_name>.
+    
+    Available icons are defined in the icons texture map as well as well as the control icons feature
+    that maps certain icons to certain controls based on the current input device.
+    """
 
     def __init__(self, base_size, shadow_offset):
         super().__init__("assets/fonts/tiny5-Regular.ttf", base_size, shadow_offset)

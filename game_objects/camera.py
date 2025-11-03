@@ -4,7 +4,7 @@ from . import ObjectGroup
 
 
 import debug
-from math_functions import clamp, unit_vector
+from math_functions import unit_vector
 
 
 
@@ -14,6 +14,7 @@ from math_functions import clamp, unit_vector
 
 
 class Camera:
+    "Moves to target position and captures an area of the world every frame."
     __max_speed = 1000
     __wander_radius = 20
     def __init__(self, start_pos: pg.typing.Point):
@@ -36,6 +37,7 @@ class Camera:
 
 
     def update(self) -> None:
+        "Updates position of camera for every game tick."
         displacement = self.__target_pos-self.position
         direction = unit_vector(displacement)
         distance = displacement.magnitude()
@@ -46,7 +48,7 @@ class Camera:
                 self.__following = False
                 self.clear_velocity()
             else:
-                self.__velocity = direction*clamp((distance-self.__wander_radius)*0.2, 0, self.__max_speed)
+                self.__velocity = direction*pg.math.clamp((distance-self.__wander_radius)*0.2, 0, self.__max_speed)
 
         else:
             if distance > self.__wander_radius:
@@ -58,14 +60,15 @@ class Camera:
     
 
 
-    def capture(self, surface: pg.Surface, entities: ObjectGroup, lerp_amount=0.0) -> None:
+    def capture(self, output_surface: pg.Surface, entities: ObjectGroup, lerp_amount=0.0) -> None:
+        "Draws game objects relative to the camera and blit them to the output surface."
         lerp_pos = self.lerp_position(lerp_amount)
-        blit_offset = pg.Vector2(surface.size)*0.5 - lerp_pos
+        blit_offset = pg.Vector2(output_surface.size)*0.5 - lerp_pos
 
-        entities.draw(surface, lerp_amount, blit_offset)
+        entities.draw(output_surface, lerp_amount, blit_offset)
         if debug.debug_mode:
-            pg.draw.rect(surface, "red", (*blit_offset, *surface.size), 1)
-            pg.draw.circle(surface, "white", self.__target_pos+blit_offset, 2)
+            pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
+            pg.draw.circle(output_surface, "white", self.__target_pos+blit_offset, 2)
     
 
 
@@ -74,6 +77,7 @@ class Camera:
 
 
     def lerp_position(self, lerp_amount: float) -> pg.Vector2:
+        "Position of camera after taking interpolation into account."
         return self.position + self.__velocity*lerp_amount
 
 

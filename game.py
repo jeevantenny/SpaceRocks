@@ -20,7 +20,13 @@ from audio import soundfx
 
 
 class Game:
-    "The Core part of the Game Engine."
+    """
+    This is core part of the game engine.
+    
+    It uses a game loop that runs on to threads. One runs with the game's tickrate of 20 TPS and handles
+    window management, user-input and game logic. The other thread runs with the framerate of the game to
+    render the window.
+    """
 
     def __init__(self) -> None:
         pg.mixer.pre_init(channels=128, buffer=1024)
@@ -33,12 +39,15 @@ class Game:
             self.__setup_engine()
         except Exception:
             traceback.print_exc()
-            input("Error occurred during setup\nExit ->")
+            print("Error occurred during setup")
+            if debug.PAUSE_ON_CRASH:
+                input("Exit ->")
 
 
 
 
     def __setup_engine(self) -> None:
+        "Called by the initializer to initialize the object."
         self.run = True
 
         self.__set_screen_mode(False)
@@ -57,13 +66,15 @@ class Game:
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed
 
-        self.debug_font = pg.font.SysFont("arial", 15)
+        self.debug_font = pg.font.SysFont("consolas", 13)
     
         self.__setup = True
 
 
 
     def __set_screen_mode(self, fullscreen: bool) -> None:
+        "Used to switch between windowed and fullscreen mode."
+
         if fullscreen:
             self.screen = pg.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF|FULLSCREEN)
         else:
@@ -75,6 +86,8 @@ class Game:
 
 
     def set_controllers(self) -> None:
+        "Looks for connected controllers and selects the first one."
+
         if pg.joystick.get_count():
             try:
                 self.input_interpreter.controller = Controller(pg.joystick.Joystick(0))
@@ -104,14 +117,19 @@ class Game:
 
         self.thread = threading.Thread(name="display_loop", target=self.display_loop)
         try:
+            # Starts the display_loop
             self.thread.start()
+
+            # Starts the main game loop
             self.game_process_loop()
         finally:
+            # Ensure that player data is saved when application is closed or crashes.
             self.quit()
 
 
 
     def game_process_loop(self) -> None:
+        "Handles Window management, user-input and game logic."
         try:
             while self.run:
                 self.get_userinput()
@@ -127,6 +145,7 @@ class Game:
 
 
     def display_loop(self) -> None:
+        "Handles rendering to screen."
         try:
             while self.run:
                 self.draw()
@@ -181,6 +200,8 @@ class Game:
 
 
     def update(self) -> None:
+        "Updates game logic."
+
         self.state_stack.update()
         self.input_interpreter.controller.update()
 
@@ -189,6 +210,8 @@ class Game:
 
 
     def draw(self) -> None:
+        "Renders game onto screen."
+
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
             self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
@@ -219,16 +242,17 @@ class Game:
 
     def next_frame(self) -> None:
         pg.display.flip()
-
         self.frame_clock.tick(config.FRAMERATE)
         self.prev_frame = perf_counter()
 
 
 
     def quit(self) -> None:
+        "Saves any user data from states before closing application."
+
         self.thread.join()
         self.input_interpreter.controller.stop_rumble()
-        if self.error:
+        if self.error and debug.PAUSE_ON_CRASH:
             input("Save and Exit ->")
         try:
             self.state_stack.quit()
@@ -237,6 +261,9 @@ class Game:
         
         except:
             traceback.print_exc()
-            input("\033[91m\033[1mAn error occurred during saving. Data may not have been saved properly\033[0m\nExit ->")
+            print("\033[91m\033[1mAn error occurred during saving. Data may not have been saved properly\033[0m")
+            if debug.PAUSE_ON_CRASH:
+                input("Exit ->")
+
         finally:
             pg.quit()

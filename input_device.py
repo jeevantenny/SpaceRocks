@@ -21,8 +21,8 @@ def controller_rumble(pattern_name: str, intensity=0.5, wait_until_clear=False) 
 
 
 
-def get_action_icon_name(action_name: str) -> str | None:
-    return InputInterpreter.get_action_icon_name(action_name)
+def get_control_icon_name(action_name: str) -> str | None:
+    return InputInterpreter.get_action_control_name(action_name)
 
 
 
@@ -259,7 +259,7 @@ class Controller:
 
 class InputInterpreter:
     __keybinds: KeybindsType = load_json(f"{INPUT_FORMAT_DIR}/keybinds")
-    __action_icons = load_json(f"{INPUT_FORMAT_DIR}/action_icons")
+    __control_icons = load_json(f"{INPUT_FORMAT_DIR}/control_icons")
     __current_instance: "InputInterpreter | None" = None
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
@@ -360,15 +360,15 @@ class InputInterpreter:
     
 
 
-    def __get_all_action_icons(self) -> dict[str, str]:
+    def __get_all_control_icons(self) -> dict[str, str]:
         if self.__current_input_type == "keyboard_mouse":
-            return self.__action_icons[self.__current_input_type]
+            return self.__control_icons[self.__current_input_type]
         else:
             return self.__get_controller_icon_names(self.controller.device_name)
     
 
     def __get_controller_icon_names(self, controller_name: str) -> dict[str, str]:
-        icons = self.__action_icons["controllers"][controller_name]
+        icons = self.__control_icons["controllers"][controller_name]
         if "same_as" in icons:
             icons = self.__get_controller_icon_names(icons["same_as"]) | icons
         
@@ -378,10 +378,10 @@ class InputInterpreter:
 
 
     @classmethod
-    def get_action_icon_name(cls, action_name: str) -> str | None:
+    def get_action_control_name(cls, action_name: str) -> str | None:
         self = cls.__current_instance
 
         try:
-            return self.__get_all_action_icons()[action_name]
+            return self.__get_all_control_icons()[action_name]
         except KeyError:
             return None

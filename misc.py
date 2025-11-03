@@ -1,9 +1,9 @@
-
-
+"Other stuff that I didn't know where else to put."
 
 
 
 def increment_score(current_score: int, target_score: int, incr_speed=0.4) -> int:
+    "Increments score based on incr_speed until it match target value."
     if current_score < target_score:
         return min(round(current_score + (target_score-current_score)*incr_speed + 0.5), target_score)
     else:
