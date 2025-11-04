@@ -1,0 +1,12 @@
+{
+    "background_palette": "test_background",
+    "asteroid_palette": "red_rocks",
+    "background_tint": "#448866",
+
+    "asteroid_density": [30, 50],
+    "asteroid_speed": [8, 8],
+    "asteroid_frequency": 0.02,
+
+    "score_range": [2000, 3000],
+    "next_level": "level_4"
+}

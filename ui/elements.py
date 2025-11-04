@@ -12,11 +12,17 @@ from . import blit_to_center, font
 
 class TitleText:
     "Uses the title_font to render text and apply an animations on it."
-
+    
     __effect_mask_colors = assets.load_json("assets/title_effect_mask_colors")
+    __effects_file = "title_effects"
+
     def __init__(self, text: str, effect_name: str) -> None:
-        self.__texture_map = self.__make_title_effect("title_effect_1", font.title_font.render(text))
+        self.__texture_map = self.__make_title_effect(self._get_text_surface(text))
         self.set_effect(effect_name)
+
+
+    def _get_text_surface(self, text: str) -> pg.Surface:
+        return font.title_font.render(text)
 
 
     @property
@@ -34,14 +40,17 @@ class TitleText:
         return self.__animation.get_frame(self.__texture_map, lerp_amount)
     
 
+    def get_effect_name(self) -> str:
+        return self.__animation.name
+
     def set_effect(self, effect_name: str) -> None:
         "Sets the current animation effect to play on the text."
-        self.__animation = Animation("main_entrance_a", assets.load_anim_data("ui_elements")["animations"][effect_name])
+        self.__animation = Animation(effect_name, assets.load_anim_data("title_text")["animations"][effect_name])
         self.__animation.restart()
 
 
-    def __make_title_effect(self, path: str, title_surface: pg.Surface) -> TextureMap:
-        texture_map = assets.load_texture_map(path).copy()
+    def __make_title_effect(self, title_surface: pg.Surface) -> TextureMap:
+        texture_map = assets.load_texture_map(self.__effects_file).copy()
 
         for name, surface in texture_map.items():
             if name == "main":
@@ -67,3 +76,11 @@ class TitleText:
                 overlay_mask.to_surface(output_surface, setcolor=new_c, unsetcolor=None)
 
         return output_surface
+    
+
+
+
+class AltTitleText(TitleText):
+
+    def _get_text_surface(self, text):
+        return font.large_font.render(text)

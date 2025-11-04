@@ -39,22 +39,23 @@ class State(soundfx.HasSoundQueue):
     take_input_on_transition = True
 
 
-    def __init__(self, *, couple_prev=False):
+    def __init__(self):
         super().__init__()
         self.state_stack: StateStack | None = None
-        self.__couple_prev = couple_prev
 
     @property
     def prev_state(self) -> "State | None":
-        if self.state_stack is not None and self in self.state_stack and len(self.state_stack) > 1:
-            return self.state_stack[self.state_stack.index(self)-1]
-        else:
-            return None
+        if self.state_stack and self in self.state_stack:
+            index = self.state_stack.index(self)
+            if index > 0:
+                return self.state_stack[index-1]
+        
+        return None
         
 
     @property
-    def initialized(self) -> bool:
-        return False
+    def name(self) -> str:
+        return type(self).__name__
     
 
     def add_to_stack(self, state_stack: "StateStack") -> None:
@@ -115,7 +116,28 @@ class State(soundfx.HasSoundQueue):
 
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__} State(state_stack={self.state_stack is not None})>"
+        return f"<{type(self).__name__} State(in_state_stack={self.state_stack is not None})>"
+    
+
+
+
+
+
+
+class PassThroughState(State):
+    
+    def userinput(self, inputs):
+        self.prev_state.userinput(inputs)
+    
+    def update(self):
+        self.prev_state.update()
+        self._join_sound_queue(self.prev_state.clear_sound_queue())
+    
+    def draw(self, surface, lerp_amount=0):
+        self.prev_state.draw(surface, lerp_amount)
+    
+    def debug_info(self):
+        return self.prev_state.debug_info()
 
 
 

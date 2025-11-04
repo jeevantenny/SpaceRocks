@@ -1,5 +1,5 @@
 {
-    "group_name": "ui_elements.animation",
+    "group_name": "title_text.animation",
 
     "animations": {
         "main_entrance_a": {
@@ -34,7 +34,6 @@
             "timeline": {
                 "0": "main"
             }
-
         },
         "main_exit": {
             "duration": 4,
@@ -44,6 +43,45 @@
                 "2": "style_b_3",
                 "3": "style_b_4",
                 "4": "blank"
+            }
+        },
+        "show_level_name": {
+            "duration": 24,
+            "timeline": {
+                "0": "style_b_4",
+                "1": "style_b_3",
+                "2": "style_b_2",
+                "3": "style_b_1",
+                "4": "main",
+                "20": "style_b_1",
+                "21": "style_b_2",
+                "22": "style_b_3",
+                "23": "style_b_4",
+                "24": "blank"
+            }
+        },
+        "show_level_name_b": {
+            "duration": 50,
+            "timeline": {
+                "0": "blank",
+                "5": "style_a_1",
+                "6": "style_a_2",
+                "7": "style_a_3",
+                "8": "style_a_4",
+                "9": "style_a_5",
+                "9.5": "style_a_6",
+                "10": "style_a_7",
+                "10.5": "style_a_8",
+                "12": "style_a_9",
+                "14": "style_a_10",
+
+                "15": "main",
+                
+                "46": "style_b_1",
+                "47": "style_b_2",
+                "48": "style_b_3",
+                "49": "style_b_4",
+                "50": "blank"
             }
         }
     }

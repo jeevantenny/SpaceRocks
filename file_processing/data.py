@@ -35,8 +35,8 @@ def load_level(name: str) -> LevelData:
                      level_data.get("asteroid_palette", None),
                      level_data.get("background_tint", "#335588"),
 
-                     level_data["asteroid_density"],
-                     level_data["asteroid_speed_mult"],
+                     tuple(level_data["asteroid_density"]),
+                     tuple(level_data["asteroid_speed"]),
                      level_data.get("asteroid_frequency", 0.2),
 
                      tuple(level_data["score_range"]),

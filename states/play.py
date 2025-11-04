@@ -18,7 +18,7 @@ from ui import add_text_padding, font
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
-from .visuals import BackgroundTint
+from .visuals import BackgroundTint, ShowLevelName
 
 
 
@@ -30,7 +30,7 @@ class Play(State):
     handles the actual Gameplay. Contains a game loop that constantly updates all game objects
     and player score.
     """
-    __spawn_radius = 200
+    __spawn_radius = 150
     __despawn_radius = 500
     __clear_fov = 60
     __score_limit = 99999
@@ -64,6 +64,8 @@ class Play(State):
 
         self.score = self.spaceship.score
         self.__level_cleared = False
+
+        ShowLevelName(level_name.replace("_", " ").upper()).add_to_stack(self.state_stack)
 
 
     
@@ -237,11 +239,18 @@ class Play(State):
 
             if self.is_top_state():
                 surface.blit(self.__info_text, (10, surface.height-20))
+        
+
 
 
 
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, required_rock_density: {self.__asteroid_density()/self.__required_asteroid_density():.0%}, cam_x: {self.camera.position.x:.0f}, cam_y: {self.camera.position.y:.0f}"
+        return f"entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density():.1f}, cam_x: {self.camera.position.x:.0f}, cam_y: {self.camera.position.y:.0f}"
+
+
+
+
+
 
 
 
@@ -334,9 +343,9 @@ class Play(State):
 
 
     def __should_spawn_on_tick(self) -> bool:
-        # random.random() < 0.2+self.score*0.02 and 
-        return random.random() < self.__level_data.asteroid_frequency and self.__required_asteroid_density() > self.__asteroid_density()
-
+        return (random.random() < self.__level_data.asteroid_frequency
+                and self.__required_asteroid_density() > self.__asteroid_density()
+)
 
 
     def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point, cache=True):
@@ -345,17 +354,28 @@ class Play(State):
         score_desc_surf = font.small_font.render(name.capitalize())
         surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))
         surface.blit(font.large_font.render(score_text, cache=cache), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
-
-
-
-    def __required_asteroid_density(self) -> int:
-        increment_percent = max((self.score-self.__level_data.score_range[0])/(self.__level_data.score_range[1]-self.__level_data.score_range[0]), 0)
-        return self.__level_data.asteroid_density[0] + (self.__level_data.asteroid_density[1]-self.__level_data.asteroid_density[0])*increment_percent
     
+
+    def __get_relative_score(self) -> int:
+        return max(self.score-self.__level_data.score_range[0], 0)
+
+
+    def __get_increment_percent(self) -> float:
+        return (self.__get_relative_score())/(self.__level_data.score_range[1]-self.__level_data.score_range[0])
+
+
+    def __required_asteroid_density(self) -> float:
+        "Required asteroid density based on the player's score. Used to determine wether to spawn more asteroids."
+        asteroid_density = self.__level_data.asteroid_density[0]
+        asteroid_density += (self.__level_data.asteroid_density[1]-self.__level_data.asteroid_density[0])*self.__get_increment_percent()
+        return asteroid_density
 
     def __get_asteroid_speed(self) -> float:
         "Gets a random speed for the asteroid based on the current level and the player's score."
-        return random.random()*(self.score-self.__level_data.score_range[0])*self.__level_data.asteroid_speed_mult + 1
+        asteroid_speed = self.__level_data.asteroid_speed[0]
+        asteroid_speed += (self.__level_data.asteroid_speed[1]-self.__level_data.asteroid_speed[0])*self.__get_increment_percent()
+        asteroid_speed = max(asteroid_speed + random.random()*4 - 2, 1)
+        return asteroid_speed
     
 
     def __asteroid_density(self) -> int:

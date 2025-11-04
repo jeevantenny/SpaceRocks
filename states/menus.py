@@ -140,6 +140,10 @@ class PauseMenu(State):
             surface.blit(ui.font.small_font.render("Alt + F11 to toggle fullscreen mode"), (10, surface.height-20))
 
 
+    def debug_info(self):
+        return self.prev_state.debug_info()
+
+
 
 
 

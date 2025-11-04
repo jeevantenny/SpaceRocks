@@ -5,8 +5,8 @@
     "background_palette": "default_background",
 
     "asteroid_density": [10, 20],
-    "asteroid_speed_mult": 0.005,
-    "asteroid_frequency": 0.2,
+    "asteroid_speed": [1, 5],
+    "asteroid_frequency": 0.4,
 
     "score_range": [0, 1000],
     "next_level": "level_2"

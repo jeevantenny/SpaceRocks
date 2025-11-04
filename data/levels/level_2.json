@@ -3,8 +3,9 @@
     "asteroid_palette": "red_rocks",
     "background_tint": "#448866",
 
-    "asteroid_density": [10, 20],
-    "asteroid_speed_mult": 0.006,
+    "asteroid_density": [20, 40],
+    "asteroid_speed": [1, 6],
+    "asteroid_frequency": 0.4,
 
     "score_range": [1000, 2000],
     "next_level": "level_3"

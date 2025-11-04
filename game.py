@@ -218,12 +218,30 @@ class Game:
             pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.screen)
 
             if debug.debug_mode:
-                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {type(self.state_stack.top_state).__name__}"
+                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state.name}"
                 debug_message = self.state_stack.debug_info()
                 if debug_message:
                     blit_text = f"{blit_text}\n{debug_message}"
-
                 self.screen.blit(self.debug_font.render(blit_text, False, "white", "black"))
+
+                self.__show_stack_view()
+
+
+    
+    def __show_stack_view(self) -> None:
+        text = "-- StateStack --"
+        current_state = self.state_stack.top_state
+
+        x = 0
+        while current_state is not None:
+            text += f"\n{current_state.name}"
+            current_state = current_state.prev_state
+            x += 1
+            if x > 100:
+                self.quit()
+        
+        text_surface = self.debug_font.render(text, False, "green", "black")
+        self.screen.blit(text_surface, (0, self.screen.height-text_surface.height))
 
 
 
