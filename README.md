@@ -1,5 +1,5 @@
-# A Game inspired by Asteroids
-**version 0.3.7**  
+# SpaceRocks (A Game inspired by Asteroids)
+**version 0.4.0**  
 *python-3.13.3*
 
 I made this game to test out a new framework I made for any games I would want to make in the future using pygame. It takes a inspiration from Atari's Asteroids Arcade Game. You control a spaceship that can turn move forward and shoot and you shoot asteroids to gain points.
@@ -9,7 +9,8 @@ I made this game to test out a new framework I made for any games I would want t
 - Soundfx volume scale with distance.
 - Press **Alt**+**F11** to toggle fullscreen mode
 - Support for select number of controllers
-- Progress is not lost when game window is closed. Player can continue from exactly where they left off.
+- Progress is not lost when application is closed. Player can continue from exactly where they left off.
+- **Ctrl D** to toggle debug mode (for testing)
 
 ## Controls
 ### Keyboard

@@ -27,7 +27,7 @@ datas = [(path, path) for path in data_paths]
 
 
 a = Analysis( # type: ignore
-    ['__main__.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=datas,
