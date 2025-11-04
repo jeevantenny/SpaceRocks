@@ -1,6 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
+# Creates a onefile version of the game.
+
 data_paths = [
     "assets",
 
@@ -47,15 +49,15 @@ exe = EXE( # type: ignore
     a.binaries,
     a.datas,
     [],
-    name='JJJ Asteroids',
+    name='SpaceRocks',
     icon="assets/textures/exe_icon.ico",
-    debug=True, # TODO Change this to False
+    debug=True,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False, # TODO Change this to True
+    upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True, # TODO Change this to False
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

@@ -137,7 +137,7 @@ class PauseMenu(State):
         if not self.__exit_menu:
             ui.blit_to_center(self.__info_text_b, surface, (0, 30))
             surface.blit(self.__info_text_a, (10, surface.height-35))
-            surface.blit(ui.font.small_font.render("Alt + F11 to toggle fullscreen mode"), (10, surface.height-20))
+            surface.blit(ui.font.small_font.render("F11 to toggle fullscreen mode"), (10, surface.height-20))
 
 
     def debug_info(self):

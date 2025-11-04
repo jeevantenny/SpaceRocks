@@ -180,7 +180,7 @@ class Game:
 
         keyboard = self.input_interpreter.keyboard_mouse
 
-        if keyboard.hold_keys[K_LALT] and keyboard.action_keys[K_F11]:
+        if keyboard.action_keys[K_F11]:
             self.__set_screen_mode(not self.__fullscreen)
 
 

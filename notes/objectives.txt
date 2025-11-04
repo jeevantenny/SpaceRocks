@@ -3,5 +3,6 @@
 - Add status bar for level completeness
 - Add more asteroid types
 - Add animation for moving to next level
+- Better fullscreen mode
 - Add more levels
 - Boss...?

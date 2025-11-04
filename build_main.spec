@@ -1,36 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
-data_paths = [
-    "assets",
-
-    "assets\\anim_controllers",
-    "assets\\animations",
-    "assets\\fonts",
-    "assets\\texture_maps",
-    "assets\\palette_swaps",
-
-    "assets\\sounds\\entity\\asteroid",
-    "assets\\sounds\\entity\\spaceship",
-    "assets\\sounds\\game",
-
-    "assets\\textures",
-    "assets\\textures\\backgrounds",
-    "assets\\textures\\game_objects",
-    "assets\\textures\\ui",
-
-    "data\\input_devices",
-    "data\\levels"
-]
-
-datas = [(path, path) for path in data_paths]
+# Main build used for distribution
 
 
 a = Analysis( # type: ignore
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=datas,
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -47,7 +25,7 @@ exe = EXE( # type: ignore
     a.binaries,
     a.datas,
     [],
-    name='JJJ Asteroids',
+    name="SpaceRocks",
     icon="assets/textures/exe_icon.ico",
     debug=False,
     bootloader_ignore_signals=False,
@@ -60,5 +38,6 @@ exe = EXE( # type: ignore
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
-    entitlements_file=None
+    entitlements_file=None,
+    onefile=False
 )

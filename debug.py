@@ -4,7 +4,7 @@ from functools import wraps
 from time import perf_counter
 from typing import Callable
 
-PAUSE_ON_CRASH = True
+PAUSE_ON_CRASH = __debug__
 
 debug_mode = False
 

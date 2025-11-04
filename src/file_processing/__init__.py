@@ -3,10 +3,12 @@
 import sys, os
 import json
 
+import config
+
 
 def get_resource_path(path: str) -> str:
     "Gets the correct path to files when compiled to executable."
-    if getattr(sys, "frozen", False):
+    if config.LOAD_ASSETS_FROM_APP_DATA and getattr(sys, "frozen", False):
         return os.path.join(sys._MEIPASS, path)
     else:
         return path
