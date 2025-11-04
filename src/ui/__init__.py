@@ -3,9 +3,8 @@
 import pygame as pg
 from typing import Literal
 
-from input_device import get_control_icon_name
-
-from file_processing import assets
+from src.input_device import get_control_icon_name
+from src.file_processing import assets
 
 
 

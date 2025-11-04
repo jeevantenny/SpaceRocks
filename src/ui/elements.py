@@ -1,8 +1,7 @@
 import pygame as pg
 
-from custom_types import TextureMap, Animation
-
-from file_processing import assets
+from src.custom_types import TextureMap, Animation
+from src.file_processing import assets
 
 from . import blit_to_center, font
 

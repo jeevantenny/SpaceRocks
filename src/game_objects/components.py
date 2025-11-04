@@ -2,16 +2,15 @@
 
 import pygame as pg
 from typing import Callable, Generator, Any
-from time import sleep
-
-from custom_types import AnimData, ControllerData, Animation, AnimController
-from math_functions import unit_vector, vector_min, format_angle
-
-from file_processing import assets
-
-from . import GameObject
 
 import debug
+
+from src.custom_types import Animation, AnimController
+from src.math_functions import unit_vector, vector_min, format_angle
+
+from src.file_processing import assets
+
+from . import GameObject
 
 
 

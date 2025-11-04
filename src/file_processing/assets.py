@@ -6,7 +6,7 @@ from functools import lru_cache
 
 from . import get_resource_path, load_json
 
-from custom_types import GameSound, TextureMap, AnimData, ControllerData
+from src.custom_types import GameSound, TextureMap, AnimData, ControllerData
 
 
 asset_cache = lru_cache(8)

@@ -3,8 +3,8 @@
 import os
 import pickle
 
-from custom_types import LevelData, SaveData
-from game_errors import SaveFileError
+from src.custom_types import LevelData, SaveData
+from src.game_errors import SaveFileError
 
 from . import load_json, save_json, get_resource_path
 

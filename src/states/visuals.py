@@ -1,6 +1,6 @@
 import pygame as pg
 
-import ui
+from src import ui
 
 
 from . import PassThroughState

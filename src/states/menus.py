@@ -1,13 +1,13 @@
 import pygame as pg
 
 import config
-from misc import increment_score
 
-from file_processing import data
-from custom_types import Timer
+from src.misc import increment_score
+from src.file_processing import data
+from src.custom_types import Timer
 
-import ui
-from ui import font, elements
+from src import ui
+from src.ui import font, elements
 
 from . import State
 

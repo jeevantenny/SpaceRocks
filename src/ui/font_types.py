@@ -5,10 +5,8 @@ from functools import partial, lru_cache
 
 from . import load_icon
 
-import game_errors
-from custom_types import TextureMap, Animation
-
-from file_processing import get_resource_path, assets
+from src import game_errors
+from src.file_processing import get_resource_path, assets
 
 
 

@@ -5,16 +5,16 @@ from typing import Self
 import random
 
 import debug
-from misc import increment_score
-from custom_types import LevelData, SaveData, Timer
 
-from file_processing import assets, data
+from src.misc import increment_score
+from src.custom_types import LevelData, SaveData, Timer
+from src.file_processing import assets, data
 
-from game_objects import GameObject, ObjectGroup, components
-from game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
-from game_objects.camera import Camera
+from src.game_objects import GameObject, ObjectGroup, components
+from src.game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
+from src.game_objects.camera import Camera
 
-from ui import add_text_padding, font
+from src.ui import add_text_padding, font
 
 from . import State
 from .menus import PauseMenu, GameOverScreen

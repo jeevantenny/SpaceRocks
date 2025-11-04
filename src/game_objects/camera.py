@@ -1,10 +1,9 @@
 import pygame as pg
 
-from . import ObjectGroup
-
-
 import debug
-from math_functions import unit_vector
+from src.math_functions import unit_vector
+
+from . import ObjectGroup
 
 
 

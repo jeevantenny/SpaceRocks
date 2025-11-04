@@ -4,7 +4,7 @@ import pygame as pg
 import random
 from math import sin, pi
 
-from ui.font import small_font
+from src import ui
 
 from .components import *
 
@@ -59,7 +59,7 @@ class DisplayPoint(ObjectTexture):
         if combo:
             text = f"COMBO {text}"
 
-        texture = small_font.render(text, color_a="#dd6644" if combo else "#eeeeee", cache=False)
+        texture = ui.font.small_font.render(text, color_a="#dd6644" if combo else "#eeeeee", cache=False)
 
         super().__init__(
             position=position,

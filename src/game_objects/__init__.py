@@ -3,9 +3,9 @@
 import pygame as pg
 from typing import Iterator
 
-from math_functions import format_angle
+from src.math_functions import format_angle
 
-from audio import soundfx
+from src.audio import soundfx
 
 
 

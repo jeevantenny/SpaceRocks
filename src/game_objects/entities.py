@@ -4,12 +4,13 @@ import random
 
 import config
 import debug
-from custom_types import Timer
-from math_functions import unit_vector, sign, vector_direction
-from input_device import InputInterpreter, controller_rumble
 
-from file_processing import assets
-from audio import soundfx
+from src.custom_types import Timer
+from src.math_functions import unit_vector, sign, vector_direction
+from src.input_device import InputInterpreter, controller_rumble
+
+from src.file_processing import assets
+from src.audio import soundfx
 
 from . import GameObject
 from .components import *

@@ -10,12 +10,12 @@ from time import perf_counter
 import config
 import debug
 
-from input_device import KeyboardMouse, Controller, InputInterpreter
+from src.input_device import KeyboardMouse, Controller, InputInterpreter
 
-from ui import font
-from states import StateStack, init_state
-from file_processing import assets
-from audio import soundfx
+from src.ui import font
+from src.states import StateStack, init_state
+from src.file_processing import assets
+from src.audio import soundfx
 
 
 

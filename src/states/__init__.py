@@ -5,14 +5,12 @@ should currently show.
 """
 
 import pygame as pg
-from typing import Self, Literal, Any, Deque, Generator, Callable
-from functools import wraps
+from typing import Self, Literal, Any, Deque, Generator
 
-import game_errors
-from input_device import InputInterpreter
-from custom_types import Timer
-
-from audio import soundfx
+from src import game_errors
+from src.input_device import InputInterpreter
+from src.custom_types import Timer
+from src.audio import soundfx
 
 
 

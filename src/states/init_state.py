@@ -1,9 +1,5 @@
-import pygame as pg
-
-from debug import Cheats
-from game_errors import SaveFileError
-
-from file_processing import data
+from src.game_errors import SaveFileError
+from src.file_processing import data
 
 from . import State, StateStack
 from .menus import TitleScreen, PauseMenu

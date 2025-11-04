@@ -1,13 +1,13 @@
 import pygame as pg
 from pygame.locals import *
 
-from typing import Callable, Any, Literal
+from typing import Any, Literal
 from collections import defaultdict
 
-from custom_types import ActionKeys, HoldKeys, InputType, BindData, KeybindsType
-from math_functions import sign
+from src.custom_types import ActionKeys, HoldKeys, InputType, BindData, KeybindsType
+from src.math_functions import sign
 
-from file_processing import load_json
+from src.file_processing import load_json
 
 
 

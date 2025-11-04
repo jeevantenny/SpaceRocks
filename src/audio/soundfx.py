@@ -2,7 +2,7 @@
 
 import pygame as pg
 
-from file_processing import assets
+from src.file_processing import assets
 
 
 type SoundQueue = list[tuple[str, float]]
