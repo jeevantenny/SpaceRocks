@@ -281,7 +281,7 @@ class Play(State):
 
     def __game_loop(self):
         if not self.__level_cleared:
-            if self.__should_spawn_on_tick():
+            if not debug.Cheats.dont_spawn_asteroids and self.__should_spawn_on_tick():
                 self.__spawn_asteroid()
             
             # Moves to next level once the player has gained enough points to complete the current one.

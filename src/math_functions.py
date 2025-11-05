@@ -35,6 +35,9 @@ def format_angle[T: (int, float)](angle: T) -> T:
     "Ensures angle is between >-180 and <=180."
     if angle > 180:
         angle -= 360
+    elif angle <= -180:
+        angle += 360
+
     return angle
 
 
