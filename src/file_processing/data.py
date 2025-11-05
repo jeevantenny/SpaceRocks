@@ -3,6 +3,8 @@
 import os
 import pickle
 
+import debug
+
 from src.custom_types import LevelData, SaveData
 from src.game_errors import SaveFileError
 
@@ -45,6 +47,9 @@ def load_level(name: str) -> LevelData:
 
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
+    if debug.Cheats.demo_mode:
+        return 0
+    
     try:
         return load_json(path, False)["highscore"]
     except FileNotFoundError:
@@ -52,13 +57,14 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
 
 
 def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
-    try:
-        data = load_json(path, False)
-    except FileNotFoundError:
-        data = {}
-    
-    data["highscore"] = int(value)
-    save_json(data, path)
+    if not debug.Cheats.demo_mode:
+        try:
+            data = load_json(path, False)
+        except FileNotFoundError:
+            data = {}
+        
+        data["highscore"] = int(value)
+        save_json(data, path)
 
 
 

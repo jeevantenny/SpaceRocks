@@ -1,3 +1,5 @@
+import debug
+
 from src.game_errors import SaveFileError
 from src.file_processing import data
 
@@ -5,6 +7,7 @@ from . import State, StateStack
 from .menus import TitleScreen, PauseMenu
 from .play import Play
 from .visuals import BackgroundTint
+from .demo_state import DemoState
 
 
 
@@ -19,7 +22,7 @@ class Initializer:
             save_data = None
             print(*e.args)
 
-        if save_data is None:
+        if save_data is None or debug.Cheats.demo_mode:
             Play("level_1").add_to_stack(state_stack)
             TitleScreen().add_to_stack(state_stack)
         
@@ -27,3 +30,6 @@ class Initializer:
             Play.init_from_save(save_data).add_to_stack(state_stack)
             BackgroundTint("#888888").add_to_stack(state_stack)
             PauseMenu().add_to_stack(state_stack)
+        
+        if debug.Cheats.demo_mode:
+            DemoState().add_to_stack(state_stack)

@@ -438,7 +438,7 @@ class Play(State):
         self.__set_score()
 
         # Saves the current state of the game if the player has scored points and had not died.
-        if not debug.Cheats.dont_save_progress and self.spaceship.health and self.spaceship.score:
+        if not debug.Cheats.demo_mode and self.spaceship.health and self.spaceship.score:
             self.__save_progress()
 
         # If not it will save the highscore.

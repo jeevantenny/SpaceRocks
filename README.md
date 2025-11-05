@@ -2,6 +2,8 @@
 **version 0.4.1**  
 *python-3.13.3*
 
+![](/demo/demo_clip.gif)
+
 I made this game to test out a new framework I made for any games I would want to make in the future using pygame. It takes a inspiration from Atari's Asteroids Arcade Game. You control a spaceship that can turn move forward and shoot and you shoot asteroids to gain points.
 
 ## Features

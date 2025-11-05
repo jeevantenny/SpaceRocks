@@ -1,5 +1,5 @@
 - Make levels determine what asteroids to spawn
-- Change ObjectHitbox Component to use circle hitbox
+- Change ObjectHitbox Component to use circle hitboxes
 - Add status bar for level completeness
 - Add more asteroid types
 - Add animation for moving to next level

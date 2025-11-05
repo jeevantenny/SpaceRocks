@@ -1,6 +1,7 @@
 import pygame as pg
 
 import config
+import debug
 
 from src.misc import increment_score
 from src.file_processing import data
@@ -23,8 +24,7 @@ class TitleScreen(State):
         super().__init__()
 
         self.title = elements.TitleText(config.WINDOW_CAPTION, "main_entrance_a")
-        version_text = ".".join(map(str, config.VERSION_NUM))
-        self.version_text_surface = font.small_font.render(f"version {version_text}   pygame-ce {pg.ver}", 1, "#ffffff", "#333333", False)
+        self.__version_text = f"version {".".join(map(str, config.VERSION_NUM))}   pygame-ce {pg.ver}"
 
         self.__start_gameplay = False
 
@@ -88,8 +88,11 @@ class TitleScreen(State):
         ui.blit_to_center(self.title.render(), surface, (0, -50))
 
         if not self.__start_gameplay and self.title.animations_complete:
-            surface.blit(self.version_text_surface, (3, config.PIXEL_WINDOW_HEIGHT-11))
             ui.blit_to_center(self.__info_text, surface, (0, 50))
+
+            if not debug.Cheats.demo_mode:
+                version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
+                surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
 
 
 
