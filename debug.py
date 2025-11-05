@@ -10,6 +10,7 @@ debug_mode = False
 
 class Cheats():
     invincible = False
+    dont_spawn_asteroids = False
     instance_respawn = False
     enemy_ship = False
     test_state = False
