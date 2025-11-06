@@ -7,7 +7,7 @@ from . import State, StateStack
 from .menus import TitleScreen, PauseMenu
 from .play import Play
 from .visuals import BackgroundTint
-from .demo_state import DemoState
+from .info_states import DemoState
 
 
 

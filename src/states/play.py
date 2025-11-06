@@ -19,6 +19,7 @@ from src.ui import add_text_padding, font
 from . import State
 from .menus import PauseMenu, GameOverScreen
 from .visuals import BackgroundTint, ShowLevelName
+from .info_states import NoMoreLevels
 
 
 
@@ -114,7 +115,11 @@ class Play(State):
         self.__info_text = font.small_font.render("")
 
         self.score = 0
-        self.highscore = data.load_highscore()
+        if debug.Cheats.demo_mode:
+            self.highscore = 0
+        else:
+            self.highscore = data.load_highscore()
+        
         self.highscore_changed = False
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
@@ -288,7 +293,10 @@ class Play(State):
             # Moves to next level once the player has gained enough points to complete the current one.
             if self.spaceship.score >= self.__level_data.score_range[1]:
                 self.__level_cleared = True
-                self.reinit_next_level(self.__level_data.next_level)
+                try:
+                    self.reinit_next_level(self.__level_data.next_level)
+                except ValueError:
+                    self.state_stack.push(NoMoreLevels())
 
         # Removes any asteroids beyond the despawn radius
         for asteroid in self.asteroids.sprites():
@@ -441,11 +449,12 @@ class Play(State):
         self.__set_score()
 
         # Saves the current state of the game if the player has scored points and had not died.
-        if not debug.Cheats.demo_mode and self.spaceship.health and self.spaceship.score:
-            self.__save_progress()
-
-        # If not it will save the highscore.
-        else:
+        if not debug.Cheats.demo_mode:
             data.save_highscore(self.highscore)
-            data.delete_progress()
+            if self.spaceship.health and self.spaceship.score:
+                self.__save_progress()
+
+            # If not it will save the highscore.
+            else:
+                data.delete_progress()
         self.entities.kill_all()

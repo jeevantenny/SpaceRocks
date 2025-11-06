@@ -88,10 +88,6 @@ def load_level(name: str) -> LevelData:
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
     "Loads the last saved highscore achieved by the player"
-
-    # Actual highscore is not loaded in demo mode.
-    if debug.Cheats.demo_mode:
-        return 0
     
     try:
         return load_json(path, False)["highscore"]
@@ -102,15 +98,13 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
 def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
     "Saved an integer value as the highscore."
 
-    # Highscore is not saved in demo mode.
-    if not debug.Cheats.demo_mode:
-        try:
-            data = load_json(path, False)
-        except FileNotFoundError:
-            data = {}
-        
-        data["highscore"] = int(value)
-        save_json(data, path)
+    try:
+        data = load_json(path, False)
+    except FileNotFoundError:
+        data = {}
+    
+    data["highscore"] = int(value)
+    save_json(data, path)
 
 
 
