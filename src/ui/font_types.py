@@ -5,7 +5,6 @@ from functools import partial, lru_cache
 
 from . import load_icon
 
-from src import game_errors
 from src.file_processing import get_resource_path, assets
 
 
@@ -31,9 +30,6 @@ class Font:
         
     
     def __render(self, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011") -> pg.Surface:
-        if self.__font is None:
-            raise game_errors.InitializationError(self)
-
         sized_font = self.__font(self.__base_size*size)
 
         main = sized_font.render(text, False, color_a, assets.COLORKEY)

@@ -1,49 +1,42 @@
 {
     "group_name": "asteroid.animation",
     "animations": {
-        "small_idle": {
+        "health_1": {
             "duration": 0.0,
             "timeline": {
-                "0.0": "small_health_1"
+                "0.0": "health_1"
+            }
+        },
+        "health_2": {
+            "duration": 0.0,
+            "timeline": {
+                "0.0": "health_2"
             }
         },
         "small_explode": {
             "anim_speed_multiplier": 1.5,
             "duration": 10,
             "timeline": {
-                "0.0": "small_break_1",
-                "1.0": "small_break_2",
-                "2.0": "small_break_3",
-                "3.0": "small_break_4",
-                "5.0": "small_break_5",
-                "7.0": "small_break_7",
-                "9.0": "small_break_7"
-            }
-        },
-        "medium_health_2": {
-            "duration": 0.0,
-            "anim_time": "obj.size",
-            "timeline": {
-                "0.0": "medium_health_2"
-            }
-        },
-        "medium_health_1": {
-            "duration": 0.0,
-            "timeline": {
-                "0.0": "medium_health_1"
+                "0.0": "break_1",
+                "1.0": "break_2",
+                "2.0": "break_3",
+                "3.0": "break_4",
+                "5.0": "break_5",
+                "7.0": "break_7",
+                "9.0": "break_7"
             }
         },
         "medium_explode": {
             "anim_speed_multiplier": 1.4,
             "duration": 10,
             "timeline": {
-                "0.0": "medium_break_1",
-                "1.0": "medium_break_2",
-                "2.0": "medium_break_3",
-                "3.0": "medium_break_4",
-                "5.0": "medium_break_5",
-                "7.0": "medium_break_7",
-                "9.0": "medium_break_7"
+                "0.0": "break_1",
+                "1.0": "break_2",
+                "2.0": "break_3",
+                "3.0": "break_4",
+                "5.0": "break_5",
+                "7.0": "break_7",
+                "9.0": "break_7"
             }
         }
     }

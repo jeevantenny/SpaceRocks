@@ -269,6 +269,12 @@ class ObjectAnimation(ObjectTexture):
 
     def _update_animations(self):
         self.__controller.update(self)
+
+
+    
+    def _do_transition(self) -> None:
+        "Moves animation controller to correct state."
+        self.__controller.do_transitions(self)
     
 
 

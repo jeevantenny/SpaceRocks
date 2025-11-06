@@ -8,6 +8,7 @@ import debug
 from src.custom_types import Timer
 from src.math_functions import unit_vector, sign, vector_direction
 from src.input_device import InputInterpreter, controller_rumble
+from src.game_errors import InitializationError
 
 from src.file_processing import assets
 from src.audio import soundfx
@@ -462,8 +463,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
     def damage_asteroid(self, asteroid: "Asteroid") -> None:
         "Damages asteroid and increments the shooter's score and combo accordingly."
-        asteroid.damage(1)
-        asteroid.accelerate(self._velocity*0.1/asteroid.size)
+        asteroid.damage(1, self._velocity*0.1/asteroid.size)
         if not asteroid.health:
             # Score increments by asteroid's points + current combo amount
             self.shooter.score += asteroid.points + self.shooter.combo
@@ -513,71 +513,96 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
 
 class Asteroid(ObjectAnimation, ObjectCollision):
-    size_data = {
-        1: {
-            "texture": "small",
-            "hitbox": (16, 16),
-            "health": 1,
-            "points": 3
-        },
-        2: {
-            "texture": "medium",
-            "hitbox": (30, 30),
-            "health": 2,
-            "points": 5
-        },
-        3: {
-            "texture": "large",
-            "hitbox": (60, 60),
-            "health": 10,
-            "points": 8
-        }
-    }
+    __asteroid_data = None
 
     __asset_key = "asteroid"
+
+
+    @classmethod
+    def set_asteroid_data(cls, asteroid_data: dict[str, dict[str, str|int]]) -> None:
+        cls.__asteroid_data = asteroid_data
+
+
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__asteroid_data is None:
+            raise InitializationError(f"No asteroid data has been defined. Could not create Asteroid object.")
+        return super().__new__(cls)
+
 
     def __init__(self,
                  position: pg.typing.Point,
                  velocity: pg.typing.Point,
-                 size: Literal[1, 2, 3] = 1,
+                 id: str,
                  palette_swap: str | None = None):
+        
+        self.__data = self.__asteroid_data[id]
 
         super().__init__(
             position=position,
-            hitbox_size=self.size_data[size]["hitbox"],
+            hitbox_size=self.__hitbox_size,
             bounce=0.95,
 
-            texture_map_path=self.__asset_key,
+            texture_map_path=self.__data["texture_map"],
             anim_path=self.__asset_key,
             controller_path=self.__asset_key,
             palette_swap=palette_swap
         )
 
-        self.size = size
+        self.__setup_id(id)
 
-        self.health = self.size_data[size]["health"]
         self.set_angular_vel(random.randint(-8, 8))
         self.accelerate(velocity)
         self.explode_pos: pg.Vector2 | None = None
 
-        self.points = self.size_data[size]["points"]
 
 
     
     def __init_from_data__(self, object_data, group=None):
         super().__init_from_data__(object_data, group)
 
-        self.size = object_data["size"]
-        self._set_hitbox_size(self.size_data[self.size]["hitbox"])
-        self.health = object_data["health"]
+        self.__setup_id(object_data["asteroid_id"])
+        self._set_hitbox_size(self.__hitbox_size)
         self.explode_pos: pg.Vector2 | None = None
-        
-        self.points = self.size_data[self.size]["points"]
+
+        # To address an issue where asteroids will show wrong texture when loaded from
+        # save file and when the pause menu is showing.
+        self._do_transition()
+
+
+
+    def __setup_id(self, id: str) -> None:
+        self.__id = id
+        self.__data = self.__asteroid_data[id]
+        self.health = self.__data["health"]
+
+
+
+    @property
+    def size(self) -> int:
+        return self.__data["size_value"]
+    
+    @property
+    def points(self) -> int:
+        return self.__data["points"]
+    
+    @property
+    def subrock(self) -> str | None:
+        return self.__data["subrock"]
+    
+    @property
+    def __knockback_amount(self) -> float:
+        return self.__data.get("knockback_amount", 1.0)
+    
+    @property
+    def __hitbox_size(self) -> tuple[int, int]:
+        return self.__data["hitbox_size"], self.__data["hitbox_size"]
+
 
 
 
     def get_data(self):
-        return super().get_data() | {"size": self.size,
+        return super().get_data() | {"asteroid_id": self.__id,
                                      "health": self.health}
 
     
@@ -597,12 +622,14 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         return (self.rect.centerx, self.rect.top)
 
 
-    def damage(self, amount: int) -> None:
+    def damage(self, amount: int, knockback: pg.Vector2 | None = None) -> None:
         self.health -= min(self.health, amount)
         if not self.health:
             self.kill()
         else:
             self._queue_sound("entity.asteroid.small_explode")
+            if knockback:
+                self.accelerate(knockback*self.__knockback_amount)
 
 
 
@@ -614,8 +641,8 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     def kill(self, spawn_asteroids=True):
         self.health = 0
         self.explode_pos = self.position.copy()
-        if spawn_asteroids and self.size > 1:
-            self.__spawn_small_asteroid()
+        if spawn_asteroids and self.__data.get("subrock"):
+            self.__spawn_subrock()
 
         if self.size == 1:
             self._queue_sound("entity.asteroid.small_explode", 0.7)
@@ -625,13 +652,13 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         self.save_entity_progress = False
 
 
-    def __spawn_small_asteroid(self):
+    def __spawn_subrock(self):
         positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
         positions = map(pg.Vector2, positions)
         rotate_angle = random.randint(1, 90)
 
         for pos in positions:
             pos.rotate_ip(rotate_angle)
-            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.size-1, self._palette_swap)
+            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.subrock, self._palette_swap)
             new_rock.set_velocity(self._velocity+pos)
             self.add_to_groups(new_rock)

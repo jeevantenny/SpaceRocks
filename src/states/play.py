@@ -139,6 +139,7 @@ class Play(State):
         self.entities = ObjectGroup()
         self.asteroids: ObjectGroup[Asteroid] = self.entities.make_subgroup()
         self.camera = Camera((0, 0))
+        Asteroid.set_asteroid_data(self.__level_data.asteroid_data)
 
 
 
@@ -331,10 +332,12 @@ class Play(State):
         velocity.scale_to_length(self.__get_asteroid_speed())
         velocity.rotate_ip(random.randint(-40, 40))
 
+        asteroid_id = random.choices(*self.__level_data.asteroid_spawn_weights, k=1)[0]
+
         asteroid = Asteroid(
             start_position,
             velocity,
-            random.randint(1, 2),
+            asteroid_id,
             self.__level_data.asteroid_palette
         )
 

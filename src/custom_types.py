@@ -292,7 +292,7 @@ class AnimController:
 
 
     def update(self, animated_obj) -> None:
-        self.__do_transitions(animated_obj)
+        self.do_transitions(animated_obj)
 
         for anim in self.current_animations():
             anim.update()
@@ -335,11 +335,16 @@ class AnimController:
         
 
 
-    def __do_transitions(self, obj) -> None:
+    def do_transitions(self, obj) -> None:
+        """
+        Performs any state transitions recursively until it reaches a state that no longer
+        has any valid transitions.
+        """
+
         for state_name, condition in self.__current_transitions.items():
             if self.__test_condition(obj, condition):
                 self.set_state(state_name)
-                self.__do_transitions(obj)
+                self.do_transitions(obj)
                 break
 
 
@@ -362,6 +367,9 @@ class LevelData(NamedTuple):
     asteroid_density: int
     asteroid_speed: tuple[float, float]
     asteroid_frequency: float
+    asteroid_spawn_weights: tuple[list[str], list[int]]
+    asteroid_data: dict[str, dict[str, str|int]]
+
     score_range: tuple[int, int]
     next_level: str
 

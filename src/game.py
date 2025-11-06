@@ -23,7 +23,7 @@ class Game:
     """
     This is core part of the game engine.
     
-    It uses a game loop that runs on to threads. One runs with the game's tickrate of 20 TPS and handles
+    It uses a game loop that runs on two threads. One runs with the game's tickrate of 20 TPS and handles
     window management, user-input and game logic. The other thread runs with the framerate of the game to
     render the window.
     """
@@ -35,13 +35,7 @@ class Game:
 
 
         self.__setup = False
-        try:
-            self.__setup_engine()
-        except Exception:
-            traceback.print_exc()
-            print("Error occurred during setup")
-            if debug.PAUSE_ON_CRASH:
-                input("Exit ->")
+        self.__setup_engine()
 
 
 
@@ -218,7 +212,7 @@ class Game:
             pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.screen)
 
             if debug.debug_mode:
-                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state.name}"
+                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
                 debug_message = self.state_stack.debug_info()
                 if debug_message:
                     blit_text = f"{blit_text}\n{debug_message}"
