@@ -4,6 +4,7 @@ import pygame as pg
 from typing import Self
 import random
 
+import config
 import debug
 
 from src.misc import increment_score
@@ -14,7 +15,7 @@ from src.game_objects import GameObject, ObjectGroup, components
 from src.game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
 from src.game_objects.camera import Camera
 
-from src.ui import add_text_padding, font
+from src.ui import add_text_padding, font, elements
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
@@ -121,6 +122,7 @@ class Play(State):
             self.highscore = data.load_highscore()
         
         self.highscore_changed = False
+        self.__progress_bar = elements.ProgressBar()
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
         self.__level_cleared = False
@@ -237,21 +239,23 @@ class Play(State):
 
         if self.spaceship.health: # type: ignore
             if self.__timer:
-                text_offset = -80*(self.__timer*0.1)**2
+                text_offset = 80*(self.__timer*0.1)**2
             else:
                 text_offset = 0
-            self.__show_scores(surface, "highscore", self.highscore, (10, 4+text_offset), (self.highscore > self.score or self.score == self.spaceship.score))
-            self.__show_scores(surface, "score", self.score, (10, 20+text_offset), self.score == self.spaceship.score)
+            self.__show_scores(surface, "highscore", self.highscore, (10, 4-text_offset), (self.highscore > self.score or self.score == self.spaceship.score))
+            self.__show_scores(surface, "score", self.score, (10, 20-text_offset), self.score == self.spaceship.score)
+            surface.blit(self.__progress_bar.render(self.__level_completion_amount()), (10, 43-text_offset))
+            
 
             if self.is_top_state():
-                surface.blit(self.__info_text, (10, surface.height-20))
+                surface.blit(self.__info_text, (10, surface.height-20+text_offset))
         
 
 
 
 
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density():.1f}, cam_x: {self.camera.position.x:.0f}, cam_y: {self.camera.position.y:.0f}"
+        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density():.1f}, cam_x: {self.camera.position.x:.0f}, cam_y: {self.camera.position.y:.0f}"
 
 
 
@@ -293,10 +297,15 @@ class Play(State):
             # Moves to next level once the player has gained enough points to complete the current one.
             if self.spaceship.score >= self.__level_data.score_range[1]:
                 self.__level_cleared = True
+                self.__delete_offscreen_asteroids()
+        
+        else:
+            if len(self.asteroids) == 0:
                 try:
                     self.reinit_next_level(self.__level_data.next_level)
                 except ValueError:
                     self.state_stack.push(NoMoreLevels())
+
 
         # Removes any asteroids beyond the despawn radius
         for asteroid in self.asteroids.sprites():
@@ -369,6 +378,10 @@ class Play(State):
 
     def __get_relative_score(self) -> int:
         return max(self.score-self.__level_data.score_range[0], 0)
+    
+
+    def __level_completion_amount(self) -> float:
+        return self.__get_relative_score()/(self.__level_data.score_range[1]-self.__level_data.score_range[0])
 
 
     def __get_increment_percent(self) -> float:
@@ -392,6 +405,12 @@ class Play(State):
     def __asteroid_density(self) -> int:
         "The sum of the points of all asteroids loaded in."
         return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < 300)
+
+
+    def __delete_offscreen_asteroids(self) -> None:
+        for asteroid in self.asteroids.sprites():
+            if not asteroid.colliderect(self.camera.get_visible_area(config.PIXEL_WINDOW_SIZE)):
+                asteroid.force_kill()
     
 
     def __set_score(self) -> None:

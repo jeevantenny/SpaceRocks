@@ -1,4 +1,4 @@
-- Make levels determine what asteroids to spawn
+✅ Make levels determine what asteroids to spawn
 - Change ObjectHitbox Component to use circle hitboxes
 - Add status bar for level completeness
 - Add more asteroid types
@@ -6,3 +6,5 @@
 - Better fullscreen mode
 - Add more levels
 - Boss...?
+
+- Reduce texture sizes where possible

@@ -1,0 +1,8 @@
+{
+    "texture": "ui/ui_elements",
+
+    "mappings": {
+        "progress_bar_base": [1, 1, 91, 11],
+        "progress_bar_overlay": [2, 13, 88, 8]
+    }
+}

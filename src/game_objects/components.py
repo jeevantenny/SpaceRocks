@@ -323,14 +323,14 @@ class ObjectHitbox(ObjectComponent):
         return rect
     
 
-    def _set_hitbox_size(self, size: pg.typing.Point):
-        self.__hitbox_size = tuple(size)
+    def colliderect(self, rect: pg.typing.RectLike) -> bool:
+        return self.rect.colliderect(rect)
     
 
     def colliding_objects(self) -> Generator[GameObject, Any, None]:
         "Returns all game objects in the primary group that collide with this object."
         for obj in self.primary_group:
-            if obj is not self and isinstance(obj, ObjectCollision) and obj.do_collision() and self.rect.colliderect(obj.rect):
+            if obj is not self and isinstance(obj, ObjectCollision) and obj.do_collision() and self.colliderect(obj.rect):
                 yield obj
 
 
@@ -343,6 +343,11 @@ class ObjectHitbox(ObjectComponent):
                 rect_center = self.position - self.get_velocity()*(1-lerp_amount)
                 blit_rect.center = rect_center+offset
             pg.draw.rect(surface, "red", blit_rect, 1)
+    
+
+
+    def _set_hitbox_size(self, size: pg.typing.Point):
+        self.__hitbox_size = tuple(size)
 
 
 

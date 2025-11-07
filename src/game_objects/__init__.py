@@ -201,6 +201,7 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 
 
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None: # type: ignore
+        "Draws all objects in group to surface with some offset."
         from .components import ObjectTexture, ObjectHitbox
 
         draw_order = sorted(

@@ -74,6 +74,12 @@ class Camera:
     def set_position(self, value: pg.typing.Point) -> None:
         self.__position = pg.Vector2(value)
 
+    
+    def get_visible_area(self, area_size: pg.typing.Point) -> pg.Rect:
+        rect = pg.Rect(0, 0, *area_size)
+        rect.center = self.position
+        return rect
+
 
     def lerp_position(self, lerp_amount: float) -> pg.Vector2:
         "Position of camera after taking interpolation into account."
