@@ -34,11 +34,7 @@ __all__ = [
 
 
 
-
-
-
-
-class ObjectVelocity:
+class ObjectVelocity(GameObject):
     "Allows game objects to have a velocity."
 
     _max_speed = 100
@@ -75,6 +71,8 @@ class ObjectVelocity:
         self._velocity += pg.Vector2(value)
 
 
+    def _get_lerp_pos(self, lerp_amount=0.0) -> pg.Vector2:
+        return self.position - self._velocity*(1-lerp_amount)
 
 
 
@@ -83,7 +81,9 @@ class ObjectVelocity:
 
 
 
-class ObjectTexture:
+
+
+class ObjectTexture(GameObject):
     "Gives an object a visible texture."
 
     draw_layer = 0
@@ -133,12 +133,16 @@ class ObjectTexture:
     
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
         blit_texture = self._get_blit_texture(lerp_amount)
-        lerp_pos = self._get_lerp_pos(lerp_amount) + offset
-        blit_pos = lerp_pos - pg.Vector2(blit_texture.get_size())*0.5
+        if isinstance(self, ObjectVelocity):
+            center = self._get_lerp_pos(lerp_amount) + offset
+        else:
+            center = self.position + offset
+
+        blit_pos = center - pg.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
 
         if debug.debug_mode:
-            pg.draw.line(surface, "white", lerp_pos, lerp_pos+self.get_rotation_vector()*10)
+            pg.draw.line(surface, "white", center, center+self.get_rotation_vector()*10)
         
         super().draw(surface, lerp_amount, offset)
 
@@ -146,14 +150,6 @@ class ObjectTexture:
     
     def _get_blit_texture(self, lerp_amount=0.0) -> pg.Surface:
         return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)))
-
-
-    def _get_lerp_pos(self, lerp_amount=0.0) -> pg.Vector2:
-        lerp_pos = self.position.copy()
-        if isinstance(self, ObjectVelocity):
-            lerp_pos -= self._velocity*(1-lerp_amount)
-        
-        return lerp_pos
     
 
 
@@ -248,7 +244,7 @@ class ObjectAnimation(ObjectTexture):
 
 
 
-class ObjectHitbox:
+class ObjectHitbox(GameObject):
     "Gives objects a hitbox that can be used to perform collision checks."
     draw_layer = 0
 
@@ -282,8 +278,7 @@ class ObjectHitbox:
         if debug.debug_mode:
             blit_rect: pg.Rect = self.rect
             if isinstance(self, ObjectVelocity):
-                rect_center = self.position - self.get_velocity()*(1-lerp_amount)
-                blit_rect.center = rect_center+offset
+                blit_rect.center = self._get_lerp_pos(lerp_amount)+offset
             pg.draw.rect(surface, "red", blit_rect, 1)
     
 
