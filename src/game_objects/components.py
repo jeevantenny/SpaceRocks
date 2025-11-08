@@ -57,16 +57,6 @@ class ObjectVelocity(ObjectComponent):
         self._velocity = pg.Vector2(0, 0)
 
 
-    
-    def __init_from_data__(self, object_data, group = None):
-        super().__init_from_data__(object_data, group)
-        self._velocity = pg.Vector2(object_data["velocity"])
-
-
-
-    def get_data(self):
-        return super().get_data() | {"velocity": tuple(self._velocity)}
-
 
 
     def update(self) -> None:
@@ -115,24 +105,13 @@ class ObjectTexture(ObjectComponent):
         self._angular_vel = 0
 
 
-    def __init_from_data__(self, object_data, texture: pg.Surface, group = None):
-        super().__init_from_data__(object_data, group)
-        self.texture = texture
-        self.__rotation = object_data["rotation"]
-        self._angular_vel = object_data["angular_vel"]
-
-
-    def get_data(self):
-        return super().get_data() | {"rotation": self.__rotation,
-                                     "angular_vel": self._angular_vel}
-
 
     @property
-    def rotation(self) -> int:
+    def _rotation(self) -> int:
         "Rotation of game object ranging from -179 to 180."
         return self.__rotation
-    @rotation.setter
-    def rotation(self, value: int) -> None:
+    @_rotation.setter
+    def _rotation(self, value: int) -> None:
         self.__rotation = int(format_angle(value))
 
 
@@ -141,18 +120,18 @@ class ObjectTexture(ObjectComponent):
 
 
     def rotate(self, amount: float) -> None:
-        self.rotation += amount
+        self._rotation += amount
 
     def get_rotation_vector(self) -> pg.Vector2:
         "Gets rotation of object as a vector relative to (0, -1)."
-        return pg.Vector2(0, -1).rotate(self.rotation)
+        return pg.Vector2(0, -1).rotate(self._rotation)
     
     def get_lerp_rotation_vector(self, lerp_amount=0.0) -> pg.Vector2:
         "Gets rotation vector taking account interpolation."
-        return pg.Vector2(0, -1).rotate(self.rotation-self._angular_vel*(1-lerp_amount))
+        return pg.Vector2(0, -1).rotate(self._rotation-self._angular_vel*(1-lerp_amount))
 
-    def set_rotation(self, value: float) -> None:
-        self.rotation = value
+    def set_rotation(self, value: int) -> None:
+        self._rotation = value
         
 
     def update(self) -> None:
@@ -175,7 +154,7 @@ class ObjectTexture(ObjectComponent):
 
     
     def _get_blit_texture(self, lerp_amount=0.0) -> pg.Surface:
-        return pg.transform.rotate(self.texture, -(self.rotation-self._angular_vel*(1-lerp_amount)))
+        return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)))
 
 
     def _get_lerp_pos(self, lerp_amount=0.0) -> pg.Vector2:
@@ -224,17 +203,6 @@ class ObjectAnimation(ObjectTexture):
 
 
 
-    def __init_from_data__(self, object_data, group=None):
-        super().__init_from_data__(object_data, None, group)
-
-        self.__texture_map_path = object_data["texture_map_path"]
-        self.__anim_path = object_data["anim_path"]
-        self.__controller_path = object_data["controller_path"]
-        self._palette_swap = object_data["palette_swap"]
-
-        self.__init_base()
-
-
 
     def __init_base(self) -> None:
         self.__texture_map = assets.load_texture_map(self.__texture_map_path, self._palette_swap)
@@ -251,15 +219,7 @@ class ObjectAnimation(ObjectTexture):
     def animations_complete(self) -> bool:
         "Returns True if all animations in the current animation controller state are complete."
         return self.__controller.animations_complete
-    
 
-
-
-    def get_data(self):
-        return super().get_data() | {"texture_map_path": self.__texture_map_path,
-                                     "anim_path": self.__anim_path,
-                                     "controller_path": self.__controller_path,
-                                     "palette_swap": self._palette_swap}
 
 
     def update(self):
@@ -305,15 +265,6 @@ class ObjectHitbox(ObjectComponent):
         super().__init__(**kwargs)
         self._set_hitbox_size(hitbox_size)
 
-
-    def __init_from_data__(self, object_data, group = None):
-        super().__init_from_data__(object_data, group)
-
-        self.__hitbox_size = object_data["hitbox_size"]
-
-
-    def get_data(self):
-        return super().get_data() | {"hitbox_size": self.__hitbox_size}
 
 
     @property
@@ -364,15 +315,6 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
 
         self.__bounce = bounce*0.5
 
-
-    def __init_from_data__(self, object_data, group=None):
-        super().__init_from_data__(object_data, group)
-
-        self.__bounce = object_data["obj_coll_bounce"]
-
-
-    def get_data(self):
-        return super().get_data() | {"obj_coll_bounce": self.__bounce}
 
 
     def update(self) -> None:

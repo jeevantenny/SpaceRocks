@@ -38,13 +38,6 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         if not self.save_entity_progress:
             raise NotImplementedError(f"{type(self).__name__} should not be reconstructed from data.")
 
-        if group:
-            super().__init__(group)
-        else:
-            super().__init__()
-        
-        self.position = pg.Vector2(object_data["position"])
-
 
 
 
@@ -56,12 +49,12 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
 
     @classmethod
-    def init_from_data(cls, object_data: dict, group: "ObjectGroup | None" = None) -> "GameObject":
+    def init_from_data(cls, object_data: dict) -> "GameObject":
         "Called on GameObject class to create object from save data."
 
         obj_cls = object_data["class"]
         obj: GameObject = obj_cls.__new__(obj_cls)
-        obj.__init_from_data__(object_data, group)
+        obj.__init_from_data__(object_data)
         return obj
 
 

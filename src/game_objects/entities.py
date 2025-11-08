@@ -51,14 +51,16 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
                 
 
-    def __init_from_data__(self, object_data, group=None):
-        super().__init_from_data__(object_data, group)
+    def __init_from_data__(self, object_data):
+        self.__init__(object_data["position"])
 
         self.score = object_data["score"]
         self.combo = object_data["combo"]
 
-        self.__init_base()
         self._set_anim_state("main")
+
+        self.set_velocity(object_data["velocity"])
+        self.set_rotation(object_data["rotation"])
 
 
 
@@ -72,20 +74,27 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
     def get_data(self):
-        return super().get_data() | {"score": self.score,
-                                     "combo": self.combo}
+        data = super().get_data()
+        
+        data.update({"position": tuple(self.position),
+                     "velocity": tuple(self._velocity),
+                     "rotation": self._rotation,
+                     "score": self.score,
+                     "combo": self.combo})
+        
+        return data
 
 
 
 
     def update(self) -> None:
         if self.__thrust:
-            self.accelerate(pg.Vector2(0, -1).rotate(self.rotation))
+            self.accelerate(pg.Vector2(0, -1).rotate(self._rotation))
             self.__release_smoke()
             if self.__thruster_audio_chan is None:
                 self.__start_thrust_sound()
             else:
-                self.__thruster_audio_chan.set_volume(pg.math.clamp(abs(self.rotation)*0.002+0.3, 0, 1))
+                self.__thruster_audio_chan.set_volume(pg.math.clamp(abs(self._rotation)*0.002+0.3, 0, 1))
 
         elif self.__thruster_audio_chan is not None:
             self.__stop_thruster_sound()
@@ -217,6 +226,11 @@ class PlayerShip(Spaceship):
         self._attack_types: list[type[GameObject]] = [Asteroid, EnemyShip]
 
 
+    def __init_from_data__(self, object_data):
+        super().__init_from_data__(object_data)
+        self._attack_types: list[type[GameObject]] = [Asteroid, EnemyShip]
+
+
 
     def userinput(self, inputs: InputInterpreter):
         if self.health and not inputs.keyboard_mouse.hold_keys[pg.K_LCTRL]:            
@@ -307,7 +321,7 @@ class EnemyShip(Spaceship):
         
     
     def __turn_to_direction(self, direction: float) -> Literal[-1, 0, 1]:
-        turn_by = direction-self.rotation
+        turn_by = direction-self._rotation
         if abs(turn_by) > 5:
             turn_value = sign(turn_by)
             if abs(turn_by) > 180:
@@ -326,7 +340,7 @@ class EnemyShip(Spaceship):
             
             thrust_dir = direction
         
-        if abs(direction-self.rotation) < 10:
+        if abs(direction-self._rotation) < 10:
             speed_in_direction = self._velocity.dot(pg.Vector2(0, -1).rotate(direction))
             if speed_in_direction < self.__pursuit_speed:
                 self._thrust()
@@ -386,7 +400,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
         self.shooter = shooter
 
         direction = unit_vector(pg.Vector2(direction))
-        self.accelerate(direction*self.__speed+shooter.get_velocity())
+        self.set_velocity(direction*self.__speed+shooter.get_velocity())
         self.move(direction*5)
 
         self.set_rotation(-direction.angle_to((0, -1)))
@@ -396,11 +410,19 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
     
     def __init_from_data__(self, object_data, group=None):
-        super().__init_from_data__(object_data, assets.load_texture_map("particles")["bullet"], group)
+        super().__init__(
+            position=object_data["position"],
+            texture=assets.load_texture_map("particles")["bullet"]
+        )
 
-        self.__attack_types = object_data["attack_types"]
+
+        direction = unit_vector(pg.Vector2(direction))
+        self.set_velocity(object_data["velocity"])
+
+        self.set_rotation(object_data["rotation"])
         self.__shooter_id = object_data["shooter_id"]
-        self.__distance_traveled = 0.0
+        self.__attack_types = object_data["attack_types"]
+        self.__distance_traveled = object_data["distance_traveled"]
 
     
     def post_init_from_data(self, object_dict):
@@ -413,8 +435,13 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
     
     def get_data(self):
-        return super().get_data() | {"shooter_id": id(self.shooter),
-                                     "attack_types": self.__attack_types}
+        data = super().get_data()
+        data.update({"velocity": tuple(self._velocity),
+                     "rotation": self._rotation,
+                     "shooter_id": id(self.shooter),
+                     "attack_types": self.__attack_types,
+                     "distance_traveled": self.__distance_traveled})
+        return data
 
 
 
@@ -558,12 +585,17 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
     
-    def __init_from_data__(self, object_data, group=None):
-        super().__init_from_data__(object_data, group)
+    def __init_from_data__(self, object_data):
+        self.__init__(
+            object_data["position"],
+            object_data["velocity"],
+            object_data["asteroid_id"],
+            palette_swap=object_data["palette_swap"]
+        )
 
-        self.__setup_id(object_data["asteroid_id"])
-        self._set_hitbox_size(self.__hitbox_size)
-        self.explode_pos: pg.Vector2 | None = None
+        self.set_rotation(object_data["rotation"])
+        self.set_angular_vel(object_data["angular_vel"])
+        self.health = object_data["health"]
 
         # To address an issue where asteroids will show wrong texture when loaded from
         # save file and when the pause menu is showing.
@@ -602,8 +634,14 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
     def get_data(self):
-        return super().get_data() | {"asteroid_id": self.__id,
-                                     "health": self.health}
+        data = super().get_data()
+        data.update({"velocity": tuple(self._velocity),
+                     "asteroid_id": self.__id,
+                     "palette_swap": self._palette_swap,
+                     "rotation": self._rotation,
+                     "angular_vel": self._angular_vel,
+                     "health": self.health})
+        return data
 
     
     def update(self):
