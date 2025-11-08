@@ -29,10 +29,14 @@ class Game:
     """
 
     def __init__(self) -> None:
-        pg.mixer.pre_init(channels=128, buffer=1024)
+        try:
+            pg.mixer.pre_init(channels=128, buffer=1024)
+            pg.mixer.init()
+        except pg.error as e:
+            print(f"Warning:", *e.args)
+
         pg.init()
         pg.joystick.init()
-
 
         self.__setup = False
         self.__setup_engine()
