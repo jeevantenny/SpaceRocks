@@ -9,8 +9,23 @@ PAUSE_ON_CRASH = False
 debug_mode = False
 
 class Cheats():
+    """
+    ## Cheats
+
+    **invincible** - makes spaceship immune to asteroids and go through them  
+    **no_asteroids** - prevents spawning of asteroids  
+    **instant_respawn** - UNIMPLEMENTED  
+    **enemy_ship** - UNIMPLEMENTED  
+    **test_state** - loads a test state instead of regular game states
+
+    **demo_mode:**  
+    Loads the game in demo mode. No data will be read from or written tp user_data
+    folder the game always starts as if loaded up for the first time. The game will
+    show a message indicating that it's in demo mode.
+    """
+
     invincible = False
-    dont_spawn_asteroids = False
+    no_asteroids = False
     instance_respawn = False
     enemy_ship = False
     test_state = False
@@ -19,6 +34,8 @@ class Cheats():
 
 
 def timeit(func: Callable):
+    "Times how long it takes a function to run and prints this value to console."
+    
     @wraps(func)
     def wrapper(*args, **kwargs):
         start = perf_counter()

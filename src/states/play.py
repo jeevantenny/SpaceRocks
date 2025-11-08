@@ -7,7 +7,7 @@ import random
 import config
 import debug
 
-from src.misc import increment_score
+from src.misc import increment_score, level_completion_amount
 from src.custom_types import LevelData, SaveData, Timer
 from src.file_processing import assets, data
 
@@ -66,6 +66,7 @@ class Play(State):
 
         self.score = self.spaceship.score
         self.__level_cleared = False
+        self.__timer = 10
 
         ShowLevelName(level_name.replace("_", " ").upper()).add_to_stack(self.state_stack)
 
@@ -116,10 +117,9 @@ class Play(State):
         self.__info_text = font.small_font.render("")
 
         self.score = 0
-        if debug.Cheats.demo_mode:
-            self.highscore = 0
-        else:
-            self.highscore = data.load_highscore()
+        self.highscore = data.load_highscore()
+
+        self.__prev_highscore = self.highscore
         
         self.highscore_changed = False
         self.__progress_bar = elements.ProgressBar()
@@ -238,18 +238,7 @@ class Play(State):
 
 
         if self.spaceship.health: # type: ignore
-            if self.__timer:
-                text_offset = 80*(self.__timer*0.1)**2
-            else:
-                text_offset = 0
-            self.__show_scores(surface, "highscore", self.highscore, (10, 4-text_offset), (self.highscore > self.score or self.score == self.spaceship.score))
-            self.__show_scores(surface, "score", self.score, (10, 20-text_offset), self.score == self.spaceship.score)
-            surface.blit(self.__progress_bar.render(self.__level_completion_amount()), (10, 43-text_offset))
-            
-
-            if self.is_top_state():
-                surface.blit(self.__info_text, (10, surface.height-20+text_offset))
-        
+            self.__draw_hud(surface)
 
 
 
@@ -287,11 +276,34 @@ class Play(State):
 
 
 
+    def __draw_hud(self, surface: pg.Surface) -> None:
+        if self.__timer:
+            entrance_offset = 80*(self.__timer*0.1)**2
+        else:
+            entrance_offset = 0
+        
+        y_offset = 6
+        if self.__prev_highscore:
+            self.__show_scores(surface, "highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.score or self.score == self.spaceship.score))
+            y_offset += 16
+        
+        self.__show_scores(surface, "score", self.score, (10, y_offset-entrance_offset), self.score == self.spaceship.score)
+        y_offset += 22
+
+        if self.__level_data.level_name != "level_1":
+            surface.blit(self.__progress_bar.render(level_completion_amount(self.score, self.__level_data.score_range)), (10, y_offset-entrance_offset))
+        
+
+        if self.is_top_state():
+            surface.blit(self.__info_text, (10, surface.height-20+entrance_offset))
+
+
+
 
 
     def __game_loop(self):
         if not self.__level_cleared:
-            if not debug.Cheats.dont_spawn_asteroids and self.__should_spawn_on_tick():
+            if not debug.Cheats.no_asteroids and self.__should_spawn_on_tick():
                 self.__spawn_asteroid()
             
             # Moves to next level once the player has gained enough points to complete the current one.
@@ -326,6 +338,31 @@ class Play(State):
 
         if self.score > prev_score:
             self._queue_sound("game.point", 0.3)
+
+
+
+
+
+
+    def __pause_game(self) -> None:
+        "Adds PauseMenu state to state stack as well as some background tint."
+        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
+        PauseMenu().add_to_stack(self.state_stack)
+
+    
+    
+    def __game_over(self) -> None:
+        "Updates the score and shows the game over screen."
+        self.__set_score()
+        for obj in self.entities.sprites():
+            if isinstance(obj, components.ObjectVelocity):
+                obj.set_velocity((0, 0))
+            
+            if isinstance(obj, components.ObjectTexture):
+                obj.set_angular_vel(0)
+
+        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
+        GameOverScreen(self.__level_data, (self.score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
 
 
 
@@ -378,10 +415,6 @@ class Play(State):
 
     def __get_relative_score(self) -> int:
         return max(self.score-self.__level_data.score_range[0], 0)
-    
-
-    def __level_completion_amount(self) -> float:
-        return self.__get_relative_score()/(self.__level_data.score_range[1]-self.__level_data.score_range[0])
 
 
     def __get_increment_percent(self) -> float:
@@ -411,6 +444,8 @@ class Play(State):
         for asteroid in self.asteroids.sprites():
             if not asteroid.colliderect(self.camera.get_visible_area(config.PIXEL_WINDOW_SIZE)):
                 asteroid.force_kill()
+                print(f"killed {asteroid}")
+                
     
 
     def __set_score(self) -> None:
@@ -419,33 +454,6 @@ class Play(State):
         self.highscore = max(self.highscore, self.score)
 
     
-
-
-
-
-
-
-
-
-    def __pause_game(self) -> None:
-        "Adds PauseMenu state to state stack as well as some background tint."
-        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
-        PauseMenu().add_to_stack(self.state_stack)
-
-    
-    
-    def __game_over(self) -> None:
-        "Updates the score and shows the game over screen."
-        self.__set_score()
-        for obj in self.entities.sprites():
-            if isinstance(obj, components.ObjectVelocity):
-                obj.set_velocity((0, 0))
-            
-            if isinstance(obj, components.ObjectTexture):
-                obj.set_angular_vel(0)
-
-        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
-        GameOverScreen((self.score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
         
 
 
@@ -468,12 +476,11 @@ class Play(State):
         self.__set_score()
 
         # Saves the current state of the game if the player has scored points and had not died.
-        if not debug.Cheats.demo_mode:
-            data.save_highscore(self.highscore)
-            if self.spaceship.health and self.spaceship.score:
-                self.__save_progress()
+        data.save_highscore(self.highscore)
+        if self.spaceship.health and self.spaceship.score:
+            self.__save_progress()
 
-            # If not it will save the highscore.
-            else:
-                data.delete_progress()
+        # If not it will save the highscore.
+        else:
+            data.delete_progress()
         self.entities.kill_all()

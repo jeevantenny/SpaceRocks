@@ -16,6 +16,8 @@ LEVELS_DIR = "data/levels"
 
 SAVE_DATA_PATH = "user_data/progress.bin"
 
+__demo_highscore = 0
+
 
 if not os.path.exists("user_data"):
     os.makedirs("user_data")
@@ -88,6 +90,11 @@ def load_level(name: str) -> LevelData:
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
     "Loads the last saved highscore achieved by the player"
+
+    # Loads temporary highscore in demo mode
+    if debug.Cheats.demo_mode:
+        global __demo_highscore
+        return __demo_highscore
     
     try:
         return load_json(path, False)["highscore"]
@@ -97,6 +104,12 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
 
 def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
     "Saved an integer value as the highscore."
+
+    # Highscore is saved temporarily in variable
+    if debug.Cheats.demo_mode:
+        global __demo_highscore
+        __demo_highscore = value
+        return
 
     try:
         data = load_json(path, False)
@@ -110,6 +123,10 @@ def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
 
 def load_progress() -> SaveData | None:
     "Loads the player's from save data as a SaveData object. Returns None if there us no progress saved."
+
+    #Does not load progress in demo mode
+    if debug.Cheats.demo_mode:
+        return None
 
     try:
         with open(SAVE_DATA_PATH, "rb") as fp:
@@ -129,11 +146,16 @@ def load_progress() -> SaveData | None:
 def save_progress(save_data: SaveData) -> None:
     "Saved the player's current progress to be resumed later."
 
-    with open(SAVE_DATA_PATH, "wb") as fp:
-        pickle.dump(save_data, fp)
+    # Does not save progress in demo mode
+    if not debug.Cheats.demo_mode:
+        with open(SAVE_DATA_PATH, "wb") as fp:
+            pickle.dump(save_data, fp)
 
 
 
 def delete_progress() -> None:
     "Deleted save data for player's progress."
-    with open(SAVE_DATA_PATH, "wb") as _: pass
+
+    # Does not delete progress in demo mode.
+    if not debug.Cheats.demo_mode:
+        with open(SAVE_DATA_PATH, "wb") as _: pass

@@ -22,7 +22,7 @@ class Initializer:
             save_data = None
             print(*e.args)
 
-        if save_data is None or debug.Cheats.demo_mode:
+        if save_data is None:
             Play("level_1").add_to_stack(state_stack)
             TitleScreen().add_to_stack(state_stack)
         
