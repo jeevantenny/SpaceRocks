@@ -2,9 +2,15 @@
 **version 0.6.1**  
 *python-3.13.3*
 
-![](/demo/demo_clip.gif)
+![SpaceRocks Gameplay](/demo/demo_clip.gif)
 
-I made this game to test out a new framework I made for any games I would want to make in the future using pygame. It takes a inspiration from Atari's Asteroids Arcade Game. You control a spaceship that can turn move forward and shoot and you shoot asteroids to gain points.
+I made this game to test out a new framework I made for any games I would want to make in the future using pygame.
+It takes a inspiration from Atari's Asteroids Arcade Game. You control a spaceship that can move forward, turn and
+shoot. Shoot asteroids to gain points.
+
+The games uses the NES color palette to try and mimic the feel of an NES title. All assets used in the game are
+original apart from the two fonts, Upheaval and Tiny5. The Open Font License for the Tiny5 font can be found
+[here](/assets/fonts/OFL.txt).
 
 ## Features
 - Infinitely scrolling world in all directions
