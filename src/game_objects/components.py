@@ -1,7 +1,7 @@
 "Contains components that game objects can inherit from to gain specific properties."
 
 import pygame as pg
-from typing import Callable, Generator, Any
+from typing import Generator, Any
 
 import debug
 

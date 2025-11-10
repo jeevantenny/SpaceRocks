@@ -19,7 +19,7 @@ SAVE_DATA_PATH = "user_data/progress.bin"
 __demo_highscore = 0
 
 
-if not os.path.exists("user_data"):
+if not (os.path.exists("user_data") or debug.Cheats.demo_mode):
     os.makedirs("user_data")
 
 

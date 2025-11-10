@@ -126,11 +126,11 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         
 
 
-    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
-        super().draw(surface, lerp_amount, offset)
-        if debug.debug_mode:
-            lerp_pos = self._get_lerp_pos(lerp_amount)+offset
-            pg.draw.line(surface, "green", lerp_pos, lerp_pos+self.get_lerp_rotation_vector(lerp_amount)*500)
+    # def draw(self, surface, lerp_amount=0, offset=(0, 0)):
+    #     super().draw(surface, lerp_amount, offset)
+    #     if debug.debug_mode:
+    #         lerp_pos = self._get_lerp_pos(lerp_amount)+offset
+    #         pg.draw.line(surface, "green", lerp_pos, lerp_pos+self.get_lerp_rotation_vector(lerp_amount)*500)
                 
 
 
@@ -143,22 +143,14 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         if not self.__thrust:
             self.accelerate(-direction*0.5)
 
-        self._queue_sound("entity.ship.shoot")
+        self._queue_sound("entity.ship.shoot", 0.8)
 
 
     
     def boost_speed(self) -> bool:
         return self._velocity.magnitude() > self._max_speed-3
 
-    
 
-    def on_collide(self, collided_with):
-        if collided_with == "vertical_border":
-            vel = self._velocity.x
-        elif collided_with == "horizontal_border":
-            vel = self._velocity.y
-        else:
-            return
 
     
     def kill(self):
@@ -450,8 +442,8 @@ class Bullet(ObjectTexture, ObjectVelocity):
         self.__distance_traveled += self.__speed
         self.__lifetime -= 1
         if self.__lifetime == 0:
-            self.kill()
             self.shooter.combo = 0
+            self.force_kill()
             # Combo goes back to zero if player misses.
             return
 

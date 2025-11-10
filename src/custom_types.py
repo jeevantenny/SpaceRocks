@@ -3,7 +3,7 @@ Contains various types that will be used throughout the game.
 """
 
 import pygame as pg
-from typing import Self, Any, Literal, Callable, Generator, NamedTuple, TypedDict
+from typing import Self, Any, Literal, Callable, Generator, NamedTuple
 import random
 from collections import defaultdict
 
