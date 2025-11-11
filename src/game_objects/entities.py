@@ -10,7 +10,7 @@ from src.math_functions import unit_vector, sign, vector_direction
 from src.input_device import InputInterpreter, controller_rumble
 from src.game_errors import InitializationError
 
-from src.file_processing import assets
+from src.file_processing import assets, load_json
 from src.audio import soundfx
 
 from . import GameObject
@@ -401,14 +401,13 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
 
     
-    def __init_from_data__(self, object_data, group=None):
+    def __init_from_data__(self, object_data):
         super().__init__(
             position=object_data["position"],
             texture=assets.load_texture_map("particles")["bullet"]
         )
 
 
-        direction = unit_vector(pg.Vector2(direction))
         self.set_velocity(object_data["velocity"])
 
         self.set_rotation(object_data["rotation"])
@@ -532,14 +531,9 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
 
 class Asteroid(ObjectAnimation, ObjectCollision):
-    __asteroid_data = None
+    __asteroid_data = load_json("data/asteroids")
 
     __asset_key = "asteroid"
-
-
-    @classmethod
-    def set_asteroid_data(cls, asteroid_data: dict[str, dict[str, str|int]]) -> None:
-        cls.__asteroid_data = asteroid_data
 
 
 
@@ -552,10 +546,9 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     def __init__(self,
                  position: pg.typing.Point,
                  velocity: pg.typing.Point,
-                 id: str,
-                 palette_swap: str | None = None):
+                 id: str):
         
-        self.__data = self.__asteroid_data[id]
+        self.__setup_id(id)
 
         super().__init__(
             position=position,
@@ -565,14 +558,11 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             texture_map_path=self.__data["texture_map"],
             anim_path=self.__asset_key,
             controller_path=self.__asset_key,
-            palette_swap=palette_swap
+            palette_swap=self.__data.get("palette")
         )
-
-        self.__setup_id(id)
 
         self.set_angular_vel(random.randint(-8, 8))
         self.accelerate(velocity)
-        self.explode_pos: pg.Vector2 | None = None
 
 
 
@@ -581,8 +571,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         self.__init__(
             object_data["position"],
             object_data["velocity"],
-            object_data["asteroid_id"],
-            palette_swap=object_data["palette_swap"]
+            object_data["asteroid_id"]
         )
 
         self.set_rotation(object_data["rotation"])
@@ -597,7 +586,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
     def __setup_id(self, id: str) -> None:
         self.__id = id
-        self.__data = self.__asteroid_data[id]
+        self.__data: dict[str, str | int] = self.__asteroid_data[id]
         self.health = self.__data["health"]
 
 
@@ -612,7 +601,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     
     @property
     def subrock(self) -> str | None:
-        return self.__data["subrock"]
+        return self.__data.get("subrock")
     
     @property
     def __knockback_amount(self) -> float:
@@ -629,7 +618,6 @@ class Asteroid(ObjectAnimation, ObjectCollision):
         data = super().get_data()
         data.update({"velocity": tuple(self._velocity),
                      "asteroid_id": self.__id,
-                     "palette_swap": self._palette_swap,
                      "rotation": self._rotation,
                      "angular_vel": self._angular_vel,
                      "health": self.health})
@@ -643,7 +631,6 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             self._update_animations()
             self.set_velocity((0, 0))
             self.set_angular_vel(0)
-            self.set_position(self.explode_pos)
             if self.animations_complete:
                 self.force_kill()
 
@@ -670,8 +657,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
     def kill(self, spawn_asteroids=True):
         self.health = 0
-        self.explode_pos = self.position.copy()
-        if spawn_asteroids and self.__data.get("subrock"):
+        if spawn_asteroids and self.subrock is not None:
             self.__spawn_subrock()
 
         if self.size == 1:
@@ -689,6 +675,6 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
         for pos in positions:
             pos.rotate_ip(rotate_angle)
-            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.subrock, self._palette_swap)
+            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.subrock)
             new_rock.set_velocity(self._velocity+pos)
             self.add_to_groups(new_rock)

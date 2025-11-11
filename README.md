@@ -1,5 +1,5 @@
 # SpaceRocks (A Game inspired by Asteroids)
-**version 0.6.5**  
+**version 0.6.6**  
 *python-3.13.3*
 
 ![SpaceRocks Gameplay](/demo/demo_clip.gif)

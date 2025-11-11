@@ -8,24 +8,9 @@
     "asteroid_speed": [1, 5],
     "asteroid_frequency": 0.4,
 
-    "asteroid_data": {
-        "small": {
-            "texture_map": "asteroid_small",
-            "hitbox_size": 16,
-            "health": 1,
-            "points": 3,
-            "size_value": 1,
-            "spawn_weight": 4
-        },
-        "medium": {
-            "texture_map": "asteroid_medium",
-            "hitbox_size": 30,
-            "health": 2,
-            "points": 5,
-            "size_value": 2,
-            "subrock": "small",
-            "spawn_weight": 3
-        }
+    "spawn_asteroids": {
+        "blue_small": 4,
+        "blue_medium": 3
     },
 
     "score_range": [0, 1000],

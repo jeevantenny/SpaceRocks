@@ -146,7 +146,6 @@ class Play(State):
         self.entities = ObjectGroup()
         self.asteroids: ObjectGroup[Asteroid] = self.entities.make_subgroup()
         self.camera = Camera((0, 0))
-        Asteroid.set_asteroid_data(self.__level_data.asteroid_data)
 
 
 
@@ -391,8 +390,7 @@ class Play(State):
         asteroid = Asteroid(
             start_position,
             velocity,
-            asteroid_id,
-            self.__level_data.asteroid_palette
+            asteroid_id
         )
 
         self.asteroids.add(asteroid)
@@ -444,7 +442,6 @@ class Play(State):
         for asteroid in self.asteroids.sprites():
             if not asteroid.colliderect(self.camera.get_visible_area(config.PIXEL_WINDOW_SIZE)):
                 asteroid.force_kill()
-                print(f"killed {asteroid}")
                 
     
 

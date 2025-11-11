@@ -38,40 +38,29 @@ def load_level(name: str) -> LevelData:
     except FileNotFoundError:
         raise ValueError(f"Invalid level name '{name}'")
     try:
-        asteroid_data = level_data["asteroid_data"]
+
         spawn_weights = ([], [])
-
-        try:
-            for a_name, data in asteroid_data.items():
-                data["texture_map"]
-                data["hitbox_size"]
-                data["health"]
-                data["points"]
-                data["size_value"]
-                spawn_weights[0].append(a_name)
-                spawn_weights[1].append(data.get("spawn_weight", 1))
-
-        except KeyError as e:
-            raise KeyError(f"asteroid_data.{a_name}.{e.args[0]}")
+        for a_name, a_weight in level_data["spawn_asteroids"].items():
+            spawn_weights[0].append(a_name)
+            spawn_weights[1].append(a_weight)
 
         level_data_obj = LevelData(
-            name,
-            level_data.get("base_color", "#000000"),
-            level_data.get("parl_a", "backgrounds/space_background"),
-            level_data.get("parl_b", "backgrounds/space_background_big"),
-            level_data["background_palette"],
-            level_data.get("asteroid_palette", None),
-            level_data.get("background_tint", "#335588"),
+            level_name=             name,
+            base_color=             level_data.get("base_color", "#000000"),
+            parl_a=                 level_data.get("parl_a", "backgrounds/space_background"),
+            parl_b=                 level_data.get("parl_b", "backgrounds/space_background_big"),
+            background_palette=     level_data["background_palette"],
+            asteroid_palette=       level_data.get("asteroid_palette", None),
+            background_tint=        level_data.get("background_tint", "#335588"),
 
-            tuple(level_data["asteroid_density"]),
-            tuple(level_data["asteroid_speed"]),
-            level_data.get("asteroid_frequency", 0.2),
-            spawn_weights,
+            asteroid_density=       tuple(level_data["asteroid_density"]),
+            asteroid_speed=         tuple(level_data["asteroid_speed"]),
+            asteroid_frequency=     level_data.get("asteroid_frequency", 0.2),
+            asteroid_spawn_weights= spawn_weights,
 
-            asteroid_data,
 
-            tuple(level_data["score_range"]),
-            level_data["next_level"]
+            score_range=            tuple(level_data["score_range"]),
+            next_level=             level_data["next_level"]
         )
     except KeyError as e:
         raise LevelDataError(name, e.args[0])
