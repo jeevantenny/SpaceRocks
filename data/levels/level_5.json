@@ -2,15 +2,15 @@
     "background_palette": "test_background",
     "background_tint": "#448866",
 
-    "asteroid_density": [10, 30],
-    "asteroid_speed": [8, 8],
-    "asteroid_frequency": 0.02,
+    "asteroid_density": [30, 80],
+    "asteroid_speed": [1, 1],
+    "asteroid_frequency": 0.6,
 
     "spawn_asteroids": {
         "green_small": 4,
         "green_medium": 3
     },
 
-    "score_range": [2000, 3000],
-    "next_level": "level_4"
+    "score_range": [5000, 50000],
+    "next_level": "level_6"
 }

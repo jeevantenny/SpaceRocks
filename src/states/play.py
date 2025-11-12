@@ -57,7 +57,12 @@ class Play(State):
     def reinit_next_level(self, level_name: str) -> None:
         "Reinitializes the current Play object for the next level without creating another Play object."
 
-        self.__setup_level(level_name)
+        try:
+            self.__setup_level(level_name)
+        except ValueError:
+            self.state_stack.push(NoMoreLevels())
+            return
+        
         self.entities.kill_all()
         self.entities.add(self.spaceship)
         self.spaceship.set_position((0, 0))
@@ -158,9 +163,12 @@ class Play(State):
 
 
             if inputs.keyboard_mouse.action_keys[pg.K_k]:
-                for asteroid in self.asteroids.sprites():
-                    self.spaceship.score += asteroid.points
-                    asteroid.kill(False)
+                if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
+                    self.spaceship.kill()
+                else:
+                    for asteroid in self.asteroids.sprites():
+                        self.spaceship.score += asteroid.points
+                        asteroid.kill(False)
 
             if inputs.keyboard_mouse.action_keys[pg.K_b]:
                 self.spaceship.score += 100
@@ -312,10 +320,7 @@ class Play(State):
         
         else:
             if len(self.asteroids) == 0:
-                try:
-                    self.reinit_next_level(self.__level_data.next_level)
-                except ValueError:
-                    self.state_stack.push(NoMoreLevels())
+                self.reinit_next_level(self.__level_data.next_level)
 
 
         # Removes any asteroids beyond the despawn radius
@@ -470,11 +475,14 @@ class Play(State):
 
 
     def quit(self) -> None:
+        # Don't dave any data if the player has no points
+        if not self.spaceship.score:
+            return
+        
         self.__set_score()
-
         # Saves the current state of the game if the player has scored points and had not died.
         data.save_highscore(self.highscore)
-        if self.spaceship.health and self.spaceship.score:
+        if self.spaceship.health:
             self.__save_progress()
 
         # If not it will save the highscore.

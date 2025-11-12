@@ -1,5 +1,5 @@
 # SpaceRocks (A Game inspired by Asteroids)
-**version 0.6.6**  
+**version 0.7.0**  
 *python-3.13.3*
 
 ![SpaceRocks Gameplay](/demo/demo_clip.gif)
@@ -19,6 +19,7 @@ original apart from the two fonts, Upheaval and Tiny5. The Open Font License for
 - Support for select number of controllers
 - Progress is not lost when application is closed. Player can continue from exactly where they left off.
 - **Ctrl D** to toggle debug mode (for testing)
+- Press **ALT** + **SHIFT** + **D** when in title screen or pause menu to clear user data.
 
 ## Controls
 ### Keyboard

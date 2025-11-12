@@ -225,7 +225,7 @@ class PlayerShip(Spaceship):
 
 
     def userinput(self, inputs: InputInterpreter):
-        if self.health and not inputs.keyboard_mouse.hold_keys[pg.K_LCTRL]:            
+        if self.health and not inputs.keyboard_mouse.hold_keys[pg.KMOD_CTRL]:            
             if inputs.check_input("ship_forward"):
                 self._thrust()
 
@@ -535,6 +535,8 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
     __asset_key = "asteroid"
 
+    # Lower max speed for asteroids ensure that they are never to fast to dodge
+    _max_speed = 10
 
 
     def __new__(cls, *args, **kwargs):
@@ -655,9 +657,9 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
 
-    def kill(self, spawn_asteroids=True):
+    def kill(self, spawn_subrocks=True):
         self.health = 0
-        if spawn_asteroids and self.subrock is not None:
+        if spawn_subrocks and self.subrock is not None:
             self.__spawn_subrock()
 
         if self.size == 1:
@@ -671,10 +673,9 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     def __spawn_subrock(self):
         positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
         positions = map(pg.Vector2, positions)
-        rotate_angle = random.randint(1, 90)
 
         for pos in positions:
-            pos.rotate_ip(rotate_angle)
+            pos.rotate_ip(self._rotation)
             new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.subrock)
             new_rock.set_velocity(self._velocity+pos)
             self.add_to_groups(new_rock)

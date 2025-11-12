@@ -31,5 +31,13 @@
         "points": 6,
         "size_value": 2,
         "subrock": "green_small"
+    },
+    "test_duplicator": {
+        "texture_map": "asteroid_small",
+        "hitbox_size": 16,
+        "health": 1,
+        "points": 10,
+        "size_value": 1,
+        "subrock": "test_duplicator"
     }
 }

@@ -50,13 +50,29 @@ class KeyboardMouse:
         
         for event in events:
             if event.type == KEYDOWN:
-                self.__action_keys[event.key] = True
+                key = self.__get_key(event.key)
+                self.__action_keys[key] = True
                 self.__action_keys["any"] = True
-                self.__hold_keys[event.key] = 1
+                self.__hold_keys[key] = 1
 
 
             elif event.type == KEYUP:
-                self.__hold_keys[event.key] = 0
+                key = self.__get_key(event.key)
+                self.__hold_keys[key] = 0
+
+
+    def __get_key(self, event_key: int) -> int:
+        "Detects modifier keys and converts the to pygame key mod values."
+        if event_key in (K_LCTRL, K_RCTRL):
+            return KMOD_CTRL
+        elif event_key in (K_LSHIFT, K_RSHIFT):
+            return KMOD_SHIFT
+        elif event_key in (K_LALT, K_RALT):
+            return KMOD_ALT
+        else:
+            return event_key
+
+
 
 
 

@@ -256,6 +256,10 @@ class StateStack(soundfx.HasSoundQueue):
         "Quits all states and pops them from the stack."
         while len(self) > 0:
             self.pop()
+    
+    def force_quit(self) -> None:
+        "Removes all states without saving any data in them."
+        self.__container.clear()
 
 
 

@@ -1,15 +1,13 @@
 {
-    "background_palette": "test_background",
-    "asteroid_palette": "red_rocks",
-    "background_tint": "#448866",
+    "background_palette": "default_background",
 
-    "asteroid_density": [20, 40],
+    "asteroid_density": [15, 25],
     "asteroid_speed": [1, 6],
     "asteroid_frequency": 0.4,
 
     "spawn_asteroids": {
-        "green_small": 4,
-        "green_medium": 3
+        "blue_small": 2,
+        "blue_medium": 1
     },
 
     "score_range": [1000, 2000],

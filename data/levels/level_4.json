@@ -1,17 +1,17 @@
 {
-    "background_palette": "test_background",
-    "asteroid_palette": "red_rocks",
-    "background_tint": "#448866",
+    "base_color": "#000000",
+    "parl_a": "backgrounds/space_background",
+    "parl_b": "backgrounds/space_background_big",
+    "background_palette": "default_background",
 
-    "asteroid_density": [30, 80],
+    "asteroid_density": [1, 1],
     "asteroid_speed": [1, 1],
-    "asteroid_frequency": 0.6,
+    "asteroid_frequency": 0.4,
 
     "spawn_asteroids": {
-        "green_small": 4,
-        "green_medium": 3
+        "test_duplicator": 1
     },
 
-    "score_range": [3000, 13000],
+    "score_range": [3000, 4000],
     "next_level": "level_5"
 }

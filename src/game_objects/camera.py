@@ -67,7 +67,18 @@ class Camera:
         entities.draw(output_surface, lerp_amount, blit_offset)
         if debug.debug_mode:
             pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
-            pg.draw.circle(output_surface, "white", self.__target_pos+blit_offset, 2)
+            self.__draw_target_crosshair(output_surface)
+
+
+    def __draw_target_crosshair(self, surface: pg.Surface) -> None:
+        blit_offset = pg.Vector2(surface.size)*0.5 - self.position
+        pos = self.__target_pos + blit_offset
+        # pg.draw.circle(surface, "white", self.__target_pos+offset, 2)
+
+        pg.draw.line(surface, "black", pos-(0, 4), pos+(0, 4), 2)
+        pg.draw.line(surface, "black", pos-(4, 0), pos+(4, 0), 2)
+        pg.draw.line(surface, "white", pos-(0, 3), pos+(0, 3))
+        pg.draw.line(surface, "white", pos-(3, 0), pos+(3, 0))
     
 
 
@@ -76,7 +87,7 @@ class Camera:
 
     
     def get_visible_area(self, area_size: pg.typing.Point) -> pg.Rect:
-        rect = pg.Rect(0, 0, *area_size)
+        rect = pg.Rect((0, 0), area_size)
         rect.center = self.position
         return rect
 

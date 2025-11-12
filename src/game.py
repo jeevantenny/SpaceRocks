@@ -182,11 +182,11 @@ class Game:
             self.__set_screen_mode(not self.__fullscreen)
 
 
-        if keyboard.hold_keys[pg.K_LCTRL] and keyboard.action_keys[pg.K_d]:
+        if keyboard.hold_keys[KMOD_CTRL] and keyboard.action_keys[K_d]:
             debug.debug_mode = not debug.debug_mode
 
 
-        if debug.debug_mode and keyboard.hold_keys[K_LCTRL]:
+        if debug.debug_mode and keyboard.hold_keys[KMOD_CTRL]:
             if self.state_stack.top_state is not None and keyboard.action_keys[K_BACKSPACE]:
                 self.state_stack.pop()
 

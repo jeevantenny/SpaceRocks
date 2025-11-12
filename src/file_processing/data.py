@@ -50,7 +50,6 @@ def load_level(name: str) -> LevelData:
             parl_a=                 level_data.get("parl_a", "backgrounds/space_background"),
             parl_b=                 level_data.get("parl_b", "backgrounds/space_background_big"),
             background_palette=     level_data["background_palette"],
-            asteroid_palette=       level_data.get("asteroid_palette", None),
             background_tint=        level_data.get("background_tint", "#335588"),
 
             asteroid_density=       tuple(level_data["asteroid_density"]),
@@ -148,3 +147,14 @@ def delete_progress() -> None:
     # Does not delete progress in demo mode.
     if not debug.Cheats.demo_mode:
         with open(SAVE_DATA_PATH, "wb") as _: pass
+
+
+
+def delete_user_data() -> None:
+    "Deletes all user data."
+
+    if debug.Cheats.demo_mode:
+        raise RuntimeError("Cannot delete user data in demo mode")
+    
+    delete_progress()
+    save_highscore(0)

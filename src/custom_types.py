@@ -361,7 +361,6 @@ class LevelData(NamedTuple):
     parl_a: str
     parl_b: str
     background_palette: str
-    asteroid_palette: str
     background_tint: str
 
     asteroid_density: int

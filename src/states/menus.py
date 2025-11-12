@@ -5,13 +5,26 @@ import debug
 
 from src.misc import increment_score, level_completion_amount
 from src.custom_types import LevelData
+from src.input_device import InputInterpreter
 
 from src import ui
 from src.ui import font, elements
 
-from . import State
+from . import State, StateStack
+from .info_states import DeleteUserDataOption
+from .visuals import BackgroundTint
 
 
+
+
+
+def option_to_delete_user_data(state_stack: StateStack, inputs: InputInterpreter) -> None:
+    action_keys = inputs.keyboard_mouse.action_keys
+    hold_keys = inputs.keyboard_mouse.hold_keys
+
+    if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and action_keys[pg.K_d]:
+        state_stack.push(DeleteUserDataOption())
+        return
 
 
 
@@ -37,6 +50,12 @@ class TitleScreen(State):
 
 
     def userinput(self, inputs):
+        if not debug.Cheats.demo_mode:
+            option_to_delete_user_data(self.state_stack, inputs)
+
+        if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
+            return
+
         if not self.__start_gameplay:
             if self.title.animations_complete:
                 self.prev_state.spaceship.userinput(inputs)
@@ -113,6 +132,9 @@ class PauseMenu(State):
 
 
     def userinput(self, inputs):
+        if not debug.Cheats.demo_mode:
+            option_to_delete_user_data(self.state_stack, inputs)
+
         if self.title.animations_complete and (inputs.check_input("pause") or inputs.check_input("select")):
             self.title.set_effect("main_exit")
             self.__exit_menu = True
