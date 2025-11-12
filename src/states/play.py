@@ -8,14 +8,14 @@ import config
 import debug
 
 from src.misc import increment_score, level_completion_amount
-from src.custom_types import LevelData, SaveData, Timer
+from src.custom_types import SaveData, Timer
 from src.file_processing import assets, data
 
 from src.game_objects import GameObject, ObjectGroup, components
 from src.game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
 from src.game_objects.camera import Camera
 
-from src.ui import add_text_padding, font, elements
+from src.ui import font, elements
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
@@ -409,7 +409,7 @@ class Play(State):
 
 
     def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point, cache=True):
-        score_text = add_text_padding(str(score), 5, pad_char='0')
+        score_text = f"{score:05}"
 
         score_desc_surf = font.small_font.render(name.capitalize())
         surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))

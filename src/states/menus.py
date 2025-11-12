@@ -221,7 +221,7 @@ class ShowScore(State):
         self.__progress_bar = elements.ProgressBar()
 
         self.score = score_data[0]
-        self.highscore = str(score_data[1])
+        self.highscore = score_data[1]
         self.new_highscore = score_data[2]
         self.display_score = 0
 
@@ -272,7 +272,7 @@ class ShowScore(State):
 
     def __draw_a(self, surface: pg.Surface) -> None:
         ui.blit_to_center(font.large_font.render(self.__display_level_name), surface, (0, -30))
-        text_surface = font.large_font.render(ui.add_text_padding(str(self.display_score), 5, pad_char='0'), 2, cache=False)
+        text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=False)
         surface.blit(text_surface, (99, 101))
 
 
@@ -287,5 +287,6 @@ class ShowScore(State):
         text_surface = font.small_font.render(name, 2)
         surface.blit(text_surface, position+(60, 0)-pg.Vector2(text_surface.width, 0)*0.5)
 
-        number_surface = font.large_font.render(ui.add_text_padding(str(score), 5, pad_char='0'), 2)
+        # print(f"{score:05}", score)
+        number_surface = font.large_font.render(f"{score:05}", 2)
         surface.blit(number_surface, position+(0, 15))

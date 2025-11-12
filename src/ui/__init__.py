@@ -11,20 +11,6 @@ from src.file_processing import assets
 
 
 
-def add_text_padding(text: str, length: int, side: Literal["left", "right"] = "right", pad_char=' ') -> str:
-    "Returns string with a minimum length containing the text and padding."
-
-    if side == "left":
-        return f"{text}{pad_char*max(length-len(text), 0)}"
-    
-    else:
-        return f"{pad_char*max(length-len(text), 0)}{text}"
-
-
-
-
-
-
 def load_icon(icon_name) -> pg.Surface:
     action_icon_name = get_control_icon_name(icon_name)
     if action_icon_name is not None:
