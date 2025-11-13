@@ -3,11 +3,11 @@
         {
             "input_device": "keyboard_mouse",
             "key": "return",
-            "type": "action"
+            "type": "tap"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "a"
         }
     ],
@@ -15,21 +15,21 @@
         {
             "input_device": "keyboard_mouse",
             "key": "escape",
-            "type": "action"
+            "type": "tap"
         },
         {
             "input_device": "keyboard_mouse",
             "key": "p",
-            "type": "action"
+            "type": "tap"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "menu"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "alt_menu"
         }
     ],
@@ -67,11 +67,11 @@
         {
             "input_device": "keyboard_mouse",
             "key": "space",
-            "type": "action"
+            "type": "tap"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "a"
         }
     ],

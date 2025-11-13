@@ -178,19 +178,19 @@ class Game:
 
         keyboard = self.input_interpreter.keyboard_mouse
 
-        if keyboard.action_keys[K_F11]:
+        if keyboard.tap_keys[K_F11]:
             self.__set_screen_mode(not self.__fullscreen)
 
 
-        if keyboard.hold_keys[KMOD_CTRL] and keyboard.action_keys[K_d]:
+        if keyboard.hold_keys[KMOD_CTRL] and keyboard.tap_keys[K_d]:
             debug.debug_mode = not debug.debug_mode
 
 
         if debug.debug_mode and keyboard.hold_keys[KMOD_CTRL]:
-            if self.state_stack.top_state is not None and keyboard.action_keys[K_BACKSPACE]:
+            if self.state_stack.top_state is not None and keyboard.tap_keys[K_BACKSPACE]:
                 self.state_stack.pop()
 
-            if keyboard.action_keys[K_v]:
+            if keyboard.tap_keys[K_v]:
                 print(self.state_stack)
 
         self.state_stack.userinput(self.input_interpreter)

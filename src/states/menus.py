@@ -19,10 +19,10 @@ from .visuals import BackgroundTint
 
 
 def option_to_delete_user_data(state_stack: StateStack, inputs: InputInterpreter) -> None:
-    action_keys = inputs.keyboard_mouse.action_keys
+    tap_keys = inputs.keyboard_mouse.tap_keys
     hold_keys = inputs.keyboard_mouse.hold_keys
 
-    if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and action_keys[pg.K_d]:
+    if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and tap_keys[pg.K_d]:
         state_stack.push(DeleteUserDataOption())
         return
 
@@ -189,7 +189,7 @@ class GameOverScreen(State):
 
     
     def userinput(self, inputs):
-        if inputs.check_input("select") or inputs.keyboard_mouse.action_keys[pg.K_SPACE]:
+        if inputs.check_input("select") or inputs.keyboard_mouse.tap_keys[pg.K_SPACE]:
             self.__timer = 0
 
     
@@ -236,7 +236,7 @@ class ShowScore(State):
 
 
     def userinput(self, inputs):
-        if inputs.check_input("select") or inputs.keyboard_mouse.action_keys[pg.K_SPACE]:
+        if inputs.check_input("select") or inputs.keyboard_mouse.tap_keys[pg.K_SPACE]:
             if self.__timer:
                 self.display_score = self.score
                 self.__timer = 0

@@ -4,7 +4,7 @@ from pygame.locals import *
 from typing import Any, Literal
 from collections import defaultdict
 
-from src.custom_types import ActionKeys, HoldKeys, InputType, BindData, KeybindsType
+from src.custom_types import TapKeys, HoldKeys, InputType, BindData, KeybindsType
 from src.math_functions import sign
 
 from src.file_processing import load_json
@@ -22,19 +22,19 @@ def controller_rumble(pattern_name: str, intensity=0.5, wait_until_clear=False) 
 
 
 def get_control_icon_name(action_name: str) -> str | None:
-    return InputInterpreter.get_action_control_name(action_name)
+    return InputInterpreter.get_control_icon_name(action_name)
 
 
 
 class KeyboardMouse:
     def __init__(self) -> None:
-        self.__action_keys: ActionKeys = defaultdict(bool)
+        self.__tap_keys: TapKeys = defaultdict(bool)
         self.__hold_keys: HoldKeys = defaultdict(float)
 
     
     @property
-    def action_keys(self) -> ActionKeys:
-        return self.__action_keys.copy()
+    def tap_keys(self) -> TapKeys:
+        return self.__tap_keys.copy()
     
     @property
     def hold_keys(self) -> HoldKeys:
@@ -43,7 +43,7 @@ class KeyboardMouse:
 
 
     def get_userinput(self, events: list[pg.Event]) -> None:
-        self.__action_keys.clear()
+        self.__tap_keys.clear()
         for key, amount in self.__hold_keys.items():
             if amount:
                 self.__hold_keys[key] += 1
@@ -51,8 +51,8 @@ class KeyboardMouse:
         for event in events:
             if event.type == KEYDOWN:
                 key = self.__get_key(event.key)
-                self.__action_keys[key] = True
-                self.__action_keys["any"] = True
+                self.__tap_keys[key] = True
+                self.__tap_keys["any"] = True
                 self.__hold_keys[key] = 1
 
 
@@ -95,7 +95,7 @@ class Controller:
             self.__mappings: dict[str, dict[str, Any]] = self.__controller_mappings[working_name]
 
 
-        self.__action_buttons: ActionKeys = defaultdict(bool)
+        self.__tap_buttons: TapKeys = defaultdict(bool)
         self.__hold_buttons: HoldKeys = defaultdict(int)
 
         self.__left_stick = pg.Vector2()
@@ -118,8 +118,8 @@ class Controller:
 
 
     @property
-    def action_buttons(self) -> ActionKeys:
-        return self.__action_buttons.copy()
+    def tap_buttons(self) -> TapKeys:
+        return self.__tap_buttons.copy()
     @property
     def hold_keys(self) -> HoldKeys:
         return self.__hold_buttons.copy()
@@ -141,7 +141,7 @@ class Controller:
 
     
     def get_userinput(self, events: list[pg.Event]) -> None:
-        self.__action_buttons.clear()
+        self.__tap_buttons.clear()
 
         if self.__joystick is None:
             return
@@ -155,8 +155,8 @@ class Controller:
                 button_name = self.__mappings["buttons"].get(str(event.button))
 
                 if button_name is not None:
-                    self.__action_buttons[button_name] = True
-                    self.__action_buttons["any"] = True
+                    self.__tap_buttons[button_name] = True
+                    self.__tap_buttons["any"] = True
                     self.__hold_buttons[button_name] = 1
 
                 #     print(event.button, button_name)
@@ -274,8 +274,8 @@ class Controller:
 
 
 class InputInterpreter:
-    __keybinds: KeybindsType = load_json(f"{INPUT_FORMAT_DIR}/keybinds")
-    __control_icons = load_json(f"{INPUT_FORMAT_DIR}/control_icons")
+    __keybinds: KeybindsType = load_json(f"{INPUT_FORMAT_DIR}/action_mappings")
+    __control_icons = load_json(f"{INPUT_FORMAT_DIR}/action_icons")
     __current_instance: "InputInterpreter | None" = None
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
@@ -328,11 +328,11 @@ class InputInterpreter:
 
     def get_userinput(self, events: list[pg.Event]) -> None:
         self.__keyboard_mouse.get_userinput(events)
-        if self.__controller.action_buttons["any"]:
+        if self.__controller.tap_buttons["any"]:
             self.__current_input_type = "controller"
 
         self.__controller.get_userinput(events)
-        if self.__keyboard_mouse.action_keys["any"]:
+        if self.__keyboard_mouse.tap_keys["any"]:
             self.__current_input_type = "keyboard_mouse"
 
 
@@ -345,13 +345,13 @@ class InputInterpreter:
                 if bind_data["type"] == "hold":
                     results.append(bool(self.__keyboard_mouse.hold_keys[key_code]))
                 else:
-                    results.append(self.__keyboard_mouse.action_keys[key_code])
+                    results.append(self.__keyboard_mouse.tap_keys[key_code])
         
 
             elif bind_data["input_device"] == "controller":
                 match bind_data["type"]:
-                    case "action_button":
-                        results.append(self.__controller.action_buttons[bind_data["value"]])
+                    case "tap_button":
+                        results.append(self.__controller.tap_buttons[bind_data["value"]])
                     
                     case "hold_button":
                         # print(self.__controller.hold_keys)
@@ -394,7 +394,7 @@ class InputInterpreter:
 
 
     @classmethod
-    def get_action_control_name(cls, action_name: str) -> str | None:
+    def get_control_icon_name(cls, action_name: str) -> str | None:
         self = cls.__current_instance
 
         try:

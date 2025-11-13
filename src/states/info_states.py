@@ -11,7 +11,7 @@ from . import State
 
 class DemoState(State):
     def userinput(self, inputs):
-        if inputs.keyboard_mouse.action_keys.get(pg.K_RETURN):
+        if inputs.keyboard_mouse.tap_keys.get(pg.K_RETURN):
             self.state_stack.pop()
 
 
@@ -29,7 +29,7 @@ class DemoState(State):
 
 class NoMoreLevels(State):
     def userinput(self, inputs):
-        if inputs.keyboard_mouse.action_keys.get(pg.K_RETURN):
+        if inputs.keyboard_mouse.tap_keys.get(pg.K_RETURN):
             from .play import Play
             self.state_stack.quit()
             self.state_stack.push(Play("level_1"))
@@ -51,13 +51,13 @@ class NoMoreLevels(State):
 class DeleteUserDataOption(State):
 
     def userinput(self, inputs):
-        action_keys = inputs.keyboard_mouse.action_keys
+        tap_keys = inputs.keyboard_mouse.tap_keys
         hold_keys = inputs.keyboard_mouse.hold_keys
 
-        if action_keys[pg.K_ESCAPE]:
+        if tap_keys[pg.K_ESCAPE]:
             self.state_stack.pop()
 
-        if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and action_keys[pg.K_d]:
+        if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and tap_keys[pg.K_d]:
             data.delete_user_data()
             self.state_stack.force_quit()
             self.state_stack.push(UserDataDeleted())

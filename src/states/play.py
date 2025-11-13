@@ -157,12 +157,12 @@ class Play(State):
 
     def userinput(self, inputs):
         if debug.debug_mode:
-            if inputs.keyboard_mouse.action_keys[pg.K_r]:
+            if inputs.keyboard_mouse.tap_keys[pg.K_r]:
                 self.spaceship.position = pg.Vector2(200, 150)
                 self.spaceship.set_velocity((0, 0))
 
 
-            if inputs.keyboard_mouse.action_keys[pg.K_k]:
+            if inputs.keyboard_mouse.tap_keys[pg.K_k]:
                 if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
                     self.spaceship.kill()
                 else:
@@ -170,19 +170,19 @@ class Play(State):
                         self.spaceship.score += asteroid.points
                         asteroid.kill(False)
 
-            if inputs.keyboard_mouse.action_keys[pg.K_b]:
+            if inputs.keyboard_mouse.tap_keys[pg.K_b]:
                 self.spaceship.score += 100
 
-            if inputs.keyboard_mouse.action_keys[pg.K_c]:
+            if inputs.keyboard_mouse.tap_keys[pg.K_c]:
                 self.spaceship.combo += 50
 
 
-            if inputs.keyboard_mouse.action_keys[pg.K_t]:
+            if inputs.keyboard_mouse.tap_keys[pg.K_t]:
                 self.reinit_next_level(self.__level_data.next_level)
                 self.spaceship.score = self.__level_data.score_range[0]
 
 
-        if debug.Cheats.enemy_ship and inputs.keyboard_mouse.action_keys[pg.K_e]:
+        if debug.Cheats.enemy_ship and inputs.keyboard_mouse.tap_keys[pg.K_e]:
             self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
 
 

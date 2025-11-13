@@ -11,7 +11,7 @@ from collections import defaultdict
 
 
 
-type ActionKeys = defaultdict[int | str, bool]
+type TapKeys = defaultdict[int | str, bool]
 type HoldKeys = defaultdict[int, int]
 
 type InputType = Literal["controller", "keyboard_mouse"]
