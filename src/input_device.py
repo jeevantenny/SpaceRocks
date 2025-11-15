@@ -275,7 +275,7 @@ class Controller:
 
 class InputInterpreter:
     __keybinds: KeybindsType = load_json(f"{INPUT_FORMAT_DIR}/action_mappings")
-    __control_icons = load_json(f"{INPUT_FORMAT_DIR}/action_icons")
+    __action_icons = load_json(f"{INPUT_FORMAT_DIR}/action_icons")
     __current_instance: "InputInterpreter | None" = None
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
@@ -378,13 +378,13 @@ class InputInterpreter:
 
     def __get_all_control_icons(self) -> dict[str, str]:
         if self.__current_input_type == "keyboard_mouse":
-            return self.__control_icons[self.__current_input_type]
+            return self.__action_icons[self.__current_input_type]
         else:
             return self.__get_controller_icon_names(self.controller.device_name)
     
 
     def __get_controller_icon_names(self, controller_name: str) -> dict[str, str]:
-        icons = self.__control_icons["controllers"][controller_name]
+        icons = self.__action_icons["controllers"][controller_name]
         if "same_as" in icons:
             icons = self.__get_controller_icon_names(icons["same_as"]) | icons
         

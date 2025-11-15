@@ -59,7 +59,7 @@ class TitleText:
             surface = pg.transform.scale(surface, title_surface.size)
             texture_map[name] = self.__apply_masks(surface, title_surface)
         
-        texture_map["blank"] = assets.colorkey_surface((1, 1))
+        texture_map["blank"] = assets.colorkey_surface(title_surface.size)
         
         return texture_map
     

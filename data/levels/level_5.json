@@ -11,6 +11,6 @@
         "green_medium": 3
     },
 
-    "score_range": [5000, 50000],
+    "score_range": [4000, 5000],
     "next_level": "level_6"
 }
