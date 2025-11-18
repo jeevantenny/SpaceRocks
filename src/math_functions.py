@@ -45,3 +45,9 @@ def format_angle[T: (int, float)](angle: T) -> T:
 def vector_direction(vector: pg.Vector2) -> float:
     "Returns the direction of a vector relative to (0, -1)."
     return format_angle(pg.Vector2(0, -1).angle_to(vector))
+
+
+def angle_difference(vector1: pg.Vector2, vector2: pg.Vector2, center: pg.typing.Point = (0, 0)) -> float:
+    vector1 = vector1 - center
+    vector2 = vector2 - center
+    return format_angle(vector1.angle_to(vector2))

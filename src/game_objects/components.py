@@ -113,6 +113,12 @@ class ObjectTexture(GameObject):
     def rotate(self, amount: float) -> None:
         self._rotation += amount
 
+    def get_rotation(self) -> int:
+        return self._rotation
+
+    def set_rotation(self, value: int) -> None:
+        self._rotation = value
+
     def get_rotation_vector(self) -> pg.Vector2:
         "Gets rotation of object as a vector relative to (0, -1)."
         return pg.Vector2(0, -1).rotate(self._rotation)
@@ -120,9 +126,6 @@ class ObjectTexture(GameObject):
     def get_lerp_rotation_vector(self, lerp_amount=0.0) -> pg.Vector2:
         "Gets rotation vector taking account interpolation."
         return pg.Vector2(0, -1).rotate(self._rotation-self._angular_vel*(1-lerp_amount))
-
-    def set_rotation(self, value: int) -> None:
-        self._rotation = value
         
 
     def update(self) -> None:
@@ -418,3 +421,26 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
 
     def do_collision(self) -> bool:
         return True
+
+
+
+
+
+
+class ObjectHealth(GameObject):
+    def __init__(self, *, max_health: int, **kwargs):
+        super().__init__(**kwargs)
+
+        self.__health, self.__max_health = max_health
+
+    
+    @property
+    def health(self) -> int:
+        return self.__health
+
+    
+    def damage(self, amount: int) -> None:
+        self.__health -= min(self.__health, amount)
+    
+    def heal(self, amount: int) -> None:
+        self.health = min(self.health+amount, self.__max_health)

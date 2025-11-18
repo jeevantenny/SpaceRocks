@@ -75,6 +75,18 @@
             "value": "a"
         }
     ],
+    "shoot_hold": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "space",
+            "type": "hold"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "a"
+        }
+    ],
     "left": [
         {
             "input_device": "keyboard_mouse",

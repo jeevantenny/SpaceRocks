@@ -213,7 +213,7 @@ class Game:
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
             self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
-            pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.screen)
+            pg.transform.scale(self.pixel_scaled_window, self.screen.size, self.screen)
 
             if debug.debug_mode:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"

@@ -12,7 +12,8 @@ from src.custom_types import SaveData, Timer
 from src.file_processing import assets, data
 
 from src.game_objects import GameObject, ObjectGroup, components
-from src.game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
+from src.game_objects.entities import PlayerShip, Asteroid, EnemyShip
+from src.game_objects.projectiles import Bullet
 from src.game_objects.camera import Camera
 
 from src.ui import font, elements

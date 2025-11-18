@@ -30,10 +30,12 @@ class DemoState(State):
 class NoMoreLevels(State):
     def userinput(self, inputs):
         if inputs.keyboard_mouse.tap_keys.get(pg.K_RETURN):
-            from .play import Play
-            self.state_stack.quit()
-            self.state_stack.push(Play("level_1"))
-        
+            self.state_stack.force_quit()
+            data.delete_progress()
+
+            from .init_state import Initializer
+            Initializer(self.state_stack)
+
 
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
