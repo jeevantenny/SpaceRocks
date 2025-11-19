@@ -4,12 +4,13 @@ import debug
 
 from src.custom_types import Timer
 from src.file_processing import assets
-from src.math_functions import unit_vector
+from src.math_functions import unit_vector, vector_direction
+from src.ui import font
 
 from . import GameObject
 from .components import ObjectTexture, ObjectVelocity, ObjectHitbox
 from .entities import Spaceship, Asteroid
-from .particles import DisplayPoint
+from .particles import DisplayText
 
 
 
@@ -132,7 +133,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
                 and self.__collision_check(obj)
                 ):
                 if isinstance(obj, Asteroid):
-                    self.damage_asteroid(obj)
+                    self.__damage_asteroid(obj)
                 else:
                     obj.kill()
                 hit = True
@@ -160,14 +161,22 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
 
 
-    def damage_asteroid(self, asteroid: "Asteroid") -> None:
+    def __damage_asteroid(self, asteroid: Asteroid) -> None:
         "Damages asteroid and increments the shooter's score and combo accordingly."
         asteroid.damage(1, self._velocity*0.1/asteroid.size)
         if not asteroid.health:
             # Score increments by asteroid's points + current combo amount
+            self.__summon_display_text(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo)
             self.shooter.score += asteroid.points + self.shooter.combo
-            self.primary_group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo))
             self.shooter.combo += 1
+
+
+    def __summon_display_text(self, position: pg.typing.Point, points: int, combo=0) -> None:
+            if combo:
+                texture = font.small_font.render(f"COMBO +{points+combo}", cache=False)
+            else:
+                texture = font.small_font.render(f"+{points}", color_a="#eeeeee", color_b="#333333", cache=False)
+            self.primary_group.add(DisplayText(position, texture))
 
 
 
@@ -201,20 +210,25 @@ class Laser(ObjectTexture):
     def __init__(
             self,
             position: pg.typing.Point,
-            direction: pg.Vector2,
+            rotation: int,
             width: int,
             damage: int,
-            duration=10
+            duration=3
         ):
 
         super().__init__(position=position, texture=None)
 
         self.__damage_duration = Timer(duration, exec_after=self.kill).start()
         self.__damage = damage
-        self.__direction = direction.copy()
+        self._rotation = rotation
 
-        self.__collision_lines = get_collision_lines(position, self.__direction, 300, width, 5)
+        self.__collision_lines = get_collision_lines(position, self.get_rotation_vector(), 300, width, 5)
         self.killed_list: list[GameObject] = []
+
+
+
+    def set_rotation(self, value):
+        raise AttributeError(f"Cannot change rotation of {type(self).__name__}")
 
 
 

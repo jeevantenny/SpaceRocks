@@ -30,7 +30,7 @@ class DemoState(State):
 class NoMoreLevels(State):
     def userinput(self, inputs):
         if inputs.keyboard_mouse.tap_keys.get(pg.K_RETURN):
-            self.state_stack.force_quit()
+            self.state_stack.quit()
             data.delete_progress()
 
             from .init_state import Initializer

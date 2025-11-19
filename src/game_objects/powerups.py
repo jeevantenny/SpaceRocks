@@ -8,10 +8,11 @@ from src.math_functions import angle_difference
 from src.input_device import InputInterpreter
 from src.audio import soundfx
 
-from . import ObjectGroup
-from .entities import Spaceship, Asteroid
-from .projectiles import obj_line_collision, get_collision_lines, Laser
-from .particles import DisplayPoint
+from src.ui import font
+
+from .entities import Spaceship
+from .projectiles import Laser
+from .particles import DisplayText
 
 
 powerup_list: dict[str, type["PowerUp"]] = {}
@@ -111,12 +112,16 @@ class SuperLaser(PowerUp):
             for asteroid in self.__laser.killed_list:
                 points += asteroid.points
             spaceship.score += points
-            spaceship.primary_group.add(DisplayPoint(spaceship.position+(0, -20), points))
+            spaceship.primary_group.add(
+                DisplayText(spaceship.position+self.__laser.get_rotation_vector()*40, font.large_font.render(
+                    f"+{points}", 1, "#cc8800", "#442200", False
+                ))
+            )
             self.__laser = None
 
 
     def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
-        if not (debug.debug_mode and self.__charging):
+        if not (debug.debug_mode and self.__charge_timer.complete):
             return
         
         offset = pg.Vector2(offset)
@@ -125,21 +130,12 @@ class SuperLaser(PowerUp):
         start_pos = spaceship.position + offset
         end_pos = start_pos + direction*300
 
-        print("yee")
-
-        pg.draw.line(surface, "red" if self.__charge_timer.complete else "blue", start_pos+perp, end_pos+perp)
-        pg.draw.line(surface, "red" if self.__charge_timer.complete else "blue", start_pos-perp, end_pos+direction-perp)
+        pg.draw.line(surface, "red", start_pos+perp, end_pos+perp)
+        pg.draw.line(surface, "red", start_pos-perp, end_pos+direction-perp)
     
 
     def __fire_laser(self, spaceship: Spaceship) -> None:
-        direction =  spaceship.get_rotation_vector()
-        self.__laser = Laser(spaceship.position,direction, 50, 1)
+        self.__laser = Laser(spaceship.position, spaceship.get_rotation(), 50, 1)
         spaceship.primary_group.add(self.__laser)
 
-        spaceship.accelerate(-direction*5)
-
-
-
-
-
-print(f"{powerup_list=}")
+        spaceship.accelerate(-spaceship.get_rotation_vector()*5)

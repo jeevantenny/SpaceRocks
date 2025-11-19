@@ -15,7 +15,7 @@ from src.audio import soundfx
 
 from . import GameObject
 from .components import *
-from .particles import ShipSmoke, DisplayPoint
+from .particles import ShipSmoke
 
 
 __all__ = [
@@ -193,20 +193,6 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -3)+self._velocity
             position = self.position-direction*8+self._velocity
             self.primary_group.add(ShipSmoke(position, velocity))
-
-
-    def __ship_got_hit(self, asteroid: "Asteroid") -> bool:
-        if asteroid.health:
-            if asteroid.size == 1 and self.boost_speed():
-                self.score += asteroid.points
-                self.primary_group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points))
-                asteroid.kill()
-                return False
-            else:
-                self.kill()
-                return True
-        else:
-            return False
         
 
 
