@@ -4,11 +4,11 @@ import debug
 
 from src.custom_types import Timer
 from src.file_processing import assets
-from src.math_functions import unit_vector, vector_direction
+from src.math_functions import unit_vector
 from src.ui import font
 
 from . import GameObject
-from .components import ObjectTexture, ObjectVelocity, ObjectHitbox
+from .components import ObjectTexture, ObjectVelocity
 from .entities import Spaceship, Asteroid
 from .particles import DisplayText
 
@@ -41,15 +41,14 @@ def get_collision_lines(start_pos: pg.Vector2, direction: pg.Vector2, length: in
 
     return lines
 
-    return [
-        (start_pos+sideways, start_pos+line_offset+sideways),
-        (start_pos-sideways, start_pos+line_offset-sideways),
-        (start_pos, start_pos+line_offset)
-    ]
 
 
 def obj_line_collision(obj: GameObject, lines: CollisionLines) -> bool:
-    return any(map(obj.rect.clipline, lines))
+    for line in lines:
+        if obj.rect.clipline(line):
+            return True
+
+    return False
 
 
 
@@ -128,14 +127,8 @@ class Bullet(ObjectTexture, ObjectVelocity):
         for obj in self.primary_group:
             # If the game object is a type the bullet can attack and the object is
             # alive then damage or kill it.
-            if (type(obj) in self.__attack_types
-                and getattr(obj, 'health', True)
-                and self.__collision_check(obj)
-                ):
-                if isinstance(obj, Asteroid):
-                    self.__damage_asteroid(obj)
-                else:
-                    obj.kill()
+            if isinstance(obj, Asteroid) and obj.health and obj_line_collision(obj, self.__get_collision_lines()):
+                self.__damage_asteroid(obj)
                 hit = True
 
         if hit:
@@ -149,12 +142,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
         super().draw(surface, lerp_amount, offset)
 
         if debug.debug_mode:
-            collision_lines = get_collision_lines(self.position-self._velocity+offset,
-                                                  -self.get_rotation_vector(),
-                                                  self.__collision_line_length(),
-                                                  18, 3)
-    
-            for line in collision_lines:
+            for line in self.__get_collision_lines(offset):
                 pg.draw.line(surface, "blue", *line)
 
 
@@ -177,21 +165,19 @@ class Bullet(ObjectTexture, ObjectVelocity):
             else:
                 texture = font.small_font.render(f"+{points}", color_a="#eeeeee", color_b="#333333", cache=False)
             self.primary_group.add(DisplayText(position, texture))
-
-
-
-
-    def __collision_check(self, _object: GameObject) -> bool:
-        collision_lines = get_collision_lines(self.position-self._velocity,
-                                              self.get_rotation_vector(),
-                                              self.__collision_line_length(),
-                                              18)
-    
-        return obj_line_collision(_object, collision_lines)
     
     
     def __collision_line_length(self) -> float:
-        return min(self.__distance_traveled*0.5, self.__speed*2)
+        return min(self.__distance_traveled*0.5-9, self.__speed*2)
+
+
+    def __get_collision_lines(self, offset: pg.typing.Point = (0, 0)) -> CollisionLines:
+        return get_collision_lines(
+            self.position-self._velocity+offset,
+            -self.get_rotation_vector(),
+            self.__collision_line_length(),
+            18
+        )
     
 
 

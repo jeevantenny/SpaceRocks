@@ -8,9 +8,6 @@ from src.file_processing import assets
 
 
 
-
-
-
 def load_icon(icon_name) -> pg.Surface:
     action_icon_name = get_control_icon_name(icon_name)
     if action_icon_name is not None:

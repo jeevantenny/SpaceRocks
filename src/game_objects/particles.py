@@ -4,8 +4,6 @@ import pygame as pg
 import random
 from math import sin, pi
 
-from src import ui
-
 from .components import *
 
 

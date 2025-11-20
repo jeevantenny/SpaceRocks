@@ -40,7 +40,7 @@ class NoMoreLevels(State):
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
         blit_to_center(font.large_font.render("THAT WAS THE LAST LEVEL"), surface)
-        blit_to_center(font.small_font.render("More levels will be developed -- Press enter to restart"), surface, (0, 30))
+        blit_to_center(font.small_font.render("More levels will be developed -- Press enter to go to main menu"), surface, (0, 30))
         blit_to_center(font.small_font.render("Thanks for playing :)"), surface, (0, 40))
 
 

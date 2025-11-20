@@ -7,8 +7,7 @@ from src.misc import increment_score, level_completion_amount
 from src.custom_types import LevelData
 from src.input_device import InputInterpreter
 
-from src import ui
-from src.ui import font, elements
+from src.ui import blit_to_center, font, elements
 
 from . import State, StateStack
 from .info_states import DeleteUserDataOption
@@ -35,7 +34,7 @@ class TitleScreen(State):
     def __init__(self):
         super().__init__()
 
-        self.title = elements.TitleText(config.WINDOW_CAPTION, "main_entrance_a")
+        self.title = elements.AnimatedText(config.WINDOW_CAPTION, "main_entrance_a")
         self.__version_text = f"version {".".join(map(str, config.VERSION_NUM))}   pygame-ce {pg.ver}"
 
         self.__start_gameplay = False
@@ -103,10 +102,10 @@ class TitleScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount*self.__start_gameplay)
-        ui.blit_to_center(self.title.render(), surface, (0, -50))
+        blit_to_center(self.title.render(), surface, (0, -50))
 
         if not self.__start_gameplay and self.title.animations_complete:
-            ui.blit_to_center(self.__info_text, surface, (0, 50))
+            blit_to_center(self.__info_text, surface, (0, 50))
 
             if not debug.Cheats.demo_mode:
                 version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
@@ -122,7 +121,7 @@ class PauseMenu(State):
     def __init__(self):
         super().__init__()
 
-        self.title = elements.TitleText(config.WINDOW_CAPTION, "main_entrance_b")
+        self.title = elements.AnimatedText(config.WINDOW_CAPTION, "main_entrance_b")
         self.__exit_menu = False
 
         # Assigned default values to avoid raising Attribute Errors due to race conditions.
@@ -157,11 +156,11 @@ class PauseMenu(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        ui.blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
+        blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
-            ui.blit_to_center(self.__info_text_b, surface, (0, 30))
+            blit_to_center(self.__info_text_b, surface, (0, 30))
             surface.blit(self.__info_text_a, (10, surface.height-35))
-            surface.blit(ui.font.small_font.render("F11 to toggle fullscreen mode"), (10, surface.height-20))
+            surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (10, surface.height-20))
 
 
     def debug_info(self):
@@ -185,7 +184,7 @@ class GameOverScreen(State):
         self.__level_data = level_data
         self.__score_data = score_data
         self.display_score = 0
-        self.title = elements.TitleText("game over", "main_entrance_a")
+        self.title = elements.AnimatedText("game over", "main_entrance_a")
 
     
     def userinput(self, inputs):
@@ -204,7 +203,7 @@ class GameOverScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
-        ui.blit_to_center(self.title.render(), surface)
+        blit_to_center(self.title.render(), surface)
         
             
 
@@ -271,7 +270,7 @@ class ShowScore(State):
 
 
     def __draw_a(self, surface: pg.Surface) -> None:
-        ui.blit_to_center(font.large_font.render(self.__display_level_name), surface, (0, -30))
+        blit_to_center(font.large_font.render(self.__display_level_name), surface, (0, -30))
         text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=False)
         surface.blit(text_surface, (99, 101))
 
