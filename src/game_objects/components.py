@@ -268,10 +268,10 @@ class ObjectHitbox(GameObject):
         return self.rect.colliderect(rect)
     
 
-    def colliding_objects(self) -> Generator[GameObject, Any, None]:
-        "Returns all game objects in the primary group that collide with this object."
+    def overlapping_objects(self) -> Generator["ObjectHitbox", Any]:
+        "Returns a generator all objects in primary group whose hitbox overlaps with this objects's."
         for obj in self.primary_group:
-            if obj is not self and isinstance(obj, ObjectCollision) and obj.do_collision() and self.colliderect(obj.rect):
+            if obj is not self and isinstance(obj, ObjectHitbox) and self.colliderect(obj.rect):
                 yield obj
 
 
@@ -309,6 +309,14 @@ class ObjectCollision(ObjectHitbox, ObjectVelocity):
     def update(self) -> None:
         super().update()
         self.process_collision()
+
+    
+
+    def colliding_objects(self) -> Generator[GameObject, Any, None]:
+        "Returns all game collision objects in the primary group that collide with this object."
+        for obj in self.overlapping_objects():
+            if isinstance(obj, ObjectCollision) and obj.do_collision():
+                yield obj
     
 
 

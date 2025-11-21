@@ -44,11 +44,7 @@ def get_collision_lines(start_pos: pg.Vector2, direction: pg.Vector2, length: in
 
 
 def obj_line_collision(obj: GameObject, lines: CollisionLines) -> bool:
-    for line in lines:
-        if obj.rect.clipline(line):
-            return True
-
-    return False
+    return any(map(obj.rect.clipline, lines))
 
 
 

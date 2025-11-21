@@ -114,7 +114,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
                 self.force_kill()
             return
 
-        for obj in self.colliding_objects():
+        for obj in self.overlapping_objects():
             if isinstance(obj, Asteroid) and obj.health:
                 self.kill()
                 break
@@ -205,7 +205,10 @@ class PlayerShip(Spaceship):
 
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
-        self.__powerups.add("SuperLaser")
+        self.invincibility_timer = Timer(1)
+        
+        # self.__powerups.add("SuperLaser")
+        # self.__powerups.add("Shield")
 
 
     def __init_from_data__(self, object_data):
@@ -214,8 +217,7 @@ class PlayerShip(Spaceship):
 
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
-
-        for powerup_name in object_data["powerups"]:
+        for powerup_name in object_data.get("powerups", []):
             self.__powerups.add(powerup_name)
 
 
@@ -246,6 +248,8 @@ class PlayerShip(Spaceship):
     def update(self):
         super().update()
         self.__powerups.update(self)
+        self.invincibility_timer.update()
+
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0)):
         super().draw(surface, lerp_amount, offset)
@@ -261,11 +265,28 @@ class PlayerShip(Spaceship):
         super().shoot()
         controller_rumble("gun_fire")
 
+    
+    def invincibility_frames(self, amount=30) -> None:
+        self.invincibility_timer = Timer(amount).start()
+
 
     def kill(self):
-        if not debug.Cheats.invincible:
+        if self.invincibility_timer.complete and not (self.__powerups.kill_protection(self) or debug.Cheats.invincible):
             super().kill()
             controller_rumble("large_explosion_b", 0.9)
+
+
+    def has_powerup(self, powerup_name: str) -> None:
+        return self.__powerups.includes(powerup_name)
+    
+
+    def acquire_powerup(self, powerup_name: str) -> None:
+        if not self.has_powerup(powerup_name):
+            self.__powerups.add(powerup_name)
+
+
+    def remove_powerup(self, powerup) -> None:
+        self.__powerups.remove(powerup)
 
 
 

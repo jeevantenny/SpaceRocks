@@ -4,13 +4,14 @@ from typing import Iterator
 import debug
 
 from src.custom_types import Timer
-from src.math_functions import angle_difference
 from src.input_device import InputInterpreter
 from src.audio import soundfx
+from src.input_device import controller_rumble
 
 from src.ui import font
 
-from .entities import Spaceship
+from .components import ObjectVelocity, ObjectTexture, ObjectHitbox
+from .entities import PlayerShip, Asteroid
 from .projectiles import Laser
 from .particles import DisplayText
 
@@ -36,12 +37,22 @@ class PowerUp:
         "Processes userinput for powerup."
         ...
 
-    def update(self, spaceship: Spaceship) -> None:
+    def update(self, spaceship: PlayerShip) -> None:
         "Updates powerup for every frame."
         ...
 
-    def draw(self, spaceship: Spaceship, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
+    def draw(self, spaceship: PlayerShip, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
         ...
+
+    
+    def kill_protection(self, spaceship: PlayerShip) -> bool:
+        return False
+
+
+
+
+
+
 
 
 
@@ -56,13 +67,22 @@ class PowerUpGroup:
         for powerup in self.__container:
             powerup.userinput(inputs)
     
-    def update(self, spaceship: Spaceship) -> None:
+    def update(self, spaceship: PlayerShip) -> None:
         for powerup in self.__container:
             powerup.update(spaceship)
     
-    def draw(self, spaceship: Spaceship, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)):
+    def draw(self, spaceship: PlayerShip, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)):
         for powerup in self.__container:
             powerup.draw(spaceship, surface, lerp_amount, offset)
+
+
+    def kill_protection(self, spaceship: PlayerShip) -> bool:
+        "Called by the `PlayerShip` object to see if any of it's powerups can shield it from a collision."
+        
+        for powerup in self:
+            if powerup.kill_protection(spaceship):
+                return True
+        return False
 
     def add(self, powerup_name: str) -> None:
         try:
@@ -70,11 +90,63 @@ class PowerUpGroup:
         except KeyError:
             raise ValueError(F"Invalid powerup '{powerup_name}'")
         
+    def remove(self, powerup: PowerUp) -> None:
+        self.__container.remove(powerup)
+
+        
+    def includes(self, powerup_name: str) -> bool:
+        try:
+            powerup_type = powerup_list[powerup_name]
+        except KeyboardInterrupt:
+            raise ValueError(F"Invalid powerup '{powerup_name}'")
+        
+        for powerup in self:
+            if isinstance(powerup, powerup_type):
+                return True
+        
+        return False
+
     def clear(self) -> None:
         self.__container.clear()
 
     def __iter__(self) -> Iterator[PowerUp]:
         return self.__container.__iter__()
+
+
+
+
+
+
+class PowerupCollectable(ObjectVelocity, ObjectTexture, ObjectHitbox):
+    def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point, powerup_name: str):
+        texture = pg.Surface((16, 16))
+        texture.fill("green")
+        super().__init__(
+            position=position,
+            texture=texture,
+            hitbox_size=(16, 16)
+        )
+
+        self.accelerate(velocity)
+        self.__powerup_name = powerup_name
+        self.__player_ship: PlayerShip | None = None
+
+
+    def update(self):
+        super().update()
+
+        if self.__player_ship is None:
+            for obj in self.primary_group:
+                if isinstance(obj, PlayerShip):
+                    self.__player_ship = obj
+                    break
+        
+        elif self.colliderect(self.__player_ship.rect):
+            self.__player_ship.acquire_powerup(self.__powerup_name)
+            self.kill()
+
+
+
 
 
 
@@ -112,11 +184,13 @@ class SuperLaser(PowerUp):
             for asteroid in self.__laser.killed_list:
                 points += asteroid.points
             spaceship.score += points
-            spaceship.primary_group.add(
-                DisplayText(spaceship.position+self.__laser.get_rotation_vector()*40, font.large_font.render(
-                    f"+{points}", 1, "#cc8800", "#442200", False
-                ))
-            )
+            if points:
+                spaceship.primary_group.add(
+                    DisplayText(spaceship.position+self.__laser.get_rotation_vector()*40, font.large_font.render(
+                        f"+{points}", 1, "#cc8800", "#442200", False
+                    ))
+                )
+
             self.__laser = None
 
 
@@ -134,8 +208,35 @@ class SuperLaser(PowerUp):
         pg.draw.line(surface, "red", start_pos-perp, end_pos+direction-perp)
     
 
-    def __fire_laser(self, spaceship: Spaceship) -> None:
+    def __fire_laser(self, spaceship: PlayerShip) -> None:
         self.__laser = Laser(spaceship.position, spaceship.get_rotation(), 50, 1)
         spaceship.primary_group.add(self.__laser)
 
         spaceship.accelerate(-spaceship.get_rotation_vector()*5)
+
+
+
+
+
+
+
+
+
+
+
+class Shield(PowerUp):
+    def __init__(self):
+        super().__init__()
+
+    def kill_protection(self, spaceship):
+        for obj in spaceship.overlapping_objects():
+            if isinstance(obj, Asteroid) and obj.health:
+                push_amount = obj.position-spaceship.position
+                push_amount.scale_to_length(3)
+                obj.accelerate(push_amount*2)
+                spaceship.accelerate(-push_amount)
+        
+        spaceship.remove_powerup(self)
+        spaceship.invincibility_frames()
+        controller_rumble("small_pulse", 0.8)
+        return True
