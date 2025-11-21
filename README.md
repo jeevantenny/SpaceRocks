@@ -34,4 +34,4 @@ original apart from the two fonts, Upheaval and Tiny5. The Open Font License for
 
 
 ## Libraries
-pygame-ce - *2.5.5*  
+`pygame-ce - 2.5.5`
