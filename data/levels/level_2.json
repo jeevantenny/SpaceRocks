@@ -1,6 +1,5 @@
 {
-    "background_palette": "default_warm",
-    "background_tint": "#826e0c",
+    "background_palette": "default_background",
 
     "asteroid_density": [15, 25],
     "asteroid_speed": [1, 6],
@@ -9,6 +8,11 @@
     "spawn_asteroids": {
         "blue_small": 2,
         "blue_medium": 1
+    },
+    
+    "powerup_frequency": 0.1,
+    "spawn_powerups": {
+        "Shield": 0.5
     },
 
     "score_range": [1000, 2000],

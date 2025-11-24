@@ -196,7 +196,7 @@ class Laser(ObjectTexture):
             width: int,
             damage: int,
             duration=3
-        ):
+            ):
 
         super().__init__(position=position, texture=None)
 

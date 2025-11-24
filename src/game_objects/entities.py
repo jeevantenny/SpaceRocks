@@ -223,7 +223,7 @@ class PlayerShip(Spaceship):
 
     def get_data(self):
         data = super().get_data()
-        data["powerups"] = [powerup.name for powerup in self.__powerups]
+        data["powerups"] = [powerup.get_name() for powerup in self.__powerups]
         return data
 
 

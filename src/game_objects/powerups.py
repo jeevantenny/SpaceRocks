@@ -1,10 +1,12 @@
 import pygame as pg
-from typing import Iterator
+import random
+from typing import Callable, Iterator
 
 import debug
 
 from src.custom_types import Timer
 from src.input_device import InputInterpreter
+from src.file_processing import assets
 from src.audio import soundfx
 from src.input_device import controller_rumble
 
@@ -22,15 +24,29 @@ powerup_list: dict[str, type["PowerUp"]] = {}
 class PowerUp:
     "Gives the player's spaceship additional abilities that they can either be offensive or defensive."
 
+    _info_text = "No information"
+
     def __init__(self):
         ...
 
     def __init_subclass__(cls):
         powerup_list[cls.__name__] = cls
 
-    @property
-    def name(self) -> str:
-        return type(self).__name__
+    @classmethod
+    def get_name(cls) -> str:
+        return cls.__name__
+    
+    @classmethod
+    def get_display_name(cls) -> str:
+        """
+        The name of the powerups shown to the player using the `_display_name` field.
+        If not defined then it returns the name of the class.
+        """
+        return getattr(cls, "_display_name", cls.__name__)
+
+    @classmethod
+    def get_info_text(cls) -> str:
+        return cls._info_text
 
 
     def userinput(self, inputs: InputInterpreter) -> None:
@@ -118,8 +134,14 @@ class PowerUpGroup:
 
 
 class PowerupCollectable(ObjectVelocity, ObjectTexture, ObjectHitbox):
-    def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point, powerup_name: str):
-        texture = pg.Surface((16, 16))
+    def __init__(
+            self,
+            position: pg.typing.Point,
+            velocity: pg.typing.Point,
+            powerup_name: str
+            ):
+
+        texture = assets.colorkey_surface((16, 16))
         texture.fill("green")
         super().__init__(
             position=position,
@@ -128,8 +150,31 @@ class PowerupCollectable(ObjectVelocity, ObjectTexture, ObjectHitbox):
         )
 
         self.accelerate(velocity)
+        self.set_angular_vel(random.randint(-3, 3))
         self.__powerup_name = powerup_name
         self.__player_ship: PlayerShip | None = None
+
+
+    def __init_from_data__(self, object_data):
+        self.__init__(object_data["position"], object_data["velocity"], object_data["powerup"])
+        self.set_angular_vel(object_data["angular_vel"])
+
+
+    @property
+    def powerup_name(self) -> str:
+        return self.__powerup_name
+
+
+    def get_data(self):
+        data = super().get_data()
+        data.update({
+            "position": tuple(self.position),
+            "velocity": tuple(self._velocity),
+            "powerup": self.__powerup_name,
+            "angular_vel": self._angular_vel
+        })
+
+        return data
 
 
     def update(self):
@@ -143,6 +188,8 @@ class PowerupCollectable(ObjectVelocity, ObjectTexture, ObjectHitbox):
         
         elif self.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
+            from src.states.info_states import PowerupInfo
+            self.primary_group.host_state.powerup_info(powerup_list[self.__powerup_name])
             self.kill()
 
 

@@ -2,6 +2,7 @@ import pygame as pg
 
 from src.ui import font, blit_to_center
 from src.file_processing import data
+from src.game_objects.powerups import PowerUp
 
 from . import State
 
@@ -24,6 +25,27 @@ class DemoState(State):
         surface.fill("black")
         blit_to_center(font.large_font.render("DEMO MODE"), surface)
         blit_to_center(font.small_font.render("Press enter to start"), surface, (0, 30))
+
+
+
+
+class PowerupInfo(State):
+    def __init__(self, powerup_type: type[PowerUp]):
+        super().__init__()
+        self.__powerup_name = powerup_type.get_display_name()
+        self.__info_text = powerup_type.get_info_text()
+
+
+    def userinput(self, inputs):
+        if inputs.check_input("select"):
+            self.state_stack.pop()
+    
+
+    def draw(self, surface, lerp_amount=0):
+        self.prev_state.draw(surface)
+        blit_to_center(font.large_font.render(self.__powerup_name), surface, (0, -10))
+        blit_to_center(font.small_font.render(self.__info_text), surface, (0, 10))
+
 
 
 
