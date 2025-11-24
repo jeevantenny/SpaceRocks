@@ -35,7 +35,7 @@ class ShowLevelName(PassThroughState):
 
     def __init__(self, level_name: str):
         super().__init__()
-        self.__title = elements.AltTitleText(level_name, "show_level_name_b")
+        self.__title = elements.AnimatedText(level_name, "show_level_name_b", font.large_font)
     
 
     def update(self):
