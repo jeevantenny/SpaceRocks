@@ -1,6 +1,6 @@
 import pygame as pg
 
-from src import ui
+from src.ui import blit_to_center, font, elements
 
 
 from . import PassThroughState
@@ -35,7 +35,7 @@ class ShowLevelName(PassThroughState):
 
     def __init__(self, level_name: str):
         super().__init__()
-        self.__title = ui.elements.AltTitleText(level_name, "show_level_name_b")
+        self.__title = elements.AnimatedText(level_name, "show_level_name_b", font.large_font)
     
 
     def update(self):
@@ -47,5 +47,5 @@ class ShowLevelName(PassThroughState):
 
     def draw(self, surface, lerp_amount=0):
         super().draw(surface, lerp_amount)
-        ui.blit_to_center(self.__title.render(), surface, (0, -40))
+        blit_to_center(self.__title.render(), surface, (0, -40))
         

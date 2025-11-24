@@ -1,6 +1,6 @@
 """Contains constants for initializing game window."""
 
-VERSION_NUM = (0, 7, 3)
+VERSION_NUM = (0, 7, 3, "adding-powerups")
 
 WINDOW_CAPTION = "SpaceRocks"
 WINDOW_ICON_PATH = "window_icon"

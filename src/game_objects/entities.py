@@ -15,13 +15,12 @@ from src.audio import soundfx
 
 from . import GameObject
 from .components import *
-from .particles import ShipSmoke, DisplayPoint
+from .particles import ShipSmoke
 
 
 __all__ = [
     "Spaceship",
     "playerShip",
-    "Bullet",
     "Asteroid"
 ]
 
@@ -115,7 +114,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
                 self.force_kill()
             return
 
-        for obj in self.colliding_objects():
+        for obj in self.overlapping_objects():
             if isinstance(obj, Asteroid) and obj.health:
                 self.kill()
                 break
@@ -138,6 +137,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
     def shoot(self) -> None:
+        from .projectiles import Bullet
         direction = self.get_rotation_vector()
         self.primary_group.add(Bullet(self.position, direction, self, self._attack_types))
         if not self.__thrust:
@@ -193,34 +193,38 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -3)+self._velocity
             position = self.position-direction*8+self._velocity
             self.primary_group.add(ShipSmoke(position, velocity))
-
-
-    def __ship_got_hit(self, asteroid: "Asteroid") -> bool:
-        if asteroid.health:
-            if asteroid.size == 1 and self.boost_speed():
-                self.score += asteroid.points
-                self.primary_group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points))
-                asteroid.kill()
-                return False
-            else:
-                self.kill()
-                return True
-        else:
-            return False
         
 
 
 
 
 class PlayerShip(Spaceship):
-    def __init__(self, position, **kwargs):
-        super().__init__(position, **kwargs)
+    def __init__(self, position):
+        super().__init__(position)
         self._attack_types: list[type[GameObject]] = [Asteroid, EnemyShip]
+
+        from .powerups import PowerUpGroup
+        self.__powerups = PowerUpGroup()
+        self.invincibility_timer = Timer(1)
+        
+        # self.__powerups.add("SuperLaser")
+        # self.__powerups.add("Shield")
 
 
     def __init_from_data__(self, object_data):
         super().__init_from_data__(object_data)
         self._attack_types: list[type[GameObject]] = [Asteroid, EnemyShip]
+
+        from .powerups import PowerUpGroup
+        self.__powerups = PowerUpGroup()
+        for powerup_name in object_data.get("powerups", []):
+            self.__powerups.add(powerup_name)
+
+
+    def get_data(self):
+        data = super().get_data()
+        data["powerups"] = [powerup.get_name() for powerup in self.__powerups]
+        return data
 
 
 
@@ -238,6 +242,19 @@ class PlayerShip(Spaceship):
             if  inputs.check_input("shoot") and self.alive():
                 self.shoot()
 
+            self.__powerups.userinput(inputs)
+
+    
+    def update(self):
+        super().update()
+        self.__powerups.update(self)
+        self.invincibility_timer.update()
+
+
+    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
+        super().draw(surface, lerp_amount, offset)
+        self.__powerups.draw(self, surface, lerp_amount, offset)
+
 
     def _thrust(self):
         super()._thrust()
@@ -248,11 +265,28 @@ class PlayerShip(Spaceship):
         super().shoot()
         controller_rumble("gun_fire")
 
+    
+    def invincibility_frames(self, amount=30) -> None:
+        self.invincibility_timer = Timer(amount).start()
+
 
     def kill(self):
-        if not debug.Cheats.invincible:
+        if self.invincibility_timer.complete and not (self.__powerups.kill_protection(self) or debug.Cheats.invincible):
             super().kill()
             controller_rumble("large_explosion_b", 0.9)
+
+
+    def has_powerup(self, powerup_name: str) -> None:
+        return self.__powerups.includes(powerup_name)
+    
+
+    def acquire_powerup(self, powerup_name: str) -> None:
+        if not self.has_powerup(powerup_name):
+            self.__powerups.add(powerup_name)
+
+
+    def remove_powerup(self, powerup) -> None:
+        self.__powerups.remove(powerup)
 
 
 
@@ -369,147 +403,6 @@ class EnemyShip(Spaceship):
         if self.distance_to(self.__player) > 2000:
             print("Removed enemy ship")
             self.force_kill()
-
-
-
-
-
-
-class Bullet(ObjectTexture, ObjectVelocity):
-    draw_layer = 1
-    visible_area = pg.Rect(0, 0, *pg.Vector2(config.WINDOW_SIZE)/config.PIXEL_SCALE).inflate(100, 100)
-
-    __speed = 40
-    __lifetime = 40
-    _max_speed = 100 + __speed
-
-    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter: Spaceship, attack_types: list[type[GameObject]]):
-        super().__init__(
-            position=position,
-            texture=assets.load_texture_map("particles")["bullet"]
-        )
-
-        self.shooter = shooter
-
-        direction = unit_vector(pg.Vector2(direction))
-        self.set_velocity(direction*self.__speed+shooter.get_velocity())
-        self.move(direction*5)
-
-        self.set_rotation(-direction.angle_to((0, -1)))
-        self.__attack_types = attack_types
-        self.__distance_traveled = 0.0
-
-
-    
-    def __init_from_data__(self, object_data):
-        super().__init__(
-            position=object_data["position"],
-            texture=assets.load_texture_map("particles")["bullet"]
-        )
-
-
-        self.set_velocity(object_data["velocity"])
-
-        self.set_rotation(object_data["rotation"])
-        self.__shooter_id = object_data["shooter_id"]
-        self.__attack_types = object_data["attack_types"]
-        self.__distance_traveled = object_data["distance_traveled"]
-
-    
-    def post_init_from_data(self, object_dict):
-        # Finds the shooter entity and assigns it to the shooter attribute.
-        if self.__shooter_id in object_dict:
-            self.shooter = object_dict[self.__shooter_id]
-        else:
-            raise Exception("Bullet cannot find shooter object.")
-
-
-    
-    def get_data(self):
-        data = super().get_data()
-        data.update({"velocity": tuple(self._velocity),
-                     "rotation": self._rotation,
-                     "shooter_id": id(self.shooter),
-                     "attack_types": self.__attack_types,
-                     "distance_traveled": self.__distance_traveled})
-        return data
-
-
-
-    def update(self):
-        super().update()
-        self.__distance_traveled += self.__speed
-        self.__lifetime -= 1
-        if self.__lifetime == 0:
-            self.shooter.combo = 0
-            self.force_kill()
-            # Combo goes back to zero if player misses.
-            return
-
-
-        hit = False
-        for obj in self.primary_group:
-            # If the game object is a type the bullet can attack and the object is
-            # alive then damage or kill it.
-            if (type(obj) in self.__attack_types
-                and getattr(obj, 'health', True)
-                and self.__collision_check(obj)
-                ):
-                if isinstance(obj, Asteroid):
-                    self.damage_asteroid(obj)
-                else:
-                    obj.kill()
-                hit = True
-
-        if hit:
-            self.kill()
-            
-        
-    
-
-
-    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
-        super().draw(surface, lerp_amount, offset)
-
-        if debug.debug_mode:
-            for line in self.__get_collision_lines(offset):
-                pg.draw.line(surface, "blue", *line)
-
-
-
-
-
-    def damage_asteroid(self, asteroid: "Asteroid") -> None:
-        "Damages asteroid and increments the shooter's score and combo accordingly."
-        asteroid.damage(1, self._velocity*0.1/asteroid.size)
-        if not asteroid.health:
-            # Score increments by asteroid's points + current combo amount
-            self.shooter.score += asteroid.points + self.shooter.combo
-            self.primary_group.add(DisplayPoint(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo))
-            self.shooter.combo += 1
-
-
-
-
-    def __collision_check(self, _object: GameObject) -> bool:
-        for line in self.__get_collision_lines():
-            if _object.rect.clipline(*line):
-                return True
-        
-        return False
-    
-
-    def __get_collision_lines(self, blit_offset=(0, 0)) -> list[tuple[pg.Vector2, pg.Vector2]]:
-        sideways: pg.Vector2 = self.get_rotation_vector().rotate(90)*9
-
-        line_offset = -self.get_rotation_vector()*min(self.__distance_traveled*0.5, self.__speed*2)
-        prev_pos = self.position-self._velocity+blit_offset
-
-        return [
-            (prev_pos+sideways, prev_pos+line_offset+sideways),
-            (prev_pos-sideways, prev_pos+line_offset-sideways),
-            (prev_pos, prev_pos+line_offset)
-        ]
         
         
 

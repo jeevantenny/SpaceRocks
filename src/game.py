@@ -16,6 +16,7 @@ from src.ui import font
 from src.states import StateStack, init_state
 from src.file_processing import assets
 from src.audio import soundfx
+from src.misc import set_console_style, bar_of_dashes
 
 
 
@@ -120,6 +121,11 @@ class Game:
 
             # Starts the main game loop
             self.game_process_loop()
+        except Exception as e:
+            self.run = False
+            self.error = True
+            raise e
+
         finally:
             # Ensure that player data is saved when application is closed or crashes.
             self.quit()
@@ -128,31 +134,19 @@ class Game:
 
     def game_process_loop(self) -> None:
         "Handles Window management, user-input and game logic."
-        try:
-            while self.run:
-                self.get_userinput()
-                self.userinput()
-                self.update()
-                self.next_tick()
-        
-        except Exception:
-            traceback.print_exc()
-            self.run = False
-            self.error = True
+        while self.run:
+            self.get_userinput()
+            self.userinput()
+            self.update()
+            self.next_tick()
             
 
 
     def display_loop(self) -> None:
         "Handles rendering to screen."
-        try:
-            while self.run:
-                self.draw()
-                self.next_frame()
-        
-        except Exception:
-            traceback.print_exc()
-            self.run = False
-            self.error = True
+        while self.run:
+            self.draw()
+            self.next_frame()
 
 
 
@@ -213,7 +207,7 @@ class Game:
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
             self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
-            pg.transform.scale_by(self.pixel_scaled_window, config.PIXEL_SCALE, self.screen)
+            pg.transform.scale(self.pixel_scaled_window, self.screen.size, self.screen)
 
             if debug.debug_mode:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
@@ -272,14 +266,26 @@ class Game:
             input("Save and Exit ->")
         try:
             self.state_stack.quit()
-            print("Program closed successfully")
+
+            set_console_style(32, 1)
+            bar_of_dashes()
+
+            print("Game Data Saved")
             print(f"error: {self.error}")
+
+            bar_of_dashes()
+            set_console_style()
         
         except:
             traceback.print_exc()
-            print("\033[91m\033[1mAn error occurred during saving. Data may not have been saved properly\033[0m")
-            if debug.PAUSE_ON_CRASH:
-                input("Exit ->")
+
+            set_console_style(91, 1)
+            bar_of_dashes()
+
+            print("\x1BAn error occurred during saving. Data may not have been saved properly.")
+
+            bar_of_dashes()
+            set_console_style()
 
         finally:
             pg.quit()

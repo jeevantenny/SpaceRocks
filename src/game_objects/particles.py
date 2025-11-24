@@ -4,14 +4,12 @@ import pygame as pg
 import random
 from math import sin, pi
 
-from src import ui
-
 from .components import *
 
 
 __all__ = [
     "ShipSmoke",
-    "DisplayPoint"
+    "DisplayText"
 ]
 
 
@@ -49,21 +47,15 @@ class ShipSmoke(ObjectAnimation, ObjectVelocity):
 
 
 
-class DisplayPoint(ObjectTexture):
+class DisplayText(ObjectTexture):
     "Shows how many points were obtained from destroying an asteroid."
     save_entity_progress=False
     draw_layer = 5
 
-    def __init__(self, position: pg.typing.Point, points: int, combo=0):
-        text = f"+{points+combo}"
-        if combo:
-            text = f"COMBO {text}"
-
-        texture = ui.font.small_font.render(text, color_a="#dd6644" if combo else "#eeeeee", cache=False)
-
+    def __init__(self, position: pg.typing.Point, text_surface: pg.Surface):
         super().__init__(
             position=position,
-            texture=texture
+            texture=text_surface
         )
         
         self.__lifetime = 12

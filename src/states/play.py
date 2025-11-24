@@ -7,12 +7,14 @@ import random
 import config
 import debug
 
-from src.misc import increment_score, level_completion_amount
+from src.misc import increment_score, level_completion_amount, weighted_choice
 from src.custom_types import SaveData, Timer
 from src.file_processing import assets, data
 
 from src.game_objects import GameObject, ObjectGroup, components
-from src.game_objects.entities import PlayerShip, Asteroid, Bullet, EnemyShip
+from src.game_objects.entities import PlayerShip, Asteroid, EnemyShip
+from src.game_objects.projectiles import Bullet
+from src.game_objects.powerups import PowerUp, PowerupCollectable
 from src.game_objects.camera import Camera
 
 from src.ui import font, elements
@@ -20,7 +22,7 @@ from src.ui import font, elements
 from . import State
 from .menus import PauseMenu, GameOverScreen
 from .visuals import BackgroundTint, ShowLevelName
-from .info_states import NoMoreLevels
+from .info_states import PowerupInfo, NoMoreLevels
 
 
 
@@ -34,11 +36,7 @@ class Play(State):
     """
     __spawn_radius = 150
     __despawn_radius = 500
-    __clear_fov = 60
     __score_limit = 99999
-
-    colors = ["#442200", "#884400", "#993300", "#005588", "#99ddee"]
-
 
 
     def __init__(self, level_name: str):
@@ -97,6 +95,8 @@ class Play(State):
             self.entities.add(entity)
             if isinstance(entity, Asteroid):
                 self.asteroids.add(entity)
+            if isinstance(entity, PowerupCollectable):
+                self.powerups.add(entity)
             elif isinstance(entity, PlayerShip):
                 self.spaceship = entity
 
@@ -125,13 +125,11 @@ class Play(State):
         self.highscore = data.load_highscore()
 
         self.__prev_highscore = self.highscore
-        
         self.highscore_changed = False
         self.__progress_bar = elements.ProgressBar()
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
         self.__level_cleared = False
-
         self.__timer = 10
 
 
@@ -146,10 +144,11 @@ class Play(State):
 
 
     def __setup_game_objects(self) -> None:
-        "Assigns all the object groups and the camera."
+        "Creates all the object groups and the camera."
 
-        self.entities = ObjectGroup()
+        self.entities = ObjectGroup(host_state=self)
         self.asteroids: ObjectGroup[Asteroid] = self.entities.make_subgroup()
+        self.powerups: ObjectGroup[PowerupCollectable] = self.entities.make_subgroup()
         self.camera = Camera((0, 0))
 
 
@@ -206,6 +205,7 @@ class Play(State):
 
             # Clears velocity and angular velocity
             self.camera.clear_velocity()
+
             for entity in self.entities.sprites():
                 # Bullets are deleted immediately
                 if isinstance(entity, Bullet):
@@ -251,7 +251,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density():.1f}, cam_x: {self.camera.position.x:.0f}, cam_y: {self.camera.position.y:.0f}"
+        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density():.1f}, combo: {self.spaceship.combo}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
 
@@ -310,8 +310,12 @@ class Play(State):
 
     def __game_loop(self):
         if not self.__level_cleared:
-            if not debug.Cheats.no_asteroids and self.__should_spawn_on_tick():
+            # Asteroid Spawning
+            if not debug.Cheats.no_asteroids and self.__should_spawn_asteroid():
                 self.__spawn_asteroid()
+
+            if self.powerups.count() == 0 and random.random() < self.__level_data.powerup_frequency:
+                self.__spawn_powerup()
             
             # Moves to next level once the player has gained enough points to complete the current one.
             if self.spaceship.score >= self.__level_data.score_range[1]:
@@ -324,9 +328,9 @@ class Play(State):
 
 
         # Removes any asteroids beyond the despawn radius
-        for asteroid in self.asteroids.sprites():
-            if asteroid.distance_to(self.spaceship) > self.__despawn_radius:
-                asteroid.force_kill()
+        for obj in self.entities.sprites():
+            if isinstance(obj, (Asteroid, PowerupCollectable)) and obj.distance_to(self.spaceship) > self.__despawn_radius:
+                obj.force_kill()
 
 
         self.entities.update(self.camera.position)
@@ -345,13 +349,21 @@ class Play(State):
 
 
 
+    def __add_background_tint(self) -> None:
+        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
 
 
 
     def __pause_game(self) -> None:
         "Adds PauseMenu state to state stack as well as some background tint."
-        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
+        self.__add_background_tint()
         PauseMenu().add_to_stack(self.state_stack)
+
+
+
+    def powerup_info(self, powerup: type[PowerUp]) -> None:
+        self.__add_background_tint()
+        PowerupInfo(powerup).add_to_stack(self.state_stack)
 
     
     
@@ -365,35 +377,35 @@ class Play(State):
             if isinstance(obj, components.ObjectTexture):
                 obj.set_angular_vel(0)
 
-        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
+        self.__add_background_tint()
         GameOverScreen(self.__level_data, (self.score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
 
 
 
 
 
+    def __get_object_spawn_pos(self) -> pg.Vector2:
+        "Returns a random position for objects like asteroids and powerups to spawn offscreen."
+        distance_from_center = self.__spawn_radius+self.spaceship.get_speed()*0.3
+        return self.camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
+    
+    def __get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float) -> pg.Vector2:
+        "Returns the velocity of an object so that is goes onscreen towards the spaceship."
+        velocity = self.camera.position-start_pos
+        velocity.scale_to_length(magnitude)
+        velocity.rotate_ip(random.randint(-40, 40))
+        return velocity
+
+
 
 
     def __spawn_asteroid(self) -> None:
-        start_position = pg.Vector2()
-
-        distance_from_center = self.__spawn_radius+self.spaceship.get_speed()*0.3
-        start_position = self.camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
-
-        if random.random() < self.score*0.00002:
-            target_pos = self.spaceship.position
-        else:
-            target_pos = self.camera.position
-
-        # Make asteroid target spaceship with some deviation
-        velocity = target_pos-start_position
-        velocity.scale_to_length(self.__get_asteroid_speed())
-        velocity.rotate_ip(random.randint(-40, 40))
-
-        asteroid_id = random.choices(*self.__level_data.asteroid_spawn_weights, k=1)[0]
+        spawn_pos = self.__get_object_spawn_pos()
+        velocity = self.__get_object_spawn_velocity(spawn_pos, self.__get_asteroid_speed())
+        asteroid_id = weighted_choice(self.__level_data.asteroid_spawn_weights)
 
         asteroid = Asteroid(
-            start_position,
+            spawn_pos,
             velocity,
             asteroid_id
         )
@@ -402,10 +414,19 @@ class Play(State):
 
 
 
-    def __should_spawn_on_tick(self) -> bool:
+    def __should_spawn_asteroid(self) -> bool:
         return (random.random() < self.__level_data.asteroid_frequency
-                and self.__required_asteroid_density() > self.__asteroid_density()
-)
+                and self.__required_asteroid_density() > self.__asteroid_density())
+    
+
+    
+    def __spawn_powerup(self) -> None:
+        powerups_name = weighted_choice(self.__level_data.powerup_spawn_weights)
+        if not self.spaceship.has_powerup(powerups_name):
+            spawn_pos = self.__get_object_spawn_pos()
+            velocity = self.__get_object_spawn_velocity(spawn_pos, 2)
+            self.powerups.add(PowerupCollectable(spawn_pos, velocity, powerups_name))
+
 
 
     def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point, cache=True):

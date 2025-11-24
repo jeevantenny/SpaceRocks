@@ -20,6 +20,14 @@
                 "7": "start_7"
             }
         },
+        "invincibility": {
+            "duration": 6,
+            "loop": true,
+            "timeline": {
+                "0": "main",
+                "3": "start_4"
+            }
+        },
         "explode": {
             "duration": 20,
             "anim_speed_multiplier": 1.0,

@@ -4,6 +4,7 @@ import pygame as pg
 from typing import Iterator
 
 from src.math_functions import format_angle
+from src.states import State
 
 from src.audio import soundfx
 
@@ -32,7 +33,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
         
 
-    def __init_from_data__(self, object_data: dict, group: "ObjectGroup | None" = None) -> None:
+    def __init_from_data__(self, object_data: dict) -> None:
         "Alternate way to create game objects using data from save file."
 
         if not self.save_entity_progress:
@@ -160,11 +161,16 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
     "A way of grouping game objects for calling basic methods on all objects simultaneously."
 
-    def __init__(self, full_volume_radius=180):
+    def __init__(self, full_volume_radius=180, host_state: State | None = None):
         super().__init__()
 
         self.__full_volume_radius = full_volume_radius
+        self.__host_state = host_state
 
+
+    @property
+    def host_state(self) -> State | None:
+        return self.__host_state
 
 
     def update(self, sound_focus: pg.typing.Point) -> None:
@@ -250,7 +256,7 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 
 
     def make_subgroup(self) -> "ObjectSubgroup":
-        return ObjectSubgroup(self, self.__full_volume_radius)
+        return ObjectSubgroup(self, self.__full_volume_radius, self.__host_state)
 
 
     def __iter__(self) -> Iterator[T]:
@@ -265,10 +271,9 @@ class ObjectSubgroup(ObjectGroup):
     a subgroup will also be added to the supergroup.
     """
 
-    def __init__(self, super_group: ObjectGroup, full_volume_radius=180):
-        super().__init__(full_volume_radius)
+    def __init__(self, super_group: ObjectGroup, full_volume_radius=180, host_state: State | None = None):
+        super().__init__(full_volume_radius, host_state)
         self.__super_group = super_group
-
 
     def add(self, *sprites):
         self.__super_group.add(*sprites)

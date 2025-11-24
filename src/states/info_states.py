@@ -2,6 +2,7 @@ import pygame as pg
 
 from src.ui import font, blit_to_center
 from src.file_processing import data
+from src.game_objects.powerups import PowerUp
 
 from . import State
 
@@ -27,18 +28,41 @@ class DemoState(State):
 
 
 
+
+class PowerupInfo(State):
+    def __init__(self, powerup_type: type[PowerUp]):
+        super().__init__()
+        self.__powerup_name = powerup_type.get_display_name()
+        self.__info_text = powerup_type.get_info_text()
+
+
+    def userinput(self, inputs):
+        if inputs.check_input("select"):
+            self.state_stack.pop()
+    
+
+    def draw(self, surface, lerp_amount=0):
+        self.prev_state.draw(surface)
+        blit_to_center(font.large_font.render(self.__powerup_name), surface, (0, -10))
+        blit_to_center(font.small_font.render(self.__info_text), surface, (0, 10))
+
+
+
+
 class NoMoreLevels(State):
     def userinput(self, inputs):
         if inputs.keyboard_mouse.tap_keys.get(pg.K_RETURN):
-            from .play import Play
             self.state_stack.quit()
-            self.state_stack.push(Play("level_1"))
-        
+            data.delete_progress()
+
+            from .init_state import Initializer
+            Initializer(self.state_stack)
+
 
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
         blit_to_center(font.large_font.render("THAT WAS THE LAST LEVEL"), surface)
-        blit_to_center(font.small_font.render("More levels will be developed -- Press enter to restart"), surface, (0, 30))
+        blit_to_center(font.small_font.render("More levels will be developed -- Press enter to go to main menu"), surface, (0, 30))
         blit_to_center(font.small_font.render("Thanks for playing :)"), surface, (0, 40))
 
 

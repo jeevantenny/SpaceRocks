@@ -39,10 +39,15 @@ def load_level(name: str) -> LevelData:
         raise ValueError(f"Invalid level name '{name}'")
     try:
 
-        spawn_weights = ([], [])
+        asteroid_weights = ([], [])
         for a_name, a_weight in level_data["spawn_asteroids"].items():
-            spawn_weights[0].append(a_name)
-            spawn_weights[1].append(a_weight)
+            asteroid_weights[0].append(a_name)
+            asteroid_weights[1].append(a_weight)
+
+        powerups_weights = ([], [])
+        for p_name, p_weight in level_data.get("spawn_powerups", {}).items():
+            powerups_weights[0].append(p_name)
+            powerups_weights[1].append(p_weight)
 
         level_data_obj = LevelData(
             level_name=             name,
@@ -55,8 +60,10 @@ def load_level(name: str) -> LevelData:
             asteroid_density=       tuple(level_data["asteroid_density"]),
             asteroid_speed=         tuple(level_data["asteroid_speed"]),
             asteroid_frequency=     level_data.get("asteroid_frequency", 0.2),
-            asteroid_spawn_weights= spawn_weights,
+            asteroid_spawn_weights= asteroid_weights,
 
+            powerup_frequency=      level_data.get("powerup_frequency", 0.0),
+            powerup_spawn_weights=  powerups_weights,
 
             score_range=            tuple(level_data["score_range"]),
             next_level=             level_data["next_level"]
@@ -75,7 +82,7 @@ def load_level(name: str) -> LevelData:
 
 
 
-
+@debug.timeit
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
     "Loads the last saved highscore achieved by the player"
 

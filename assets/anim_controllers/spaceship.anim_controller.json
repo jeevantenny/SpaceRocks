@@ -12,7 +12,14 @@
         "main": {
             "animations": ["main"],
             "transitions": {
+                "invincibility": "not obj.invincibility_timer.complete",
                 "explode": "not obj.health"
+            }
+        },
+        "invincibility": {
+            "animations": ["invincibility"],
+            "transitions": {
+                "main": "obj.invincibility_timer.complete"
             }
         },
         "explode": {

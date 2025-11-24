@@ -368,6 +368,9 @@ class LevelData(NamedTuple):
     asteroid_frequency: float
     asteroid_spawn_weights: tuple[list[str], list[int]]
 
+    powerup_frequency: float
+    powerup_spawn_weights: tuple[list[str], list[int]]
+
     score_range: tuple[int, int]
     next_level: str
 

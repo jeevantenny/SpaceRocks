@@ -3,20 +3,20 @@ import pygame as pg
 from src.custom_types import TextureMap, Animation
 from src.file_processing import assets
 
-from . import blit_to_center, font
+from . import font
 
 
 
 
 
-class TitleText:
+class AnimatedText:
     "Uses the title_font to render text and apply an animations on it."
     
     __effect_mask_colors = assets.load_json("assets/title_effect_mask_colors")
     __effects_file = "title_effects"
 
-    def __init__(self, text: str, effect_name: str) -> None:
-        self.__texture_map = self.__make_title_effect(self._get_text_surface(text))
+    def __init__(self, text: str, effect_name: str, font=font.title_font) -> None:
+        self.__texture_map = self.__make_title_effect(font.render(text))
         self.set_effect(effect_name)
 
 
@@ -75,14 +75,6 @@ class TitleText:
                 overlay_mask.to_surface(output_surface, setcolor=new_c, unsetcolor=None)
 
         return output_surface
-    
-
-
-
-class AltTitleText(TitleText):
-
-    def _get_text_surface(self, text):
-        return font.large_font.render(text)
     
 
 
