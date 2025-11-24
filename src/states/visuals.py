@@ -1,7 +1,7 @@
 import pygame as pg
 
 from src.ui import blit_to_center, font, elements
-
+from src.custom_types import Timer
 
 from . import PassThroughState
 
@@ -19,7 +19,7 @@ class BackgroundTint(PassThroughState):
     def update(self):
         super().update()
         
-        if self.__pop_when_at_top and self.state_stack.top_state is self:
+        if self.__pop_when_at_top and self.is_top_state():
             self.state_stack.pop()
 
     def draw(self, surface, lerp_amount=0):
@@ -35,7 +35,7 @@ class ShowLevelName(PassThroughState):
 
     def __init__(self, level_name: str):
         super().__init__()
-        self.__title = elements.AnimatedText(level_name, "show_level_name_b", font.large_font)
+        self.__title = elements.AltTitleText(level_name, "show_level_name_b")
     
 
     def update(self):
@@ -49,3 +49,15 @@ class ShowLevelName(PassThroughState):
         super().draw(surface, lerp_amount)
         blit_to_center(self.__title.render(), surface, (0, -40))
         
+
+
+
+class Freeze(PassThroughState):
+    def __init__(self, ticks: int):
+        super().__init__()
+        self.__timer = Timer(ticks, exec_after=self.state_stack.pop()).start()
+    
+
+    def update(self):
+        if self.is_top_state():
+            self.__timer.update()

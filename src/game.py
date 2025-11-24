@@ -134,19 +134,31 @@ class Game:
 
     def game_process_loop(self) -> None:
         "Handles Window management, user-input and game logic."
-        while self.run:
-            self.get_userinput()
-            self.userinput()
-            self.update()
-            self.next_tick()
+        try:
+            while self.run:
+                self.get_userinput()
+                self.userinput()
+                self.update()
+                self.next_tick()
+
+        except Exception as e:
+            self.run = False
+            self.error = True
+            raise e
             
 
 
     def display_loop(self) -> None:
         "Handles rendering to screen."
-        while self.run:
-            self.draw()
-            self.next_frame()
+        try:
+            while self.run:
+                self.draw()
+                self.next_frame()
+
+        except Exception as e:
+            self.run = False
+            self.error = True
+            raise e
 
 
 
