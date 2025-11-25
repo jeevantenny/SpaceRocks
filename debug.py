@@ -19,9 +19,9 @@ class Cheats():
     **test_state** - loads a test state instead of regular game states
 
     **demo_mode:**  
-    Loads the game in demo mode. No data will be read from or written tp user_data
-    folder the game always starts as if loaded up for the first time. The game will
-    show a message indicating that it's in demo mode.
+    Loads the game in demo mode. The game will show a message indicating
+    that it's in demo mode. No data will be read from or written to user_data
+    folder the game always starts as if loaded up for the first time.
     """
 
     invincible = False

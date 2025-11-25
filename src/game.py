@@ -111,7 +111,7 @@ class Game:
         self.frame_clock = pg.Clock()
         self.prev_frame = perf_counter()
 
-        self.error = False
+        self.error: str | None = None
         
 
         self.thread = threading.Thread(name="display_loop", target=self.display_loop)
@@ -121,10 +121,10 @@ class Game:
 
             # Starts the main game loop
             self.game_process_loop()
-        except Exception as e:
+        except KeyboardInterrupt:
             self.run = False
-            self.error = True
-            raise e
+            self.error = KeyboardInterrupt.__name__
+            # Closes game during keyboard interrupt
 
         finally:
             # Ensure that player data is saved when application is closed or crashes.
@@ -143,7 +143,7 @@ class Game:
 
         except Exception as e:
             self.run = False
-            self.error = True
+            self.error = type(e).__name__
             raise e
             
 
@@ -157,7 +157,7 @@ class Game:
 
         except Exception as e:
             self.run = False
-            self.error = True
+            self.error = type(e).__name__
             raise e
 
 
@@ -236,13 +236,9 @@ class Game:
         text = "-- StateStack --"
         current_state = self.state_stack.top_state
 
-        x = 0
         while current_state is not None:
             text += f"\n{current_state.name}"
             current_state = current_state.prev_state
-            x += 1
-            if x > 100:
-                self.quit()
         
         text_surface = self.debug_font.render(text, False, "green", "black")
         self.screen.blit(text_surface, (0, self.screen.height-text_surface.height))

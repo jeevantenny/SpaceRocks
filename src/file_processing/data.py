@@ -55,7 +55,7 @@ def load_level(name: str) -> LevelData:
             parl_a=                 level_data.get("parl_a", "backgrounds/space_background"),
             parl_b=                 level_data.get("parl_b", "backgrounds/space_background_big"),
             background_palette=     level_data["background_palette"],
-            background_tint=        level_data.get("background_tint", "#335588"),
+            background_tint=        level_data.get("background_tint", "#4E6382"),
 
             asteroid_density=       tuple(level_data["asteroid_density"]),
             asteroid_speed=         tuple(level_data["asteroid_speed"]),
@@ -82,7 +82,6 @@ def load_level(name: str) -> LevelData:
 
 
 
-@debug.timeit
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
     "Loads the last saved highscore achieved by the player"
 

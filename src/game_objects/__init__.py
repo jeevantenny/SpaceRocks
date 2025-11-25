@@ -4,7 +4,7 @@ import pygame as pg
 from typing import Iterator
 
 from src.math_functions import format_angle
-from src.states import State
+from src.states import State, StateStack
 
 from src.audio import soundfx
 
@@ -171,6 +171,13 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
     @property
     def host_state(self) -> State | None:
         return self.__host_state
+
+    
+    def get_host_state_stack(self) -> StateStack | None:
+        if self.__host_state is None:
+            return None
+        else:
+            return self.__host_state.state_stack
 
 
     def update(self, sound_focus: pg.typing.Point) -> None:
