@@ -2,6 +2,7 @@
 
 import os
 import pickle
+from functools import lru_cache
 
 import debug
 
@@ -11,7 +12,10 @@ from src.game_errors import SaveFileError, LevelDataError
 from . import load_json, save_json, get_resource_path
 
 
+data_cache = lru_cache(1)
+
 HIGHSCORE_DATA_PATH = "user_data/highscore"
+SETTINGS_DATA_PATH = "user_data/settings"
 LEVELS_DIR = "data/levels"
 
 SAVE_DATA_PATH = "user_data/progress.bin"
@@ -153,6 +157,23 @@ def delete_progress() -> None:
     # Does not delete progress in demo mode.
     if not debug.Cheats.demo_mode:
         with open(SAVE_DATA_PATH, "wb") as _: pass
+
+
+
+@data_cache
+def load_settings(path=SETTINGS_DATA_PATH) -> dict:
+    "Loads user settings as a dictionary"
+    return load_json(path)
+
+
+def update_settings(settings_data: dict, path=SETTINGS_DATA_PATH) -> None:
+    "Updates user settings. Only settings that change need to be present in `settings_data`."
+    new_settings = load_settings()
+    new_settings.update(settings_data)
+    save_json(new_settings, path)
+    load_settings.cache_clear()
+
+
 
 
 

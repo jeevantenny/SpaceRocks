@@ -17,7 +17,7 @@ from src.game_objects.projectiles import Bullet
 from src.game_objects.powerups import PowerUp, PowerupCollectable
 from src.game_objects.camera import Camera
 
-from src.ui import font, elements
+from src.ui import font, effects, hud
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
@@ -127,7 +127,7 @@ class Play(State):
 
         self.__prev_highscore = self.highscore
         self.highscore_changed = False
-        self.__progress_bar = elements.ProgressBar()
+        self.__progress_bar = hud.ProgressBar()
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
         self.__level_cleared = False

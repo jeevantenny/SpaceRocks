@@ -6,12 +6,12 @@ import debug
 from src.misc import increment_score, level_completion_amount
 from src.custom_types import LevelData
 from src.input_device import InputInterpreter
+from src.file_processing import data
 
-from src.ui import blit_to_center, font, elements
+from src.ui import blit_to_center, font, effects, elements, hud
 
 from . import State, StateStack
 from .info_states import DeleteUserDataOption
-from .visuals import BackgroundTint
 
 
 
@@ -34,7 +34,7 @@ class TitleScreen(State):
     def __init__(self):
         super().__init__()
 
-        self.title = elements.AnimatedText(config.WINDOW_CAPTION, "main_entrance_a")
+        self.title = effects.AnimatedText(config.WINDOW_CAPTION, "main_entrance_a")
         self.__version_text = f"version {".".join(map(str, config.VERSION_NUM))}   pygame-ce {pg.ver}"
 
         self.__start_gameplay = False
@@ -65,8 +65,8 @@ class TitleScreen(State):
                     or inputs.check_input("ship_forward")
                     or inputs.check_input("ship_backward")
                     or inputs.check_input("shoot")
-                    or inputs.check_input("left")
-                    or inputs.check_input("right")
+                    or inputs.check_input("ship_left")
+                    or inputs.check_input("ship_right")
                     ):
                     self.__start_gameplay = True
                     self.title.set_effect("main_exit")
@@ -121,7 +121,7 @@ class PauseMenu(State):
     def __init__(self):
         super().__init__()
 
-        self.title = elements.AnimatedText(config.WINDOW_CAPTION, "main_entrance_b")
+        self.title = effects.AnimatedText(config.WINDOW_CAPTION, "main_entrance_b")
         self.__exit_menu = False
 
         # Assigned default values to avoid raising Attribute Errors due to race conditions.
@@ -137,6 +137,9 @@ class PauseMenu(State):
         if self.title.animations_complete and (inputs.check_input("pause") or inputs.check_input("select")):
             self.title.set_effect("main_exit")
             self.__exit_menu = True
+
+        elif inputs.keyboard_mouse.tap_keys[pg.K_s]:
+            Settings().add_to_stack(self.state_stack)
 
         
         
@@ -165,8 +168,46 @@ class PauseMenu(State):
 
     def debug_info(self):
         return self.prev_state.debug_info()
+    
 
 
+
+
+
+class Settings(State):
+    def __init__(self):
+        super().__init__()
+        settings = data.load_settings()
+        self.__soundfx = elements.Toggle(settings["soundfx_volume"], "Sound FX")
+        self.__controller_rumble = elements.Toggle(settings["controller_rumble"], "Controller Rumble")
+        self.__elements = elements.ElementList([
+            self.__soundfx,
+            self.__controller_rumble,
+            elements.Toggle(False, "Congo Bongo!")
+        ])
+
+        self.__info_text = font.font_with_icons.render("Press<back> to go back")
+
+    def userinput(self, inputs):
+        if inputs.check_input("back"):
+            self.state_stack.pop()
+        
+        self.__elements.userinput(inputs)
+    
+
+    def draw(self, surface, lerp_amount=0):
+        surface.fill("black")
+        surface.blit(font.large_font.render("Settings"), (20, 20))
+        self.__elements.draw(surface.subsurface(20, 50, 200, surface.height-50))
+        surface.blit(self.__info_text, (10, surface.height-20))
+
+
+
+    def quit(self):
+        data.update_settings({
+            "soundfx_volume": 1.0 if self.__soundfx.on else 0.0,
+            "controller_rumble": self.__controller_rumble.on
+        })
 
 
 
@@ -184,7 +225,7 @@ class GameOverScreen(State):
         self.__level_data = level_data
         self.__score_data = score_data
         self.display_score = 0
-        self.title = elements.AnimatedText("game over", "main_entrance_a")
+        self.title = effects.AnimatedText("game over", "main_entrance_a")
 
     
     def userinput(self, inputs):
@@ -217,7 +258,7 @@ class ShowScore(State):
         super().__init__()
         self.__level_data = level_data
         self.__display_level_name = level_data.level_name.replace('_', ' ').upper()
-        self.__progress_bar = elements.ProgressBar()
+        self.__progress_bar = hud.ProgressBar()
 
         self.score = score_data[0]
         self.highscore = score_data[1]

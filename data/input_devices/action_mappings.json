@@ -11,6 +11,18 @@
             "value": "a"
         }
     ],
+    "back": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "escape",
+            "type": "tap"
+        },
+        {
+            "input_device": "controller",
+            "key": "b",
+            "type": "tap"
+        }
+    ],
     "pause": [
         {
             "input_device": "keyboard_mouse",
@@ -87,7 +99,33 @@
             "value": "a"
         }
     ],
-    "left": [
+    "up": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "w",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "w",
+            "type": "hold",
+            "threshold": 12
+        }
+    ],
+    "down": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "s",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "s",
+            "type": "hold",
+            "threshold": 12
+        }
+    ],
+    "ship_left": [
         {
             "input_device": "keyboard_mouse",
             "key": "a",
@@ -106,7 +144,7 @@
             "value": "d_left"
         }
     ],
-    "right": [
+    "ship_right": [
         {
             "input_device": "keyboard_mouse",
             "key": "d",
