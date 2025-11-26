@@ -1,5 +1,6 @@
 import pygame as pg
 from typing import Literal, Optional
+import math
 import random
 
 import config
@@ -10,12 +11,15 @@ from src.math_functions import unit_vector, sign, vector_direction
 from src.input_device import InputInterpreter, controller_rumble
 from src.game_errors import InitializationError
 
-from src.file_processing import assets, load_json
+from src.file_processing import load_json
 from src.audio import soundfx
+
+from src.ui import font
 
 from . import GameObject
 from .components import *
-from .particles import ShipSmoke
+from .projectiles import Bullet
+from .particles import ShipSmoke, DisplayText
 
 
 __all__ = [
@@ -136,14 +140,16 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
 
-    def shoot(self) -> None:
+    def shoot(self) -> Bullet:
         from .projectiles import Bullet
         direction = self.get_rotation_vector()
-        self.primary_group.add(Bullet(self.position, direction, self, self._attack_types))
+        bullet = Bullet(self.position, direction, self.get_velocity())
+        self.primary_group.add(bullet)
         if not self.__thrust:
             self.accelerate(-direction*0.5)
-
         self._queue_sound("entity.ship.shoot", 0.8)
+
+        return bullet
 
 
     
@@ -205,10 +211,17 @@ class PlayerShip(Spaceship):
 
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
-        self.invincibility_timer = Timer(1)
+        self.__invincibility_timer = Timer(1)
+
+        self.__bullets_fired: set[Bullet] = set()
         
         # self.__powerups.add("SuperLaser")
         # self.__powerups.add("Shield")
+
+    
+    @property
+    def invincible(self) -> bool:
+        return not self.__invincibility_timer.complete
 
 
     def __init_from_data__(self, object_data):
@@ -248,7 +261,13 @@ class PlayerShip(Spaceship):
     def update(self):
         super().update()
         self.__powerups.update(self)
-        self.invincibility_timer.update()
+        self.__invincibility_timer.update()
+
+        for bullet in self.__bullets_fired.copy():
+            if not bullet.alive():
+                self.__bullets_fired.remove(bullet)
+                self.__process_from_bullet(bullet)
+                
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0)):
@@ -262,16 +281,18 @@ class PlayerShip(Spaceship):
 
 
     def shoot(self):
-        super().shoot()
+        bullet = super().shoot()
+        self.__bullets_fired.add(bullet)
         controller_rumble("gun_fire")
+
 
     
     def invincibility_frames(self, amount=30) -> None:
-        self.invincibility_timer = Timer(amount).start()
+        self.__invincibility_timer = Timer(amount).start()
 
 
     def kill(self):
-        if self.invincibility_timer.complete and not (self.__powerups.kill_protection(self) or debug.Cheats.invincible):
+        if self.__invincibility_timer.complete and not (self.__powerups.kill_protection(self) or debug.Cheats.invincible):
             super().kill()
             controller_rumble("large_explosion_b", 0.9)
 
@@ -287,6 +308,27 @@ class PlayerShip(Spaceship):
 
     def remove_powerup(self, powerup) -> None:
         self.__powerups.remove(powerup)
+
+
+    def __process_from_bullet(self, bullet: Bullet) -> None:
+        if not bullet.hit_list:
+            self.combo = 1.0
+            return
+        
+        for asteroid in bullet.hit_list:
+            if asteroid.health:
+                continue
+
+            point = math.ceil(asteroid.points * self.combo)
+            self.score += point
+            if self.combo > 1.0:
+                text_surface = font.small_font.render(f"+{point} COMBO", cache=False)
+            else:
+                text_surface = font.small_font.render(f"+{point}", 1, "#eeeeee", "#004466", False)
+
+            self.primary_group.add(DisplayText(asteroid.get_display_point_pos(), text_surface))
+            self.combo = min(self.combo*1.3, 25)
+        
 
 
 

@@ -58,6 +58,23 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         obj.__init_from_data__(object_data)
         return obj
 
+        
+
+
+    @property
+    def primary_group(self) -> "ObjectGroup | None":
+        "The first group in the list of groups that the game object is part of (if any)."
+        if groups:=self.groups():
+            return groups[0] # type: ignore
+        
+
+    @property
+    def host_state(self) -> State | None:
+        if self.primary_group is not None:
+            return self.primary_group.host_state
+        else:
+            return None
+
 
 
     def get_data(self) -> dict:
@@ -72,15 +89,6 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         return {"id": id(self),
                 "class": type(self),
                 "position": tuple(self.position)}
-
-        
-
-
-    @property
-    def primary_group(self) -> "ObjectGroup | None":
-        "The first group in the list of groups that the game object is part of (if any)."
-        if groups:=self.groups():
-            return groups[0] # type: ignore
         
 
     def add_to_groups(self, _object: "GameObject") -> None:
@@ -275,7 +283,7 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 class ObjectSubgroup(ObjectGroup):
     """
     A sprite group that contains a subset of sprites from another group. Any sprites added to
-    a subgroup will also be added to the supergroup.
+    a subgroup will also be added to the supergroup. Any sprites removed
     """
 
     def __init__(self, super_group: ObjectGroup, full_volume_radius=180, host_state: State | None = None):
@@ -285,3 +293,12 @@ class ObjectSubgroup(ObjectGroup):
     def add(self, *sprites):
         self.__super_group.add(*sprites)
         super().add(*sprites)
+
+
+    def remove(self, *sprites) -> None:
+        "Removed sprite from group and parent group if it exists in this group."
+        for sprite in sprites:
+            if self.has_internal(sprite):
+                self.__super_group.remove(sprite)
+        
+        super().remove(*sprites)

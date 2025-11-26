@@ -35,6 +35,7 @@ class Play(State):
     and player score.
     """
     __spawn_radius = 150
+    __visible_radius = 230
     __despawn_radius = 500
     __score_limit = 99999
 
@@ -67,7 +68,7 @@ class Play(State):
         self.spaceship.clear_velocity()
         self.camera.set_position((0, 0))
 
-        self.score = self.spaceship.score
+        self.__display_score = self.spaceship.score
         self.__level_cleared = False
         self.__timer = 10
 
@@ -108,7 +109,7 @@ class Play(State):
 
 
         self.camera.set_position(self.spaceship.position)
-        self.score = save_data.score
+        self.__display_score = save_data.score
 
         self.__timer = 0
 
@@ -121,7 +122,7 @@ class Play(State):
 
         self.__info_text = font.small_font.render("")
 
-        self.score = 0
+        self.__display_score = 0
         self.highscore = data.load_highscore()
 
         self.__prev_highscore = self.highscore
@@ -291,14 +292,14 @@ class Play(State):
         
         y_offset = 6
         if self.__prev_highscore:
-            self.__show_scores(surface, "highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.score or self.score == self.spaceship.score))
+            self.__show_scores(surface, "highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.__display_score or self.__display_score == self.spaceship.score))
             y_offset += 16
         
-        self.__show_scores(surface, "score", self.score, (10, y_offset-entrance_offset), self.score == self.spaceship.score)
+        self.__show_scores(surface, "score", self.__display_score, (10, y_offset-entrance_offset), self.__display_score == self.spaceship.score)
         y_offset += 22
 
         if self.__level_data.level_name != "level_1":
-            surface.blit(self.__progress_bar.render(level_completion_amount(self.score, self.__level_data.score_range)), (10, y_offset-entrance_offset))
+            surface.blit(self.__progress_bar.render(level_completion_amount(self.__display_score, self.__level_data.score_range)), (10, y_offset-entrance_offset))
         
 
         if self.is_top_state():
@@ -320,6 +321,7 @@ class Play(State):
             # Moves to next level once the player has gained enough points to complete the current one.
             if self.spaceship.score >= self.__level_data.score_range[1]:
                 self.__level_cleared = True
+                ShowLevelName("Level Cleared").add_to_stack(self.state_stack)
                 self.__delete_offscreen_asteroids()
         
         else:
@@ -328,8 +330,8 @@ class Play(State):
 
 
         # Removes any asteroids beyond the despawn radius
-        for obj in self.entities.sprites():
-            if isinstance(obj, (Asteroid, PowerupCollectable)) and obj.distance_to(self.spaceship) > self.__despawn_radius:
+        for obj in self.asteroids.sprites() + self.powerups.sprites():
+            if obj.distance_to(self.spaceship) > self.__despawn_radius:
                 obj.force_kill()
 
 
@@ -340,11 +342,11 @@ class Play(State):
         # Records wether the highscore changes self.highscore will be incremented along with the score.
         if not self.highscore_changed and self.spaceship.score > self.highscore:
             self.highscore_changed = True
-        prev_score = self.score
-        self.score = increment_score(self.score, self.spaceship.score)
-        self.highscore = max(self.highscore, self.score)
+        prev_score = self.__display_score
+        self.__display_score = increment_score(self.__display_score, self.spaceship.score)
+        self.highscore = max(self.highscore, self.__display_score)
 
-        if self.score > prev_score:
+        if self.__display_score > prev_score:
             self._queue_sound("game.point", 0.3)
 
 
@@ -378,7 +380,7 @@ class Play(State):
                 obj.set_angular_vel(0)
 
         self.__add_background_tint()
-        GameOverScreen(self.__level_data, (self.score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
+        GameOverScreen(self.__level_data, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
 
 
 
@@ -438,7 +440,7 @@ class Play(State):
     
 
     def __get_relative_score(self) -> int:
-        return max(self.score-self.__level_data.score_range[0], 0)
+        return max(self.__display_score-self.__level_data.score_range[0], 0)
 
 
     def __get_increment_percent(self) -> float:
@@ -461,7 +463,7 @@ class Play(State):
 
     def __asteroid_density(self) -> int:
         "The sum of the points of all asteroids loaded in."
-        return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < 300)
+        return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < self.__visible_radius)
 
 
     def __delete_offscreen_asteroids(self) -> None:
@@ -473,8 +475,8 @@ class Play(State):
 
     def __set_score(self) -> None:
         "Updates the score to match the value stored in the spaceship object. Changes highscore if score is larger."
-        self.score = min(self.spaceship.score, self.__score_limit)
-        self.highscore = max(self.highscore, self.score)
+        self.__display_score = min(self.spaceship.score, self.__score_limit)
+        self.highscore = max(self.highscore, self.__display_score)
 
     
         

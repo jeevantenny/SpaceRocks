@@ -12,7 +12,7 @@ from src.input_device import controller_rumble
 
 from src.ui import font
 
-from .components import ObjectVelocity, ObjectTexture, ObjectHitbox
+from .components import ObjectTexture, ObjectCollision
 from .entities import PlayerShip, Asteroid
 from .projectiles import Laser
 from .particles import DisplayText
@@ -133,7 +133,7 @@ class PowerUpGroup:
 
 
 
-class PowerupCollectable(ObjectVelocity, ObjectTexture, ObjectHitbox):
+class PowerupCollectable(ObjectTexture, ObjectCollision):
     def __init__(
             self,
             position: pg.typing.Point,
@@ -146,7 +146,8 @@ class PowerupCollectable(ObjectVelocity, ObjectTexture, ObjectHitbox):
         super().__init__(
             position=position,
             texture=texture,
-            hitbox_size=(16, 16)
+            hitbox_size=(16, 16),
+            bounce=0.2
         )
 
         self.accelerate(velocity)
@@ -189,7 +190,7 @@ class PowerupCollectable(ObjectVelocity, ObjectTexture, ObjectHitbox):
         elif self.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
             from src.states.info_states import PowerupInfo
-            self.primary_group.host_state.powerup_info(powerup_list[self.__powerup_name])
+            self.host_state.powerup_info(powerup_list[self.__powerup_name])
             self.kill()
 
 

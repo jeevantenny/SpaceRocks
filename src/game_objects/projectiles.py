@@ -1,5 +1,4 @@
 import pygame as pg
-import math
 
 import debug
 
@@ -10,7 +9,6 @@ from src.ui import font
 
 from . import GameObject
 from .components import ObjectTexture, ObjectVelocity
-from .entities import Spaceship, Asteroid
 from .particles import DisplayText
 
 
@@ -53,24 +51,24 @@ class Bullet(ObjectTexture, ObjectVelocity):
     draw_layer = 1
 
     __speed = 40
-    __lifetime = 40
+    __lifetime = 18
     _max_speed = 100 + __speed
 
-    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter: Spaceship, attack_types: list[type[GameObject]]):
+    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter_vel: pg.typing.Point):
         super().__init__(
             position=position,
             texture=assets.load_texture_map("particles")["bullet"]
         )
 
-        self.shooter = shooter
-
         direction = unit_vector(pg.Vector2(direction))
-        self.set_velocity(direction*self.__speed+shooter.get_velocity())
+        self.set_velocity(direction*self.__speed+shooter_vel)
         self.move(direction*5)
 
         self.set_rotation(-direction.angle_to((0, -1)))
-        self.__attack_types = attack_types
         self.__distance_traveled = 0.0
+
+        from .entities import Asteroid
+        self.hit_list = set[Asteroid]()
 
 
     
@@ -82,19 +80,9 @@ class Bullet(ObjectTexture, ObjectVelocity):
 
 
         self.set_velocity(object_data["velocity"])
-
         self.set_rotation(object_data["rotation"])
-        self.__shooter_id = object_data["shooter_id"]
-        self.__attack_types = object_data["attack_types"]
+        self.__lifetime = object_data["lifetime"]
         self.__distance_traveled = object_data["distance_traveled"]
-
-    
-    def post_init_from_data(self, object_dict):
-        # Finds the shooter entity and assigns it to the shooter attribute.
-        if self.__shooter_id in object_dict:
-            self.shooter = object_dict[self.__shooter_id]
-        else:
-            raise Exception("Bullet cannot find shooter object.")
 
 
     
@@ -102,8 +90,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
         data = super().get_data()
         data.update({"velocity": tuple(self._velocity),
                      "rotation": self._rotation,
-                     "shooter_id": id(self.shooter),
-                     "attack_types": self.__attack_types,
+                     "lifetime": self.__lifetime,
                      "distance_traveled": self.__distance_traveled})
         return data
 
@@ -113,23 +100,23 @@ class Bullet(ObjectTexture, ObjectVelocity):
         super().update()
         self.__distance_traveled += self.__speed
         self.__lifetime -= 1
-        if self.__lifetime == 0:
-            self.shooter.combo = 1.0
-            self.force_kill()
-            # Combo goes back to zero if player misses.
-            return
 
+        from .entities import Asteroid
 
         hit = False
         for obj in self.primary_group:
             # If the game object is a type the bullet can attack and the object is
             # alive then damage or kill it.
             if isinstance(obj, Asteroid) and obj.health and obj_line_collision(obj, self.__get_collision_lines()):
-                self.__damage_asteroid(obj)
+                obj.damage(1, self._velocity*0.1/obj.size)
+                self.hit_list.add(obj)
                 hit = True
 
         if hit:
             self.kill()
+        
+        if self.__lifetime <= 0:
+            self.force_kill()
             
         
     
@@ -142,20 +129,6 @@ class Bullet(ObjectTexture, ObjectVelocity):
             for line in self.__get_collision_lines(offset):
                 pg.draw.line(surface, "blue", *line)
 
-
-
-
-
-    def __damage_asteroid(self, asteroid: Asteroid) -> None:
-        "Damages asteroid and increments the shooter's score and combo accordingly."
-        asteroid.damage(1, self._velocity*0.1/asteroid.size)
-        if not asteroid.health:
-            # Score increments by asteroid's points + current combo amount
-            points = math.ceil(asteroid.points * self.shooter.combo)
-            self.__summon_display_text(asteroid.get_display_point_pos(), points, self.shooter.combo > 1)
-
-            self.shooter.score += points
-            self.shooter.combo *= 1.1
 
 
     def __summon_display_text(self, position: pg.typing.Point, points: int, has_combo=False) -> None:
@@ -219,6 +192,7 @@ class Laser(ObjectTexture):
 
 
     def update(self):
+        from .entities import Asteroid
         if not self.__damage_duration.complete:
             for obj in self.primary_group:
                 if isinstance(obj, Asteroid) and obj.health and obj_line_collision(obj, self.__collision_lines):
