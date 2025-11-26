@@ -1,0 +1,16 @@
+{
+    "background_palette": "default_background",
+
+    "asteroid_density": [10, 18],
+    "asteroid_speed": [1, 4],
+    "asteroid_frequency": 0.35,
+
+    "spawn_asteroids": {
+        "blue_small": 4,
+        "blue_medium": 3,
+        "green_small": 2
+    },
+
+    "score_range": [1000, 2000],
+    "next_level": "level_3"
+}

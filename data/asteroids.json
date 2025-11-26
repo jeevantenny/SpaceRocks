@@ -39,5 +39,30 @@
         "points": 10,
         "size_value": 1,
         "subrock": "test_duplicator"
+    },
+
+    "red_fast": {
+        "texture_map": "asteroid_small",
+        "hitbox_size": 16,
+        "health": 1,
+        "points": 4,
+        "size_value": 1,
+        "speed_multiplier": 1.6
+    },
+    "blue_heavy": {
+        "texture_map": "asteroid_medium",
+        "hitbox_size": 30,
+        "health": 4,
+        "points": 12,
+        "size_value": 3,
+        "subrock": "blue_small"
+    },
+    "splitter_triple": {
+        "texture_map": "asteroid_medium",
+        "hitbox_size": 30,
+        "health": 2,
+        "points": 8,
+        "size_value": 2,
+        "subrock": "blue_small"
     }
 }

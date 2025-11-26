@@ -12,7 +12,7 @@ from . import load_json, save_json, get_resource_path
 
 
 HIGHSCORE_DATA_PATH = "user_data/highscore"
-LEVELS_DIR = "data/levels"
+LEVELS_DIR = "data/generated_levels"
 
 SAVE_DATA_PATH = "user_data/progress.bin"
 

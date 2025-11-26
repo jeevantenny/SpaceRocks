@@ -1,0 +1,22 @@
+{
+    "background_palette": "default_background",
+
+    "asteroid_density": [15, 28],
+    "asteroid_speed": [2, 6],
+    "asteroid_frequency": 0.5,
+
+    "spawn_asteroids": {
+        "blue_medium": 3,
+        "green_medium": 3,
+        "red_fast": 2
+    },
+
+    "powerup_frequency": 0.22,
+    "spawn_powerups": {
+        "Shield": 2,
+        "SuperLaser": 1
+    },
+
+    "score_range": [7000, 8000],
+    "next_level": "level_9"
+}
