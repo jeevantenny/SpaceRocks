@@ -1,4 +1,5 @@
 import pygame as pg
+import math
 
 import debug
 
@@ -113,7 +114,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
         self.__distance_traveled += self.__speed
         self.__lifetime -= 1
         if self.__lifetime == 0:
-            self.shooter.combo = 0
+            self.shooter.combo = 1.0
             self.force_kill()
             # Combo goes back to zero if player misses.
             return
@@ -150,14 +151,16 @@ class Bullet(ObjectTexture, ObjectVelocity):
         asteroid.damage(1, self._velocity*0.1/asteroid.size)
         if not asteroid.health:
             # Score increments by asteroid's points + current combo amount
-            self.__summon_display_text(asteroid.get_display_point_pos(), asteroid.points, self.shooter.combo)
-            self.shooter.score += asteroid.points + self.shooter.combo
-            self.shooter.combo += 1
+            points = math.ceil(asteroid.points * self.shooter.combo)
+            self.__summon_display_text(asteroid.get_display_point_pos(), points, self.shooter.combo > 1)
+
+            self.shooter.score += points
+            self.shooter.combo *= 1.1
 
 
-    def __summon_display_text(self, position: pg.typing.Point, points: int, combo=0) -> None:
-            if combo:
-                texture = font.small_font.render(f"COMBO +{points+combo}", cache=False)
+    def __summon_display_text(self, position: pg.typing.Point, points: int, has_combo=False) -> None:
+            if has_combo:
+                texture = font.small_font.render(f"COMBO +{points}", cache=False)
             else:
                 texture = font.small_font.render(f"+{points}", color_a="#eeeeee", color_b="#333333", cache=False)
             self.primary_group.add(DisplayText(position, texture))

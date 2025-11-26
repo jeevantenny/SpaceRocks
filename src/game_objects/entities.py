@@ -44,7 +44,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         )
 
         self.score = 0
-        self.combo = 0
+        self.combo = 1.0
 
         self.__init_base()
 
