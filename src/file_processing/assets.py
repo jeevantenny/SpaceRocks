@@ -4,7 +4,7 @@ import pygame as pg
 from typing import overload
 from functools import lru_cache
 
-from . import get_resource_path, load_json
+from . import load_json
 
 from src.custom_types import GameSound, TextureMap, AnimData, ControllerData
 
@@ -29,7 +29,7 @@ __sound_definition = load_json("assets/sounds")
 @asset_cache
 def load_texture(path: str, palette_swap_name: str | None = None, file_type="png") -> pg.Surface:
     "Loads a texture from the textures folder as a pygame.Surface"
-    texture_path = get_resource_path(f"{TEXTURES_DIR}/{path}.{file_type}")
+    texture_path = f"{TEXTURES_DIR}/{path}.{file_type}"
     texture = pg.image.load(texture_path).convert()
     texture.set_colorkey(COLORKEY)
     if palette_swap_name is not None:
@@ -115,7 +115,7 @@ def load_sound(name: str) -> GameSound:
     
     sounds = []
     for path in sound_data["sounds"]:
-        final_path = get_resource_path(f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}")
+        final_path = f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}"
         sounds.append(pg.Sound(final_path))
 
     return GameSound(name, sounds)
@@ -125,5 +125,4 @@ def load_sound(name: str) -> GameSound:
 def load_music(path: str):
     "NOT IMPLEMENTED"
     raise NotImplementedError
-    pg.mixer_music.load(get_resource_path(f"{SOUNDS_DIR}/{path}.ogg"))
     

@@ -1,6 +1,6 @@
 """Contains constants for initializing game window."""
 
-VERSION_NUM = (0, 8, 3)
+VERSION_NUM = (0, 8, 4)
 
 WINDOW_CAPTION = "SpaceRocks"
 WINDOW_ICON_PATH = "window_icon"
@@ -18,5 +18,3 @@ PIXEL_WINDOW_SIZE = (PIXEL_WINDOW_WIDTH, PIXEL_WINDOW_HEIGHT)
 
 FRAMERATE = 60
 TICKRATE = 20
-
-LOAD_ASSETS_FROM_APP_DATA = False

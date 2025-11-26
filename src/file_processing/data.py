@@ -8,7 +8,7 @@ import debug
 from src.custom_types import LevelData, SaveData
 from src.game_errors import SaveFileError, LevelDataError
 
-from . import load_json, save_json, get_resource_path
+from . import load_json, save_json
 
 
 HIGHSCORE_DATA_PATH = "user_data/highscore"
@@ -91,7 +91,7 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
         return __demo_highscore
     
     try:
-        return load_json(path, False)["highscore"]
+        return load_json(path)["highscore"]
     except FileNotFoundError:
         return 0
 
@@ -106,7 +106,7 @@ def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
         return
 
     try:
-        data = load_json(path, False)
+        data = load_json(path)
     except FileNotFoundError:
         data = {}
     

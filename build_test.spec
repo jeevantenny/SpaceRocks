@@ -1,38 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 
-# Creates a onefile version of the game.
-
-data_paths = [
-    "assets",
-
-    "assets\\anim_controllers",
-    "assets\\animations",
-    "assets\\fonts",
-    "assets\\texture_maps",
-    "assets\\palette_swaps",
-
-    "assets\\sounds\\entity\\asteroid",
-    "assets\\sounds\\entity\\spaceship",
-    "assets\\sounds\\game",
-
-    "assets\\textures",
-    "assets\\textures\\backgrounds",
-    "assets\\textures\\game_objects",
-    "assets\\textures\\ui",
-
-    "data\\input_devices",
-    "data\\levels"
-]
-
-datas = [(path, path) for path in data_paths]
 
 
 a = Analysis( # type: ignore
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=datas,
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
