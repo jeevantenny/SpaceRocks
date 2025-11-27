@@ -3,10 +3,12 @@ Contains various types that will be used throughout the game.
 """
 
 import pygame as pg
-from typing import Self, Any, Literal, Callable, Generator, NamedTuple
 import random
+
+from typing import Self, Any, Literal, Callable, Generator, NamedTuple
 from collections import defaultdict
 
+from dataclasses import dataclass
 
 
 
@@ -166,6 +168,15 @@ class Animation:
             self.__flipbook = False
             self.__anim_time = Timer(self.duration, self.loop)
             self.__timeline = self.__convert_timeline(self.__anim_data["timeline"])
+
+
+    @classmethod
+    def load_from_dict(cls, anim_dict: dict[str, AnimData]) -> dict[str, Self]:
+        "Creates `Animation` objects from animation data loaded from animation.json file."
+        return {
+            name: cls(name, anim_data)
+            for name, anim_data in anim_dict["animations"].items()
+        }
             
 
 
@@ -352,6 +363,13 @@ class AnimController:
     def __test_condition(self, obj, condition: str) -> bool:
         return bool(eval(condition, None, locals()))
     
+
+
+
+
+class UserSettings(NamedTuple):
+    soundfx_volume: float
+    controller_rumble: bool
 
 
 

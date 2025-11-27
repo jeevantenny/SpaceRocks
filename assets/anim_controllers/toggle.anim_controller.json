@@ -1,0 +1,19 @@
+{
+    "name": "toggle.anim_controller",
+    "starting_state": "toggle_off",
+
+    "states": {
+        "toggle_off": {
+            "animations": ["toggle_off"],
+            "transitions": {
+                "toggle_on": "obj.on"
+            }
+        },
+        "toggle_on": {
+            "animations": ["toggle_on"],
+            "transitions": {
+                "toggle_off": "not obj.on"
+            }
+        }
+    }
+}

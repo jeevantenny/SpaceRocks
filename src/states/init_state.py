@@ -9,6 +9,8 @@ from .play import Play
 from .visuals import BackgroundTint
 from .info_states import DemoState
 
+from .test_states import *
+
 
 
 
@@ -17,7 +19,7 @@ class Initializer:
 
     def __init__(self, state_stack: StateStack):
         if debug.Cheats.test_state:
-            Settings().add_to_stack(state_stack)
+            TestElementList().add_to_stack(state_stack)
             return
 
         try:

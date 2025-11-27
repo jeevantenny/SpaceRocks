@@ -3,10 +3,11 @@
 import os
 import pickle
 from functools import lru_cache
+from json import JSONDecodeError
 
 import debug
 
-from src.custom_types import LevelData, SaveData
+from src.custom_types import UserSettings, LevelData, SaveData
 from src.game_errors import SaveFileError, LevelDataError
 
 from . import load_json, save_json, get_resource_path
@@ -15,7 +16,10 @@ from . import load_json, save_json, get_resource_path
 data_cache = lru_cache(1)
 
 HIGHSCORE_DATA_PATH = "user_data/highscore"
+
 SETTINGS_DATA_PATH = "user_data/settings"
+DEFAULT_SETTINGS_PATH = "data/default_settings"
+
 LEVELS_DIR = "data/levels"
 
 SAVE_DATA_PATH = "user_data/progress.bin"
@@ -96,7 +100,7 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
     
     try:
         return load_json(path, False)["highscore"]
-    except FileNotFoundError:
+    except (FileNotFoundError, JSONDecodeError):
         return 0
 
 
@@ -108,14 +112,8 @@ def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
         global __demo_highscore
         __demo_highscore = value
         return
-
-    try:
-        data = load_json(path, False)
-    except FileNotFoundError:
-        data = {}
     
-    data["highscore"] = int(value)
-    save_json(data, path)
+    save_json({"highscore": int(value)}, path)
 
 
 
@@ -161,16 +159,34 @@ def delete_progress() -> None:
 
 
 @data_cache
-def load_settings(path=SETTINGS_DATA_PATH) -> dict:
+def load_settings() -> UserSettings:
     "Loads user settings as a dictionary"
-    return load_json(path)
+    try:
+        settings = load_json(SETTINGS_DATA_PATH)
+    except (FileNotFoundError, JSONDecodeError):
+        settings = {}
+    
+    full_settings = load_json(DEFAULT_SETTINGS_PATH)
+    full_settings.update(settings)
+    return UserSettings(**full_settings)
 
 
-def update_settings(settings_data: dict, path=SETTINGS_DATA_PATH) -> None:
+def update_settings(**settings_data) -> None:
     "Updates user settings. Only settings that change need to be present in `settings_data`."
-    new_settings = load_settings()
-    new_settings.update(settings_data)
-    save_json(new_settings, path)
+    full_settings = load_settings()._asdict()
+    for setting in settings_data.keys():
+        if setting not in full_settings:
+            raise ValueError(f"Invalid setting name '{setting}'")
+    
+    full_settings.update(settings_data)
+    save_json(full_settings, SETTINGS_DATA_PATH)
+    load_settings.cache_clear()
+
+
+
+def reset_settings() -> None:
+    "Resets all settings to default values."
+    save_json({}, SETTINGS_DATA_PATH)
     load_settings.cache_clear()
 
 
@@ -185,3 +201,4 @@ def delete_user_data() -> None:
     
     delete_progress()
     save_highscore(0)
+    reset_settings()

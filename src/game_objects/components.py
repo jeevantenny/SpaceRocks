@@ -196,13 +196,10 @@ class ObjectAnimation(ObjectTexture):
 
     def __init_base(self) -> None:
         self.__texture_map = assets.load_texture_map(self.__texture_map_path, self._palette_swap)
-
-        anim_data = assets.load_anim_data(self.__anim_path)
-        animations = {}
-        for name, data in anim_data["animations"].items():
-            animations[name] = Animation(name, data)
-
-        self.__controller = AnimController(assets.load_anim_controller_data(self.__controller_path), animations)
+        self.__controller = AnimController(
+            assets.load_anim_controller_data(self.__controller_path),
+            Animation.load_from_dict(assets.load_anim_data(self.__anim_path))
+        )
 
 
     @property

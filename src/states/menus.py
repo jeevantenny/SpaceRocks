@@ -12,6 +12,7 @@ from src.ui import blit_to_center, font, effects, elements, hud
 
 from . import State, StateStack
 from .info_states import DeleteUserDataOption
+from .visuals import BackgroundTint
 
 
 
@@ -60,16 +61,19 @@ class TitleScreen(State):
                 self.prev_state.spaceship.userinput(inputs)
 
                 # The game will start once the player presses one of the controls
-                if (
-                    inputs.check_input("select")
-                    or inputs.check_input("ship_forward")
-                    or inputs.check_input("ship_backward")
-                    or inputs.check_input("shoot")
-                    or inputs.check_input("ship_left")
-                    or inputs.check_input("ship_right")
+                if (not inputs.keyboard_mouse.hold_keys[pg.KMOD_CTRL]
+                    and (inputs.check_input("select")
+                         or inputs.check_input("ship_forward")
+                         or inputs.check_input("shoot")
+                         or inputs.check_input("ship_left")
+                         or inputs.check_input("ship_right"))
                     ):
                     self.__start_gameplay = True
                     self.title.set_effect("main_exit")
+                
+                if inputs.keyboard_mouse.tap_keys[pg.K_s]:
+                    BackgroundTint("#4E6382").add_to_stack(self.state_stack)
+                    Settings().add_to_stack(self.state_stack)
     
         else:
             self.prev_state.spaceship.userinput(inputs)
@@ -107,7 +111,7 @@ class TitleScreen(State):
         if not self.__start_gameplay and self.title.animations_complete:
             blit_to_center(self.__info_text, surface, (0, 50))
 
-            if not debug.Cheats.demo_mode:
+            if not debug.Cheats.demo_mode and self.is_top_state():
                 version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
                 surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
 
@@ -159,6 +163,9 @@ class PauseMenu(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
+        if not self.is_top_state():
+            return
+        
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
             blit_to_center(self.__info_text_b, surface, (0, 30))
@@ -178,25 +185,33 @@ class Settings(State):
     def __init__(self):
         super().__init__()
         settings = data.load_settings()
-        self.__soundfx = elements.Toggle(settings["soundfx_volume"], "Sound FX")
-        self.__controller_rumble = elements.Toggle(settings["controller_rumble"], "Controller Rumble")
+        self.__soundfx = elements.Slider((0, 100), int(settings.soundfx_volume*100), 10, "Sound FX")
+        self.__controller_rumble = elements.Toggle(settings.controller_rumble, "Controller Rumble")
         self.__elements = elements.ElementList([
             self.__soundfx,
             self.__controller_rumble,
-            elements.Toggle(False, "Congo Bongo!")
+            elements.Slider((0, 100), 0, 5, "Congo Bongo!")
         ])
 
         self.__info_text = font.font_with_icons.render("Press<back> to go back")
 
     def userinput(self, inputs):
+        if not debug.Cheats.demo_mode:
+            option_to_delete_user_data(self.state_stack, inputs)
+
         if inputs.check_input("back"):
             self.state_stack.pop()
         
         self.__elements.userinput(inputs)
+
+
+    def update(self):
+        self.prev_state.update()
+        self.__elements.update()
     
 
     def draw(self, surface, lerp_amount=0):
-        surface.fill("black")
+        self.prev_state.draw(surface, lerp_amount)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, 200, surface.height-50))
         surface.blit(self.__info_text, (10, surface.height-20))
@@ -204,10 +219,10 @@ class Settings(State):
 
 
     def quit(self):
-        data.update_settings({
-            "soundfx_volume": 1.0 if self.__soundfx.on else 0.0,
-            "controller_rumble": self.__controller_rumble.on
-        })
+        data.update_settings(
+            soundfx_volume=round(self.__soundfx.value*0.01, 2),
+            controller_rumble=self.__controller_rumble.on
+        )
 
 
 

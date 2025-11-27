@@ -1,4 +1,5 @@
 /.space-game
+/.venv
 /.vscode
 /.VSCodeCounter
 
@@ -13,6 +14,5 @@ __pycache__
 
 
 test.py
-output_log.txt
-notes.txt
+/notes/.gitignore
 *.exe

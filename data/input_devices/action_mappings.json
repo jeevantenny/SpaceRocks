@@ -99,6 +99,90 @@
             "value": "a"
         }
     ],
+    "left": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "a",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "a",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "left",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "left",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": -0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_left"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_left",
+            "threshold": 8
+        }
+    ],
+    "right": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "d",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "d",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "right",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "right",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": 0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_right"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_right",
+            "threshold": 8
+        }
+    ],
     "up": [
         {
             "input_device": "keyboard_mouse",
@@ -109,7 +193,36 @@
             "input_device": "keyboard_mouse",
             "key": "w",
             "type": "hold",
-            "threshold": 12
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "up",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "up",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "y",
+            "value": -0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_up"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_up",
+            "threshold": 8
         }
     ],
     "down": [
@@ -122,7 +235,36 @@
             "input_device": "keyboard_mouse",
             "key": "s",
             "type": "hold",
-            "threshold": 12
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "down",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "down",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "y",
+            "value": 0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_down"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_down",
+            "threshold": 8
         }
     ],
     "ship_left": [
