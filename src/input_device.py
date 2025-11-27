@@ -1,7 +1,7 @@
 import pygame as pg
 from pygame.locals import *
 
-from typing import Any, Literal
+from typing import Any, Literal, Self
 from collections import defaultdict
 
 from src.custom_types import TapKeys, HoldKeys, InputType, BindData, KeybindsType
@@ -11,7 +11,7 @@ from src.file_processing import load_json
 
 
 
-INPUT_FORMAT_DIR = "data/input_devices"
+INPUT_DETAILS_DIR = "data/input_devices"
 
 
 
@@ -20,8 +20,15 @@ def controller_rumble(pattern_name: str, intensity=0.5, wait_until_clear=False) 
     Makes the controller vibrate in a certain pattern defined in `rumble_patterns.json` with a specific intensity.
     The `wait_until_clear` parameter means thr rumble pattern will not be played if a pattern is already playing.
     """
-    if Controller.current_instance is not None and  InputInterpreter.current_input_type() == "controller":
-        Controller.current_instance.rumble(pattern_name, intensity, wait_until_clear)
+    if InputInterpreter.current_input_type() == "controller":
+        InputInterpreter.get_current_instance().controller.rumble(pattern_name, intensity, wait_until_clear)
+
+
+def stop_controller_rumble() -> None:
+    "Stops all controller rumble."
+    if InputInterpreter.get_current_instance().controller is not None:
+        InputInterpreter.get_current_instance().controller.stop_rumble()
+    
 
 
 
@@ -82,21 +89,19 @@ class KeyboardMouse:
 
 
 class Controller:
-    __controller_mappings = load_json(f"{INPUT_FORMAT_DIR}/controller_mappings")
-    __rumble_patterns = load_json(f"{INPUT_FORMAT_DIR}/rumble_patterns")
+    __controller_mappings = load_json(f"{INPUT_DETAILS_DIR}/controller_mappings")
+    __rumble_patterns = load_json(f"{INPUT_DETAILS_DIR}/rumble_patterns")
     __stick_dead_zone = 0.3
 
-    current_instance: "Controller | None" = None
-
-    def __init__(self, joystick: pg.joystick.JoystickType | None = None):
+    def __init__(self, joystick: pg.joystick.JoystickType):
         self.__joystick = joystick
-        if self.__joystick is not None:
-            working_name = self.device_name
-            if working_name not in self.__controller_mappings:
-                working_name = self.__controller_mappings["default"]
 
-            working_name = self.__controller_mappings[working_name].get("same_as", working_name)
-            self.__mappings: dict[str, dict[str, Any]] = self.__controller_mappings[working_name]
+        working_name = self.device_name
+        if working_name not in self.__controller_mappings:
+            working_name = self.__controller_mappings["default"]
+
+        working_name = self.__controller_mappings[working_name].get("same_as", working_name)
+        self.__mappings: dict[str, dict[str, Any]] = self.__controller_mappings[working_name]
 
 
         self.__tap_buttons: TapKeys = defaultdict(bool)
@@ -109,16 +114,11 @@ class Controller:
         self.__right_trigger = 0.0
 
         self.__rumble_queue = []
-        
-        type(self).current_instance = self
 
 
     @property
     def device_name(self) -> str | None:
-        if self.__joystick is not None:
-            return self.__joystick.get_name()
-        else:
-            return None
+        self.__joystick.get_name()
 
 
     @property
@@ -146,9 +146,6 @@ class Controller:
     
     def get_userinput(self, events: list[pg.Event]) -> None:
         self.__tap_buttons.clear()
-
-        if self.__joystick is None:
-            return
 
         for button, value in self.__hold_buttons.items():
             if value:
@@ -252,8 +249,6 @@ class Controller:
             prev_time = time
 
 
-
-
     
     def stop_rumble(self) -> None:
         if self.__joystick is not None:
@@ -278,18 +273,15 @@ class Controller:
 
 
 class InputInterpreter:
-    __keybinds: KeybindsType = load_json(f"{INPUT_FORMAT_DIR}/action_mappings")
-    __action_icons = load_json(f"{INPUT_FORMAT_DIR}/action_icons")
+    __keybinds: KeybindsType = load_json(f"{INPUT_DETAILS_DIR}/action_mappings")
+    __action_icons = load_json(f"{INPUT_DETAILS_DIR}/action_icons")
     __current_instance: "InputInterpreter | None" = None
 
     def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
         self.__current_input_type: InputType
 
         self.__keyboard_mouse = keyboard_mouse
-        if controller is None:
-            self.controller = Controller(None)
-        else:
-            self.controller = controller
+        self.controller = controller
         
         type(self).__current_instance = self
 
@@ -304,7 +296,7 @@ class InputInterpreter:
     @controller.setter
     def controller(self, value: Controller | None) -> None:
         self.__controller = value
-        if self.controller.device_name is not None:
+        if self.controller is not None:
             self.__current_input_type = "controller"
         else:
             self.__current_input_type = "keyboard_mouse"
@@ -313,6 +305,11 @@ class InputInterpreter:
     @classmethod
     def current_input_type(cls) -> InputType:
         return cls.__current_instance.__current_input_type
+    
+
+    @classmethod
+    def get_current_instance(cls) -> Self | None:
+        return cls.__current_instance
 
 
     
@@ -332,12 +329,13 @@ class InputInterpreter:
 
     def get_userinput(self, events: list[pg.Event]) -> None:
         self.__keyboard_mouse.get_userinput(events)
-        if self.__controller.tap_buttons["any"]:
-            self.__current_input_type = "controller"
-
-        self.__controller.get_userinput(events)
         if self.__keyboard_mouse.tap_keys["any"]:
             self.__current_input_type = "keyboard_mouse"
+
+        if self.controller is not None:
+            self.__controller.get_userinput(events)
+            if self.__controller.tap_buttons["any"]:
+                self.__current_input_type = "controller"
 
 
     def check_input(self, action_name: str) -> bool:
@@ -352,7 +350,7 @@ class InputInterpreter:
                     results.append(self.__keyboard_mouse.tap_keys[key_code])
         
 
-            elif bind_data["input_device"] == "controller":
+            elif bind_data["input_device"] == "controller" and self.controller is not None:
                 match bind_data["type"]:
                     case "tap_button":
                         results.append(self.__controller.tap_buttons[bind_data["value"]])

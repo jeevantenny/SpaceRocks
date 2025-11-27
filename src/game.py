@@ -10,7 +10,7 @@ from time import perf_counter
 import config
 import debug
 
-from src.input_device import KeyboardMouse, Controller, InputInterpreter
+from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
 from src.ui import font
 from src.states import StateStack, init_state
@@ -92,9 +92,9 @@ class Game:
                 self.input_interpreter.controller = Controller(pg.joystick.Joystick(0))
                 print(f"Connected {self.input_interpreter.controller.device_name}")
             except pg.error:
-                self.input_interpreter.controller = Controller()
+                self.input_interpreter.controller = None
         else:
-            self.input_interpreter.controller = Controller()
+            self.input_interpreter.controller = None
 
     
 
@@ -207,7 +207,8 @@ class Game:
         "Updates game logic."
 
         self.state_stack.update()
-        self.input_interpreter.controller.update()
+        if self.input_interpreter.controller is not None:
+            self.input_interpreter.controller.update()
 
         soundfx.play_sound_queue(self.state_stack.clear_sound_queue())
 
@@ -269,7 +270,7 @@ class Game:
         "Saves any user data from states before closing application."
 
         self.thread.join()
-        self.input_interpreter.controller.stop_rumble()
+        stop_controller_rumble()
         if self.error and debug.PAUSE_ON_CRASH:
             input("Save and Exit ->")
         try:
