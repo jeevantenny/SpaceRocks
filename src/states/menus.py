@@ -44,15 +44,13 @@ class TitleScreen(State):
         # This attribute is assigned a blank surface to avoid an raising an AttributeError due to
         # race condition from the drawing thread.
         self.__info_text = pg.Surface((1, 1))
+        self.__settings_info = pg.Surface((1, 1))
 
 
 
 
 
     def userinput(self, inputs):
-        if not debug.Cheats.demo_mode:
-            option_to_delete_user_data(self.state_stack, inputs)
-
         if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
             return
 
@@ -71,7 +69,7 @@ class TitleScreen(State):
                     self.__start_gameplay = True
                     self.title.set_effect("main_exit")
                 
-                if inputs.keyboard_mouse.tap_keys[pg.K_s]:
+                if inputs.check_input("settings"):
                     BackgroundTint("#4E6382").add_to_stack(self.state_stack)
                     Settings().add_to_stack(self.state_stack)
     
@@ -84,6 +82,8 @@ class TitleScreen(State):
             self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
             self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+        
+        self.__settings_info = font.font_with_icons.render("Settings<settings>")
         
 
 
@@ -114,6 +114,7 @@ class TitleScreen(State):
             if not debug.Cheats.demo_mode and self.is_top_state():
                 version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
                 surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
+                surface.blit(self.__settings_info, (surface.width-self.__settings_info.width-10, surface.height-20))
 
 
 
@@ -135,14 +136,11 @@ class PauseMenu(State):
 
 
     def userinput(self, inputs):
-        if not debug.Cheats.demo_mode:
-            option_to_delete_user_data(self.state_stack, inputs)
-
         if self.title.animations_complete and (inputs.check_input("pause") or inputs.check_input("select")):
             self.title.set_effect("main_exit")
             self.__exit_menu = True
 
-        elif inputs.keyboard_mouse.tap_keys[pg.K_s]:
+        elif inputs.check_input("settings"):
             Settings().add_to_stack(self.state_stack)
 
         
@@ -152,7 +150,7 @@ class PauseMenu(State):
         else:
             self.__info_text_b = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
-        self.__info_text_a = font.font_with_icons.render("Press<select> to continue")
+        self.__info_text_a = font.font_with_icons.render("Continue<select>     settings<settings>")
 
 
     def update(self):
@@ -162,15 +160,14 @@ class PauseMenu(State):
     
 
     def draw(self, surface, lerp_amount=0):
-        self.prev_state.draw(surface)
+        self.prev_state.draw(surface, 1)
         if not self.is_top_state():
             return
         
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
             blit_to_center(self.__info_text_b, surface, (0, 30))
-            surface.blit(self.__info_text_a, (10, surface.height-35))
-            surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (10, surface.height-20))
+            surface.blit(self.__info_text_a, (10, surface.height-20))
 
 
     def debug_info(self):
@@ -193,7 +190,9 @@ class Settings(State):
             elements.Slider((0, 100), 0, 5, "Congo Bongo!")
         ])
 
-        self.__info_text = font.font_with_icons.render("Press<back> to go back")
+        self.__background: pg.Surface | None = None
+
+        self.__info_text = font.font_with_icons.render("Back<back>")
 
     def userinput(self, inputs):
         if not debug.Cheats.demo_mode:
@@ -211,10 +210,25 @@ class Settings(State):
     
 
     def draw(self, surface, lerp_amount=0):
-        self.prev_state.draw(surface, lerp_amount)
+        self.__draw_background(surface)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, 200, surface.height-50))
+        
         surface.blit(self.__info_text, (10, surface.height-20))
+        surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-20))
+
+
+    def __draw_background(self, surface: pg.Surface) -> None:
+        """
+        Background is copied and drawn over to avoid having to call draw methods of previous states. This
+        was causing a major performance drop for some reason even though the settings state isn't very performance
+        intensive on it's own.
+        """
+        if self.__background is None or self.__background.size != surface.size:
+            self.prev_state.draw(surface)
+            self.__background = surface.copy()
+        else:
+            surface.blit(self.__background)
 
 
 

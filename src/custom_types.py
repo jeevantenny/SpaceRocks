@@ -90,7 +90,7 @@ class Timer:
 
 
     def end(self) -> None:
-        self.__time_left == 0.0
+        self.__time_left = 0.0
         if self.__exec_after is not None:
             self.__exec_after()
 
@@ -221,6 +221,11 @@ class Animation:
         self.__anim_time.restart()
 
 
+    def skip_to_end(self) -> None:
+        "Skips to last frame of animation."
+        self.__anim_time.end()
+
+
 
     def get_frame(self, texture_map: TextureMap, lerp_amount=0.0) -> pg.Surface:
         if self.__flipbook:
@@ -301,7 +306,6 @@ class AnimController:
 
 
 
-
     def update(self, animated_obj) -> None:
         self.do_transitions(animated_obj)
 
@@ -329,6 +333,11 @@ class AnimController:
         for anim in self.current_animations():
             anim.restart()
     
+
+    def skip_to_end(self) -> None:
+        "Skips all animations in current state to the last frame."
+        for animation in self.current_animations():
+            animation.skip_to_end()
 
 
     def current_animations(self) -> Generator[Animation, Any, None]:

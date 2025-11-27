@@ -2,11 +2,13 @@
     "keyboard_mouse": {
         "select": "K_return",
         "back": "K_esc",
-        "ship_forward": "K_w",
-        "shoot": "K_space",
         "left": "K_a",
         "right": "K_d",
-        "pause": "K_esc"
+        "pause": "K_esc",
+        "settings": "K_q",
+
+        "ship_forward": "K_w",
+        "shoot": "K_space"
     },
 
     "controllers": {
@@ -15,18 +17,21 @@
         "Nintendo Switch Joy-Con (L/R)": {
             "select": "sw_a",
             "back": "sw_b",
-            "ship_forward": "sw_r_bumper",
-            "shoot": "sw_a",
             "left": "K_a",
             "right": "K_d",
-            "pause": "sw_plus"
+            "pause": "sw_plus",
+            "settings": "sw_y",
+
+            "ship_forward": "sw_r_bumper",
+            "shoot": "sw_a"
         },
         "Nintendo Switch Joy-Con (L)": {
             "same_as": "Nintendo Switch Joy-Con (L/R)",
             "select": "sw_al_right",
             "back": "sw_al_down",
-            "shoot": "sw_al_right",
-            "pause": "sw_minus"
+            "pause": "sw_minus",
+            "settings": "sw_al_up",
+            "shoot": "sw_al_right"
         },
         "Nintendo Switch Joy-Con (R)": {
             "same_as": "Nintendo Switch Joy-Con (L)",

@@ -23,82 +23,6 @@
             "type": "tap"
         }
     ],
-    "pause": [
-        {
-            "input_device": "keyboard_mouse",
-            "key": "escape",
-            "type": "tap"
-        },
-        {
-            "input_device": "keyboard_mouse",
-            "key": "p",
-            "type": "tap"
-        },
-        {
-            "input_device": "controller",
-            "type": "tap_button",
-            "value": "menu"
-        },
-        {
-            "input_device": "controller",
-            "type": "tap_button",
-            "value": "alt_menu"
-        }
-    ],
-    "ship_forward": [
-        {
-            "input_device": "keyboard_mouse",
-            "key": "w",
-            "type": "hold"
-        },
-        {
-            "input_device": "controller",
-            "type": "hold_button",
-            "value": "r_bumper"
-        },
-        {
-            "input_device": "controller",
-            "type": "trigger",
-            "side": "right",
-            "value": 0.5
-        }
-    ],
-    "ship_backward": [
-        {
-            "input_device": "keyboard_mouse",
-            "key": "s",
-            "type": "hold"
-        },
-        {
-            "input_device": "controller",
-            "type": "hold_button",
-            "value": "l_bumper"
-        }
-    ],
-    "shoot": [
-        {
-            "input_device": "keyboard_mouse",
-            "key": "space",
-            "type": "tap"
-        },
-        {
-            "input_device": "controller",
-            "type": "tap_button",
-            "value": "a"
-        }
-    ],
-    "shoot_hold": [
-        {
-            "input_device": "keyboard_mouse",
-            "key": "space",
-            "type": "hold"
-        },
-        {
-            "input_device": "controller",
-            "type": "hold_button",
-            "value": "a"
-        }
-    ],
     "left": [
         {
             "input_device": "keyboard_mouse",
@@ -267,6 +191,76 @@
             "threshold": 8
         }
     ],
+    "pause": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "escape",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "p",
+            "type": "tap"
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
+            "value": "menu"
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
+            "value": "alt_menu"
+        }
+    ],
+    "settings": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "q",
+            "type": "tap"
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
+            "value": "y"
+        }
+    ],
+
+
+
+
+
+
+    "ship_forward": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "w",
+            "type": "hold"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "r_bumper"
+        },
+        {
+            "input_device": "controller",
+            "type": "trigger",
+            "side": "right",
+            "value": 0.5
+        }
+    ],
+    "ship_backward": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "s",
+            "type": "hold"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "l_bumper"
+        }
+    ],
     "ship_left": [
         {
             "input_device": "keyboard_mouse",
@@ -303,6 +297,30 @@
             "input_device": "controller",
             "type": "hold_button",
             "value": "d_right"
+        }
+    ],
+    "shoot": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "space",
+            "type": "tap"
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
+            "value": "a"
+        }
+    ],
+    "shoot_hold": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "space",
+            "type": "hold"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "a"
         }
     ]
 }

@@ -148,6 +148,8 @@ class Toggle(UIElement):
             assets.load_anim_controller_data("toggle"),
             Animation.load_from_dict(assets.load_anim_data("ui_elements"))
         )
+        self.__controller.do_transitions(self)
+        self.__controller.skip_to_end()
 
 
     @property
