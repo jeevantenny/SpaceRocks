@@ -1,0 +1,13 @@
+{
+    "background_palette": "default_background",
+    "asteroid_density": [
+        10,
+        20
+    ],
+    "asteroid_speed": [
+        1,
+        5
+    ],
+    "score_range": [10000, 20000],
+    "next_level": "level_12"
+}

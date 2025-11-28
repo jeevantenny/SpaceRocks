@@ -6,13 +6,13 @@
     "asteroid_frequency": 0.4,
 
     "spawn_asteroids": {
-        "blue_small": 2,
-        "blue_medium": 1
+        "blue_small": 1,
+        "blue_medium": 2
     },
     
-    "powerup_frequency": 0.1,
+    "powerup_frequency": 0.05,
     "spawn_powerups": {
-        "Shield": 0.5
+        "Shield": 1
     },
 
     "score_range": [1000, 2000],
