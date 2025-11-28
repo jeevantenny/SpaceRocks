@@ -48,7 +48,7 @@ def load_level(name: str) -> LevelData:
     try:
 
         asteroid_weights = ([], [])
-        for a_name, a_weight in level_data["spawn_asteroids"].items():
+        for a_name, a_weight in level_data.get("spawn_asteroids", {}).items():
             asteroid_weights[0].append(a_name)
             asteroid_weights[1].append(a_weight)
 

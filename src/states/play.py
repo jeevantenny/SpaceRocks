@@ -223,7 +223,8 @@ class Play(State):
         
         else:
             self.entities.update(self.camera.position)
-            self.__game_over_timer.update()
+            if self.is_top_state():
+                self.__game_over_timer.update()
         
         self._join_sound_queue(self.entities.clear_sound_queue())
             
