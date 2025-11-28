@@ -3,24 +3,19 @@
 import sys, os
 import json
 
-import config
 
-
-def get_resource_path(path: str) -> str:
+def get_MEI_path(path: str) -> str:
     "Gets the correct path to files when compiled to executable."
-    if config.LOAD_ASSETS_FROM_APP_DATA and getattr(sys, "frozen", False):
+    if getattr(sys, "frozen", False):
         return os.path.join(sys._MEIPASS, path)
     else:
         return path
     
 
 
-def load_json(path: str, use_mei_path=True) -> dict:
+def load_json(path: str) -> dict:
     "Loads a json file as a dict (don't include .json in path)"
-    path = f"{path}.json"
-    if use_mei_path:
-        path = get_resource_path(path)
-    with open(path, 'r') as fp:
+    with open(f"{path}.json", 'r') as fp:
         return json.load(fp)
     
 

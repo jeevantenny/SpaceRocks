@@ -6,7 +6,7 @@ from functools import partial, lru_cache
 from . import load_icon
 
 from src.input_device import Controller
-from src.file_processing import get_resource_path, assets
+from src.file_processing import assets
 
 
 
@@ -17,7 +17,7 @@ from src.file_processing import get_resource_path, assets
 class Font:
     "A font that renders text using a font file such as ttf."
     def __init__(self, font_path: str, base_size: int, shadow_offset: int):
-        self.__font = partial(pg.font.Font, get_resource_path(font_path))
+        self.__font = partial(pg.font.Font, font_path)
         self.__base_size =base_size
         self.__shadow_offset = shadow_offset
 

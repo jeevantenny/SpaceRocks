@@ -10,7 +10,7 @@ import debug
 from src.custom_types import UserSettings, LevelData, SaveData
 from src.game_errors import SaveFileError, LevelDataError
 
-from . import load_json, save_json, get_resource_path
+from . import load_json, save_json
 
 
 data_cache = lru_cache(1)
@@ -99,7 +99,7 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
         return __demo_highscore
     
     try:
-        return load_json(path, False)["highscore"]
+        return load_json(path)["highscore"]
     except (FileNotFoundError, JSONDecodeError):
         return 0
 

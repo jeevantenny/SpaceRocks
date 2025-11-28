@@ -319,15 +319,17 @@ class PlayerShip(Spaceship):
             if asteroid.health:
                 continue
 
-            point = math.ceil(asteroid.points * self.combo)
-            self.score += point
-            if self.combo > 1.0:
-                text_surface = font.small_font.render(f"+{point} COMBO", cache=False)
+            points = math.ceil(asteroid.points * self.combo)
+            self.score += points
+            if self.combo >= 25:
+                text_surface = font.small_font.render(f"+{points} MAX COMBO", 1, "#dd99ff", "#550055", False)
+            elif self.combo > 1:
+                text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
             else:
-                text_surface = font.small_font.render(f"+{point}", 1, "#eeeeee", "#004466", False)
+                text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
 
             self.primary_group.add(DisplayText(asteroid.get_display_point_pos(), text_surface))
-            self.combo = min(self.combo*1.3, 25)
+            self.combo = min(self.combo*1.1, 25)
         
 
 
