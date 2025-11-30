@@ -125,7 +125,7 @@ class Controller:
     def tap_buttons(self) -> TapKeys:
         return self.__tap_buttons.copy()
     @property
-    def hold_keys(self) -> HoldKeys:
+    def hold_buttons(self) -> HoldKeys:
         return self.__hold_buttons.copy()
     
     @property
@@ -152,6 +152,8 @@ class Controller:
                 self.__hold_buttons[button] += 1
 
         for event in events:
+            
+            # Controller Buttons
             if event.type == JOYBUTTONDOWN:
                 button_name = self.__mappings["buttons"].get(str(event.button))
 
@@ -159,40 +161,94 @@ class Controller:
                     self.__tap_buttons[button_name] = True
                     self.__tap_buttons["any"] = True
                     self.__hold_buttons[button_name] = 1
-
-                #     print(event.button, button_name)
-                # else:
-                #     print(event.button)
                 
-            if event.type == JOYBUTTONUP:
+            elif event.type == JOYBUTTONUP:
                 button_name = self.__mappings["buttons"].get(str(event.button))
 
                 if button_name is not None:
                     self.__hold_buttons[button_name] = 0
             
-            if event.type == JOYAXISMOTION:
-                axis_data = self.__mappings["axis"].get(str(event.axis))
+
+            # Controller Thumb-sticks or Axis if supported
+            elif event.type == JOYAXISMOTION and "axis" in self.__mappings:
+                axis_name = self.__mappings["axis"].get(str(event.axis))
+
+                match axis_name:
+                    case None:
+                        continue
+
+                    case "l_stick_x":
+                        self.__set_stick_value(self.__left_stick, 0, event.value)
+                    case "l_stick_y":
+                        self.__set_stick_value(self.__left_stick, 1, event.value)
+
+                    case "r_stick_x":
+                        self.__set_stick_value(self.__right_stick, 0, event.value)
+                    case "r_stick_y":
+                        self.__set_stick_value(self.__right_stick, 1, event.value)
+                    
+                    case "l_trigger":
+                        if abs(event.value) > self.__stick_dead_zone:
+                            self.__left_trigger = event.value
+                        else:
+                            self.__left_trigger = 0.0
+                    
+                    case "r_trigger":
+                        if abs(event.value) > self.__stick_dead_zone:
+                            self.__right_trigger = event.value
+                        else:
+                            self.__right_trigger = 0.0
+
+            
+            # Controller D-pad/Hat if supported (some controllers have this as buttons)
+            elif event.type == JOYHATMOTION and "hats" in self.__mappings:
+                hat_name = self.__mappings["hats"].get(str(event.hat))
+
+                if hat_name == "dpad":
+                    if event.value[0] == -1:   
+                        if not self.__hold_buttons["d_left"]:
+                            self.__tap_buttons["d_left"] = True
+                        self.__hold_buttons["d_left"] = 1
+                    else:
+                        self.__hold_buttons["d_left"] = 0
+
+                    if  event.value[0] == 1:
+                        if not self.__hold_buttons["d_right"]:
+                            self.__tap_buttons["d_right"] = True
+                        self.__hold_buttons["d_right"] = 1
+                    else:
+                        self.__hold_buttons["d_right"] = 0
+
+                    if event.value[1] == -1:
+                        if not self.__hold_buttons["d_down"]:
+                            self.__tap_buttons["d_down"] = True
+                        self.__hold_buttons["d_down"] = 1
+                    else:
+                        self.__hold_buttons["d_down"] = 0
+
+                    if event.value[1] == 1:
+                        if not self.__hold_buttons["d_up"]:
+                            self.__tap_buttons["d_up"] = True
+                        self.__hold_buttons["d_up"] = 1
+                    else:
+                        self.__hold_buttons["d_up"] = 0
 
 
-                if axis_data is not None:
-                    match axis_data["stick"]:
-                        case "left_stick":
-                            self.__set_stick_value(self.__left_stick, axis_data["axis"], event.value)
-  
-                        case "right_stick":
-                            self.__set_stick_value(self.__right_stick, axis_data["axis"], event.value)
-                        
-                        case "l_trigger":
-                            if abs(event.value) > self.__stick_dead_zone:
-                                self.__left_trigger = event.value
-                            else:
-                                self.__left_trigger = 0.0
-                        
-                        case "r_trigger":
-                            if abs(event.value) > self.__stick_dead_zone:
-                                self.__right_trigger = event.value
-                            else:
-                                self.__right_trigger = 0.0
+
+
+    def __set_stick_value(self, stick: pg.Vector2, side: int, value: float):
+        if abs(value) > self.__stick_dead_zone:
+            set_value = value
+        else:
+            set_value = 0.0
+        
+        if side == 0:
+            stick.x = set_value
+        elif side == 1:
+            stick.y = set_value
+        else:
+            raise ValueError(f"Invalid stick side {side}")
+
     
 
 
@@ -201,18 +257,6 @@ class Controller:
     def update(self) -> None:
         if self.__rumble_queue:
             self.__joystick.rumble(*self.__rumble_queue.pop(0))
-
-
-
-
-
-
-
-    def __set_stick_value(self, stick: pg.Vector2, axis: str, value: float):
-        if abs(value) > self.__stick_dead_zone:
-            setattr(stick, axis, value)
-        else:
-            setattr(stick, axis, 0.0)
 
 
 
@@ -356,7 +400,7 @@ class InputInterpreter:
                         result = self.__controller.tap_buttons[bind_data["value"]]
                     
                     case "hold_button":
-                        result = self.__controller.hold_keys[bind_data["value"]] > bind_data.get("threshold", 0)
+                        result = self.__controller.hold_buttons[bind_data["value"]] > bind_data.get("threshold", 0)
 
                     case "stick" | "trigger":
                         side = bind_data["side"]
