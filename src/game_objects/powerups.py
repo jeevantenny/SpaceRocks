@@ -189,7 +189,6 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
         
         elif self.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
-            from src.states.info_states import PowerupInfo
             self.host_state.powerup_info(powerup_list[self.__powerup_name])
             self.kill()
 
