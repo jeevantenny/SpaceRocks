@@ -13,12 +13,9 @@ from src.game_errors import SaveFileError, LevelDataError
 from . import load_json, save_json
 
 
-data_cache = lru_cache(1)
-
 HIGHSCORE_DATA_PATH = "user_data/highscore"
 
 SETTINGS_DATA_PATH = "user_data/settings"
-DEFAULT_SETTINGS_PATH = "data/default_settings"
 
 LEVELS_DIR = "data/levels"
 
@@ -158,17 +155,21 @@ def delete_progress() -> None:
 
 
 
-@data_cache
+@lru_cache(1)
 def load_settings() -> UserSettings:
     "Loads user settings as a dictionary"
     try:
         settings = load_json(SETTINGS_DATA_PATH)
     except (FileNotFoundError, JSONDecodeError):
         settings = {}
-    
-    full_settings = load_json(DEFAULT_SETTINGS_PATH)
-    full_settings.update(settings)
-    return UserSettings(**full_settings)
+    else:
+        settings = {
+            name: value
+            for name, value in settings.items()
+            if name in UserSettings._fields
+        }
+
+    return UserSettings(**settings)
 
 
 def update_settings(**settings_data) -> None:

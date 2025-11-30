@@ -64,15 +64,15 @@ class Timer:
 
     @property
     def countdown(self) -> float:
-        return self.__time_left
+        return pg.math.clamp(self.__time_left, 0, self.__duration)
     
     @property
     def time_elapsed(self) -> float:
-        return self.__duration - self.__time_left
+        return self.__duration - self.countdown
     
     @property
     def complete(self) -> bool:
-        return self.__time_left == 0.0
+        return self.__time_left <= 0.0
     
     @property
     def completion_amount(self) -> float:
@@ -87,6 +87,9 @@ class Timer:
 
     def restart(self) -> None:
         self.start()
+
+    def advance(self, ticks: float) -> None:
+        self.__time_left -= ticks
 
 
     def end(self) -> None:
@@ -140,6 +143,9 @@ class Stopwatch:
 
     def pause(self):
         self.__running = False
+
+    def advance(self, amount: float) -> None:
+        self.__time += amount
     
 
     def update(self, speed_multiplier=1.0) -> None:
@@ -219,6 +225,11 @@ class Animation:
 
     def restart(self) -> None:
         self.__anim_time.restart()
+
+
+    def advance(self, amount: float) -> None:
+        "Advances the animation by a certain amount of time (in ticks)."
+        self.__anim_time.advance(amount*self.anim_speed_multiplier)
 
 
     def skip_to_end(self) -> None:
@@ -332,6 +343,13 @@ class AnimController:
     def restart_animations(self) -> None:
         for anim in self.current_animations():
             anim.restart()
+
+
+    def advance_animations(self, amount: float) -> None:
+        "Advances all animations in current state by a certain amount og time (in ticks)."
+        for animation in self.current_animations():
+            animation.advance(amount)
+
     
 
     def skip_to_end(self) -> None:
@@ -377,8 +395,9 @@ class AnimController:
 
 
 class UserSettings(NamedTuple):
-    soundfx_volume: float
-    controller_rumble: bool
+    soundfx_volume: float = 0.7
+    controller_rumble: bool = True
+    show_version_number: bool = True
 
 
 

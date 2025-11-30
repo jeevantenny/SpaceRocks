@@ -44,7 +44,6 @@ class TitleScreen(State):
         # This attribute is assigned a blank surface to avoid an raising an AttributeError due to
         # race condition from the drawing thread.
         self.__info_text = pg.Surface((1, 1))
-        self.__settings_info = pg.Surface((1, 1))
 
 
 
@@ -83,8 +82,6 @@ class TitleScreen(State):
         else:
             self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
-        self.__settings_info = font.font_with_icons.render("Settings<settings>")
-        
 
 
 
@@ -112,9 +109,14 @@ class TitleScreen(State):
             blit_to_center(self.__info_text, surface, (0, 50))
 
             if not debug.Cheats.demo_mode and self.is_top_state():
-                version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
-                surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
-                surface.blit(self.__settings_info, (surface.width-self.__settings_info.width-10, surface.height-20))
+                settings_info = font.font_with_icons.render("Settings<settings>")
+                info_offset = 18
+                if data.load_settings().show_version_number:
+                    version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
+                    surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
+                    info_offset += 10
+
+                surface.blit(settings_info, (10, surface.height-info_offset))
 
 
 
@@ -130,8 +132,7 @@ class PauseMenu(State):
         self.__exit_menu = False
 
         # Assigned default values to avoid raising Attribute Errors due to race conditions.
-        self.__info_text_a = pg.Surface((1, 1))
-        self.__info_text_b = pg.Surface((1, 1))
+        self.__info_text = pg.Surface((1, 1))
 
 
 
@@ -146,11 +147,10 @@ class PauseMenu(State):
         
         
         if inputs.current_input_type() == "keyboard_mouse":
-            self.__info_text_b = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
-            self.__info_text_b = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
-        self.__info_text_a = font.font_with_icons.render("Continue<select>     settings<settings>")
 
 
     def update(self):
@@ -166,8 +166,8 @@ class PauseMenu(State):
         
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
-            blit_to_center(self.__info_text_b, surface, (0, 30))
-            surface.blit(self.__info_text_a, (10, surface.height-20))
+            blit_to_center(self.__info_text, surface, (0, 30))
+            surface.blit(font.font_with_icons.render("Continue<select>     settings<settings>"), (10, surface.height-18))
 
 
     def debug_info(self):
@@ -184,15 +184,16 @@ class Settings(State):
         settings = data.load_settings()
         self.__soundfx = elements.Slider((0, 100), int(settings.soundfx_volume*100), 10, "Sound FX")
         self.__controller_rumble = elements.Toggle(settings.controller_rumble, "Controller Rumble")
+        self.__show_version_num = elements.Toggle(settings.show_version_number, "Show version number")
         self.__elements = elements.ElementList([
             self.__soundfx,
             self.__controller_rumble,
-            elements.Slider((0, 100), 0, 5, "Congo Bongo!")
-        ])
+            # elements.Slider((0, 100), 0, 5, "Congo Bongo!"),
+            elements.UIPadding(15),
+            self.__show_version_num
+        ], wrap_list=True)
 
         self.__background: pg.Surface | None = None
-
-        self.__info_text = font.font_with_icons.render("Back<back>")
 
     def userinput(self, inputs):
         if not debug.Cheats.demo_mode:
@@ -211,11 +212,12 @@ class Settings(State):
 
     def draw(self, surface, lerp_amount=0):
         self.__draw_background(surface)
+        # self.prev_state.draw(surface)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, 200, surface.height-50))
         
-        surface.blit(self.__info_text, (10, surface.height-20))
-        surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-20))
+        surface.blit(font.font_with_icons.render("Back<back>"), (10, surface.height-18))
+        surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
 
 
     def __draw_background(self, surface: pg.Surface) -> None:
@@ -235,7 +237,8 @@ class Settings(State):
     def quit(self):
         data.update_settings(
             soundfx_volume=round(self.__soundfx.value*0.01, 2),
-            controller_rumble=self.__controller_rumble.on
+            controller_rumble=self.__controller_rumble.on,
+            show_version_number=self.__show_version_num.on
         )
 
 
@@ -300,8 +303,6 @@ class ShowScore(State):
         else:
             self.__timer = 30
 
-        self.__info_text = pg.Surface((1, 1))
-
 
 
     def userinput(self, inputs):
@@ -325,8 +326,6 @@ class ShowScore(State):
             self._queue_sound("game.point", 0.3)
         elif self.__timer:
             self.__timer -= 1
-        else:
-            self.__info_text = font.font_with_icons.render("Play Again<select>")
 
 
 
@@ -341,14 +340,16 @@ class ShowScore(State):
 
     def __draw_a(self, surface: pg.Surface) -> None:
         blit_to_center(font.large_font.render(self.__display_level_name), surface, (0, -30))
-        text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=False)
+        text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=(self.display_score==self.score))
         surface.blit(text_surface, (99, 101))
 
 
     def __draw_b(self, surface: pg.Surface) -> None:
         self.__display_score(surface, "Highscore", self.highscore, (102, 50))
         self.__display_score(surface, "Score", self.score, (102, 120))
-        surface.blit(self.__info_text, ((config.PIXEL_WINDOW_WIDTH-self.__info_text.width)*0.5, 200))
+
+        info_text = font.font_with_icons.render("Play Again<select>")
+        surface.blit(info_text, ((surface.width-info_text.width)*0.5, 200))
 
 
     def __display_score(self, surface: pg.Surface, name: str, score: int, position=(0, 0)) -> None:

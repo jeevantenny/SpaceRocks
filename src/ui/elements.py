@@ -2,6 +2,7 @@ import pygame as pg
 from typing import Iterable
 
 from src.custom_types import Animation, AnimController
+from src.math_functions import sign
 from src.input_device import InputInterpreter
 from src.file_processing import assets
 
@@ -37,21 +38,35 @@ class ElementList:
         self.__container = list(elements)
         self.__current = 0
         self.__wrap_list = wrap_list
+
+    @property
+    def current_index(self) -> int:
+        return self.__current
+    @current_index.setter
+    def current_index(self, value: int) -> None:
+        if self.__wrap_list:
+            self.__current = value%len(self.__container)
+        else:
+            self.__current = pg.math.clamp(value, 0, len(self.__container)-1)
+
     
     def userinput(self, inputs: InputInterpreter) -> None:
         if self.__container:
             if inputs.check_input("up"):
-                self.__current -= 1
+                self.__increment_selector(-1)
             if inputs.check_input("down"):
-                self.__current += 1
+                self.__increment_selector(1)
 
-            if self.__wrap_list:
-                self.__current %= len(self.__container)
-            else:
-                self.__current = pg.math.clamp(self.__current, 0, len(self.__container)-1)
+            self.__container[self.current_index].userinput(inputs)
 
-            self.__container[self.__current].userinput(inputs)
 
+    def __increment_selector(self, amount: int) -> None:
+        self.current_index += amount
+        if isinstance(self.__container[self.current_index], UIPadding):
+            self.current_index += sign(amount)
+            
+
+        
 
     def update(self) -> None:
         for element in self.__container:
@@ -62,17 +77,33 @@ class ElementList:
         # subsurface.fill("blue")
         y_offset = self.__padding
         for i, element in enumerate(self.__container):
-            if i == self.__current:
-                subsurface.fill("#550011", (0, y_offset-self.__padding*0.5, subsurface.width, 13+self.__padding))
+            if i == self.current_index:
+                subsurface.fill("#550011", (0, y_offset-self.__padding*0.5, subsurface.width, element.size[1]+self.__padding))
             
-            position = (subsurface.width-element.size[0]-self.__padding, y_offset)
-            label = element.get_label()
-            if label is not None:
-                label_pos = (self.__padding, y_offset+2)
-                subsurface.blit(font.small_font.render(label), label_pos)
-            subsurface.blit(element.render(), position)
+            if not isinstance(element, UIPadding):
+                position = (subsurface.width-element.size[0]-self.__padding, y_offset)
+                label = element.get_label()
+                if label is not None:
+                    label_pos = (self.__padding, y_offset+2)
+                    subsurface.blit(font.small_font.render(label), label_pos)
+                subsurface.blit(element.render(), position)
 
-            y_offset += 13 + self.__padding
+            y_offset += element.size[1] + self.__padding
+
+
+
+
+class UIPadding(UIElement):
+    def __init__(self, padding_height: int):
+        super().__init__(None)
+        self.__padding_height = padding_height
+    
+    @property
+    def size(self) -> pg.typing.Point:
+        return (0, self.__padding_height)
+    
+    def render(self):
+        raise NotImplementedError
 
 
 

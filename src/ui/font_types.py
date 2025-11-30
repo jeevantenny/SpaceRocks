@@ -28,6 +28,11 @@ class Font:
         else:
             return self.__render_internal(text, size, color_a, color_b)
 
+
+    @lru_cache(8)
+    def __render_cached(self, text, size, color_a, color_b) -> pg.Surface:
+        return self.__render_internal(text, size, color_a, color_b)
+
         
     
     def __render_internal(self, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011") -> pg.Surface:
@@ -42,11 +47,6 @@ class Font:
         surface.blit(main, (0, 0))
 
         return surface
-
-
-    @lru_cache(8)
-    def __render_cached(self, text, size, color_a, color_b) -> pg.Surface:
-        return self.__render_internal(text, size, color_a, color_b)
 
 
 

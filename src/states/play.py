@@ -232,7 +232,7 @@ class Play(State):
         if self.__timer:
             self.__timer -= 1
 
-        self.__info_text = font.font_with_icons.render("Press<pause> to pause")
+        self.__info_text = font.font_with_icons.render("Pause<pause>")
 
         
 
@@ -307,7 +307,7 @@ class Play(State):
         
 
         if self.is_top_state():
-            surface.blit(self.__info_text, (10, surface.height-20+entrance_offset))
+            surface.blit(self.__info_text, (10, surface.height-18+entrance_offset))
 
 
 

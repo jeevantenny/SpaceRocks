@@ -34,7 +34,7 @@ class Initializer:
         
         else:
             Play.init_from_save(save_data).add_to_stack(state_stack)
-            BackgroundTint("#888888").add_to_stack(state_stack)
+            BackgroundTint("#666666").add_to_stack(state_stack)
             PauseMenu().add_to_stack(state_stack)
         
         if debug.Cheats.demo_mode:
