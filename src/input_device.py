@@ -344,25 +344,25 @@ class InputInterpreter:
 
 
     def check_input(self, action_name: str) -> bool:
-        result = False
+        results: list[bool] = []
 
         for bind_data in self.__get_bind_options(action_name):
             if bind_data["input_device"] == "keyboard_mouse":
                 key_code = pg.key.key_code(bind_data["key"])
                 if bind_data["type"] == "hold":
-                    result = self.__keyboard_mouse.hold_keys[key_code] > bind_data.get("threshold", 0)
+                    results.append(self.__keyboard_mouse.hold_keys[key_code] > bind_data.get("threshold", 0))
                 else:
-                    result = self.__keyboard_mouse.tap_keys[key_code]
+                    results.append(self.__keyboard_mouse.tap_keys[key_code])
         
 
             elif bind_data["input_device"] == "controller":
                 match bind_data["type"]:
                     case "tap_button":
-                        result = self.__controller.tap_buttons[bind_data["value"]]
+                        results.append(self.__controller.tap_buttons[bind_data["value"]])
                     
                     case "hold_button":
                         # print(self.__controller.hold_keys)
-                        result = self.__controller.hold_keys[bind_data["value"]] > bind_data.get("threshold", 0)
+                        results.append(self.__controller.hold_keys[bind_data["value"]] > bind_data.get("threshold", 0))
 
                     case "stick" | "trigger":
                         side = bind_data["side"]
@@ -370,19 +370,16 @@ class InputInterpreter:
 
                         if bind_data["type"] == "stick":
                             axis = bind_data["axis"]
-                            stick_value = self.__controller.get_stick_value(side, axis)
+                            value = self.__controller.get_stick_value(side, axis)
                         elif side == "right":
-                            stick_value = self.__controller.right_trigger
+                            value = self.__controller.right_trigger
                         else:
-                            stick_value = self.__controller.left_trigger
+                            value = self.__controller.left_trigger
 
-                        result = abs(stick_value) > abs(target_value) and sign(stick_value) == sign(target_value)
+                        results.append(abs(value) > abs(target_value) and sign(value) == sign(target_value))
         
-            if result:
-                return True
 
-        
-        return False
+        return any(results)
     
 
 
