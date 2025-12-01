@@ -12,8 +12,9 @@ from src.custom_types import SaveData, Timer
 from src.file_processing import assets, data
 
 from src.game_objects import GameObject, ObjectGroup, components
-from src.game_objects.entities import PlayerShip, Asteroid, EnemyShip
-from src.game_objects.projectiles import Bullet
+from src.game_objects.spaceship import PlayerShip
+from src.game_objects.obstacles import Asteroid
+from src.game_objects.projectiles import PlayerBullet
 from src.game_objects.powerups import PowerUp, PowerupCollectable
 from src.game_objects.camera import Camera
 
@@ -31,7 +32,7 @@ from .info_states import PowerupInfo, NoMoreLevels
 
 class Play(State):
     """
-    handles the actual Gameplay. Contains a game loop that constantly updates all game objects
+    Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
     and player score.
     """
     __spawn_radius = 150
@@ -50,6 +51,7 @@ class Play(State):
         self.__setup_game_objects()
 
         self.spaceship = PlayerShip((0, 0))
+        self.spaceship.set_score_limit(self.__level_data.score_range[1])
         self.entities.add(self.spaceship)
 
 
@@ -64,8 +66,11 @@ class Play(State):
         
         self.entities.kill_all()
         self.entities.add(self.spaceship)
+
         self.spaceship.set_position((0, 0))
         self.spaceship.clear_velocity()
+        self.spaceship.set_score_limit(self.__level_data.score_range[1])
+
         self.camera.set_position((0, 0))
 
         self.__display_score = self.spaceship.score
@@ -102,6 +107,8 @@ class Play(State):
                 self.spaceship = entity
 
             object_dict[entity_data["id"]] = entity
+        
+        self.spaceship.set_score_limit(self.__level_data.score_range[1])
 
         
         for entity in self.entities.sprites():
@@ -182,10 +189,6 @@ class Play(State):
                 self.spaceship.score = self.__level_data.score_range[0]
 
 
-        if debug.Cheats.enemy_ship and inputs.keyboard_mouse.tap_keys[pg.K_e]:
-            self.entities.add(EnemyShip(self.spaceship.position+(0, 20)))
-
-
         self.spaceship.userinput(inputs)
 
         if self.spaceship.health and inputs.check_input("pause"):
@@ -209,7 +212,7 @@ class Play(State):
 
             for entity in self.entities.sprites():
                 # Bullets are deleted immediately
-                if isinstance(entity, Bullet):
+                if isinstance(entity, PlayerBullet):
                     entity.force_kill()
                     continue
                 
@@ -293,10 +296,10 @@ class Play(State):
         
         y_offset = 6
         if self.__prev_highscore:
-            self.__show_scores(surface, "highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.__display_score or self.__display_score == self.spaceship.score))
+            self.__show_scores(surface, "Highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.__display_score or self.__display_score == self.spaceship.score))
             y_offset += 16
         
-        self.__show_scores(surface, "score", self.__display_score, (10, y_offset-entrance_offset), self.__display_score == self.spaceship.score)
+        self.__show_scores(surface, "Score", self.__display_score, (10, y_offset-entrance_offset), self.__display_score == self.spaceship.score)
         y_offset += 22
 
         if self.__level_data.level_name != "level_1":
@@ -316,7 +319,7 @@ class Play(State):
             if not debug.Cheats.no_asteroids and self.__should_spawn_asteroid():
                 self.__spawn_asteroid()
 
-            if self.powerups.count() == 0 and random.random() < self.__level_data.powerup_frequency:
+            if self.powerups.count() == 0 and self.__level_data.spawn_powerups and random.random() < self.__level_data.powerup_frequency:
                 self.__spawn_powerup()
             
             # Moves to next level once the player has gained enough points to complete the current one.
@@ -419,7 +422,8 @@ class Play(State):
 
     def __should_spawn_asteroid(self) -> bool:
         return (random.random() < self.__level_data.asteroid_frequency
-                and self.__required_asteroid_density() > self.__asteroid_density())
+                and self.__required_asteroid_density() > self.__asteroid_density()
+                and self.__level_data.spawn_asteroids)
     
 
     
@@ -435,7 +439,7 @@ class Play(State):
     def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point, cache=True):
         score_text = f"{score:05}"
 
-        score_desc_surf = font.small_font.render(name.capitalize())
+        score_desc_surf = font.small_font.render(name)
         surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))
         surface.blit(font.large_font.render(score_text, cache=cache), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
     

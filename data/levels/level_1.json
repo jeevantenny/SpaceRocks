@@ -2,7 +2,7 @@
     "base_color": "#000000",
     "parl_a": "backgrounds/space_background",
     "parl_b": "backgrounds/space_background_big",
-    "background_palette": "default_background",
+    "background_palette": "background/default_background",
 
     "asteroid_density": [10, 20],
     "asteroid_speed": [1, 5],

@@ -13,7 +13,8 @@ from src.input_device import controller_rumble
 from src.ui import font
 
 from .components import ObjectTexture, ObjectCollision
-from .entities import PlayerShip, Asteroid
+from .spaceship import PlayerShip
+from .obstacles import Asteroid
 from .projectiles import Laser
 from .particles import DisplayText
 

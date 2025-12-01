@@ -1,0 +1,320 @@
+import pygame as pg
+import math
+import random
+from typing import Literal
+
+import debug
+
+from src.math_functions import sign
+from src.custom_types import Timer
+from src.input_device import controller_rumble, InputInterpreter
+from src.audio import soundfx
+from src.ui import font
+
+
+
+from . import GameObject
+from .components import ObjectAnimation, ObjectVelocity, ObjectHitbox
+from .obstacles import Asteroid
+from .projectiles import PlayerBullet
+from .particles import ShipSmoke, DisplayText
+
+
+
+
+
+
+
+
+class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
+    draw_layer = 2
+    distance_based_sound=False
+    _rotation_speed = 30
+    __asset_key = "spaceship"
+
+    def __init__(self, position):
+        
+        super().__init__(
+            position=position,
+            hitbox_size=(10, 10),
+
+            texture_map_path=self.__asset_key,
+            anim_path=self.__asset_key,
+            controller_path=self.__asset_key
+        )
+
+        self.health = True
+        self.__thrust = False
+        self.__thruster_audio_chan: pg.Channel | None = None
+        self.__turn_direction: Literal[-1, 0, 1] = 0
+
+        self._attack_types: list[type[GameObject]] = [Asteroid]
+
+                
+
+    def __init_from_data__(self, object_data):
+        self.__init__(object_data["position"])
+
+        self._set_anim_state("main")
+
+        self.set_velocity(object_data["velocity"])
+        self.set_rotation(object_data["rotation"])
+
+
+
+    def get_data(self):
+        data = super().get_data()
+        data.update({"position": tuple(self.position),
+                     "velocity": tuple(self._velocity),
+                     "rotation": self._rotation})
+        return data
+
+
+
+
+    def update(self) -> None:
+        if self.__thrust:
+            self.accelerate(pg.Vector2(0, -1).rotate(self._rotation))
+            self.__release_smoke()
+            if self.__thruster_audio_chan is None:
+                self.__start_thrust_sound()
+            else:
+                self.__thruster_audio_chan.set_volume(pg.math.clamp(abs(self._rotation)*0.002+0.3, 0, 1))
+
+        elif self.__thruster_audio_chan is not None:
+            self.__stop_thruster_sound()
+
+
+        if self._angular_vel*self.__turn_direction <= 0:
+            self._angular_vel = 0
+        if self.__turn_direction and abs(self._angular_vel) < self._rotation_speed:
+            self._angular_vel += 8*self.__turn_direction
+        
+
+        super().update()
+
+            
+        
+        if not self.health:
+            if self.animations_complete:
+                self.force_kill()
+            return
+
+        for obj in self.overlapping_objects():
+            if isinstance(obj, Asteroid) and obj.health:
+                self.kill()
+                break
+
+
+        self.__thrust = False
+        self.__turn_direction = 0
+                
+
+
+
+
+
+    def shoot(self) -> PlayerBullet:
+        from .projectiles import PlayerBullet
+        direction = self.get_rotation_vector()
+        bullet = PlayerBullet(self.position, direction, self.get_velocity())
+        self.primary_group.add(bullet)
+        if not self.__thrust:
+            self.accelerate(-direction*0.5)
+        self._queue_sound("entity.ship.shoot", 0.8)
+
+        return bullet
+
+
+    
+    def boost_speed(self) -> bool:
+        return self._velocity.magnitude() > self._max_speed-3
+
+
+
+    
+    def kill(self):
+        self.health = False
+        self.__thrust = False
+        self.clear_velocity()
+        self.set_angular_vel(0)
+        self._queue_sound("entity.asteroid.medium_explode")
+
+
+    def force_kill(self):
+        self.__stop_thruster_sound()
+        super().force_kill()
+
+
+    def _thrust(self) -> None:
+        self.__thrust = True
+
+
+    def _turn(self, direction: Literal[-1, 1]) -> None:
+        self.__turn_direction = sign(self.__turn_direction+direction)
+
+
+    def __start_thrust_sound(self) -> None:
+        self.__stop_thruster_sound()
+        self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.7, -1)
+
+
+
+    def __stop_thruster_sound(self) -> None:
+        if self.__thruster_audio_chan is not None:
+            self.__thruster_audio_chan.fadeout(100)
+            self.__thruster_audio_chan = None
+
+    
+
+    def __release_smoke(self) -> None:
+        for _ in range(5):
+            direction = self.get_rotation_vector()
+            velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -3)+self._velocity
+            position = self.position-direction*8+self._velocity
+            self.primary_group.add(ShipSmoke(position, velocity))
+        
+
+
+
+
+class PlayerShip(Spaceship):
+    def __init__(self, position):
+        super().__init__(position)
+        self._attack_types: list[type[GameObject]] = [Asteroid]
+
+        from .powerups import PowerUpGroup
+        self.__powerups = PowerUpGroup()
+        self.__invincibility_timer = Timer(1)
+
+        self.__bullets_fired: set[PlayerBullet] = set()
+        self.__score_limit: int | None = None
+
+        self.score = 0
+        self.combo = 1.0
+        
+        # self.__powerups.add("SuperLaser")
+        # self.__powerups.add("Shield")
+
+    
+    @property
+    def invincible(self) -> bool:
+        return not self.__invincibility_timer.complete
+
+
+    def __init_from_data__(self, object_data):
+        super().__init_from_data__(object_data)
+        self._attack_types: list[type[GameObject]] = [Asteroid]
+
+        self.score = object_data["score"]
+        self.combo = object_data["combo"]
+
+        from .powerups import PowerUpGroup
+        self.__powerups = PowerUpGroup()
+        for powerup_name in object_data.get("powerups", []):
+            self.__powerups.add(powerup_name)
+
+
+    def get_data(self):
+        data = super().get_data()
+        data.update({"score": self.score,
+                     "combo": self.combo,
+                     "powerups": [powerup.get_name() for powerup in self.__powerups]})
+        return data
+    
+
+    def set_score_limit(self, limit: int) -> None:
+        self.__score_limit = limit
+
+
+
+    def userinput(self, inputs: InputInterpreter):
+        if self.health and not inputs.keyboard_mouse.hold_keys[pg.KMOD_CTRL]:            
+            if inputs.check_input("ship_forward"):
+                self._thrust()
+
+            if inputs.check_input("left"):
+                self._turn(-1)
+
+            if inputs.check_input("right"):
+                self._turn(1)
+            
+            if  inputs.check_input("shoot") and self.alive():
+                self.shoot()
+
+            self.__powerups.userinput(inputs)
+
+    
+    def update(self):
+        super().update()
+        self.__powerups.update(self)
+        self.__invincibility_timer.update()
+
+        for bullet in self.__bullets_fired.copy():
+            if not bullet.alive():
+                self.__bullets_fired.remove(bullet)
+                self.__process_from_bullet(bullet)
+                
+
+
+    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
+        super().draw(surface, lerp_amount, offset)
+        self.__powerups.draw(self, surface, lerp_amount, offset)
+
+
+    def _thrust(self):
+        super()._thrust()
+        controller_rumble("ship_thrusters", 0.25, True)
+
+
+    def shoot(self):
+        bullet = super().shoot()
+        self.__bullets_fired.add(bullet)
+        controller_rumble("gun_fire")
+
+
+    
+    def invincibility_frames(self, amount=30) -> None:
+        self.__invincibility_timer = Timer(amount).start()
+
+
+    def kill(self):
+        if self.__invincibility_timer.complete and not (self.__powerups.kill_protection(self) or debug.Cheats.invincible):
+            super().kill()
+            controller_rumble("large_explosion_b", 0.9)
+
+
+    def has_powerup(self, powerup_name: str) -> None:
+        return self.__powerups.includes(powerup_name)
+    
+
+    def acquire_powerup(self, powerup_name: str) -> None:
+        if not self.has_powerup(powerup_name):
+            self.__powerups.add(powerup_name)
+
+
+    def remove_powerup(self, powerup) -> None:
+        self.__powerups.remove(powerup)
+
+
+    def __process_from_bullet(self, bullet: PlayerBullet) -> None:
+        if self.score == self.__score_limit:
+            return
+
+        if not bullet.hit_list:
+            self.combo = 1.0
+            return
+        
+        for asteroid in bullet.hit_list:
+            if not asteroid.health:
+                points = min(math.ceil(asteroid.points * self.combo), self.__score_limit-self.score)
+                self.score += points
+                if self.combo >= 25:
+                    text_surface = font.small_font.render(f"+{points} MAX COMBO", 1, "#dd99ff", "#550055", False)
+                elif self.combo > 1:
+                    text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
+                else:
+                    text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
+
+                self.primary_group.add(DisplayText(asteroid.get_display_point_pos(), text_surface))
+                self.combo = min(self.combo*1.1, 25)

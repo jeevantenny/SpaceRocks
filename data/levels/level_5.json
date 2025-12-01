@@ -1,5 +1,5 @@
 {
-    "background_palette": "test_background",
+    "background_palette": "background/test_background",
     "background_tint": "#448866",
 
     "asteroid_density": [30, 80],
@@ -8,7 +8,7 @@
 
     "spawn_asteroids": {
         "green_small": 4,
-        "green_medium": 3
+        "green_medium": 1
     },
 
     "score_range": [4000, 5000],

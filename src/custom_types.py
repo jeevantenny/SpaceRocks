@@ -375,6 +375,15 @@ class LevelData(NamedTuple):
     next_level: str
 
 
+    @property
+    def spawn_asteroids(self) -> bool:
+        return self.asteroid_frequency > 0 and len(self.asteroid_spawn_weights[0]) > 0
+    
+    @property
+    def spawn_powerups(self) -> bool:
+        return self.powerup_frequency > 0 and len(self.powerup_spawn_weights[0]) > 0
+
+
 
 
 class SaveData(NamedTuple):

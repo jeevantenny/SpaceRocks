@@ -1,5 +1,5 @@
 {
-    "background_palette": "default_background",
+    "background_palette": "background/default_background",
 
     "asteroid_density": [15, 25],
     "asteroid_speed": [1, 6],
