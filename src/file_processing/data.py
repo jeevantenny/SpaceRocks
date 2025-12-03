@@ -52,8 +52,8 @@ def load_level(name: str) -> LevelData:
         level_data_obj = LevelData(
             level_name=             name,
             base_color=             level_data.get("base_color", "#000000"),
-            parl_a=                 level_data.get("parl_a", "backgrounds/space_background"),
-            parl_b=                 level_data.get("parl_b", "backgrounds/space_background_big"),
+            parl_a=                 level_data.get("parl_a"),
+            parl_b=                 level_data.get("parl_b"),
             background_palette=     level_data["background_palette"],
             background_tint=        level_data.get("background_tint", "#4E6382"),
 

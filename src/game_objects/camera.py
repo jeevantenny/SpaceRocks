@@ -75,8 +75,8 @@ class Camera:
         pos = self.__target_pos + blit_offset
         # pg.draw.circle(surface, "white", self.__target_pos+offset, 2)
 
-        pg.draw.line(surface, "black", pos-(0, 4), pos+(0, 4), 2)
-        pg.draw.line(surface, "black", pos-(4, 0), pos+(4, 0), 2)
+        pg.draw.line(surface, "black", pos-(0, 4), pos+(0, 4), 3)
+        pg.draw.line(surface, "black", pos-(4, 0), pos+(4, 0), 3)
         pg.draw.line(surface, "white", pos-(0, 3), pos+(0, 3))
         pg.draw.line(surface, "white", pos-(3, 0), pos+(3, 0))
     

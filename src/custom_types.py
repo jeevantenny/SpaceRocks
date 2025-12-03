@@ -350,7 +350,10 @@ class AnimController:
 
     
     def __test_condition(self, obj, condition: str) -> bool:
-        return bool(eval(condition, None, locals()))
+        try:
+            return bool(eval(condition, None, locals()))
+        except Exception as e:
+            raise type(e)(f"transition condition '{condition}' for '{type(obj).__name__}'\n\t\t{e.args[0]}")
     
 
 

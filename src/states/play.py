@@ -13,8 +13,8 @@ from src.file_processing import assets, data
 
 from src.game_objects import GameObject, ObjectGroup, components
 from src.game_objects.spaceship import PlayerShip
-from src.game_objects.obstacles import Asteroid
-from src.game_objects.projectiles import PlayerBullet
+from src.game_objects.obstacles import Asteroid, EnemyShip
+from src.game_objects.projectiles import Projectile
 from src.game_objects.powerups import PowerUp, PowerupCollectable
 from src.game_objects.camera import Camera
 
@@ -64,6 +64,7 @@ class Play(State):
             self.state_stack.push(NoMoreLevels())
             return
         
+        self.entities.remove(self.spaceship)
         self.entities.kill_all()
         self.entities.add(self.spaceship)
 
@@ -147,8 +148,19 @@ class Play(State):
 
         self.__level_data = data.load_level(level_name)
         self.__base_color = self.__level_data.base_color
-        self.__parl_a = assets.load_texture(self.__level_data.parl_a, self.__level_data.background_palette)
-        self.__parl_b = assets.load_texture(self.__level_data.parl_b, self.__level_data.background_palette)
+
+        self.__parl_a: pg.Surface | None
+        self.__parl_b: pg.Surface | None
+
+        if self.__level_data.parl_a is None:
+            self.__parl_a = None
+        else:
+            self.__parl_a = assets.load_texture(self.__level_data.parl_a, self.__level_data.background_palette)
+        
+        if self.__level_data.parl_b is None:
+            self.__parl_b = None
+        else:
+            self.__parl_b = assets.load_texture(self.__level_data.parl_b, self.__level_data.background_palette)
 
 
     def __setup_game_objects(self) -> None:
@@ -171,7 +183,7 @@ class Play(State):
 
             if inputs.keyboard_mouse.tap_keys[pg.K_k]:
                 if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
-                    self.spaceship.kill()
+                    self.spaceship.force_kill()
                 else:
                     for asteroid in self.asteroids.sprites():
                         self.spaceship.score += asteroid.points
@@ -181,7 +193,11 @@ class Play(State):
                 self.spaceship.score += 100
 
             if inputs.keyboard_mouse.tap_keys[pg.K_c]:
-                self.spaceship.combo += 50
+                self.spaceship.combo *= 2
+
+            if inputs.keyboard_mouse.tap_keys[pg.K_x]:
+                self.entities.add(EnemyShip((0, -400)))
+                print(f"Spawned EnemyShip")
 
 
             if inputs.keyboard_mouse.tap_keys[pg.K_t]:
@@ -212,7 +228,7 @@ class Play(State):
 
             for entity in self.entities.sprites():
                 # Bullets are deleted immediately
-                if isinstance(entity, PlayerBullet):
+                if isinstance(entity, Projectile):
                     entity.force_kill()
                     continue
                 
@@ -270,21 +286,23 @@ class Play(State):
 
 
     def __draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        # Background A
-        width, height = self.__parl_b.size
-        camera_offset = -self.camera.lerp_position(lerp_amount)*0.1
-        camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
-        for x in range(-1, surface.width//width+1):
-            for y in range(-1, surface.height//height+1):
-                surface.blit(self.__parl_b, (width*x, height*y)+camera_offset)
+        # Background B
+        if self.__parl_b is not None:
+            width, height = self.__parl_b.size
+            camera_offset = -self.camera.lerp_position(lerp_amount)*0.1
+            camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
+            for x in range(-1, surface.width//width+1):
+                for y in range(-1, surface.height//height+1):
+                    surface.blit(self.__parl_b, (width*x, height*y)+camera_offset)
 
         # Background B
-        width, height = self.__parl_a.size
-        camera_offset = -self.camera.lerp_position(lerp_amount)*0.3
-        camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
-        for x in range(-1, surface.width//width+1):
-            for y in range(-1, surface.height//height+1):
-                surface.blit(self.__parl_a, (width*x, height*y)+camera_offset)
+        if self.__parl_a is not None:
+            width, height = self.__parl_a.size
+            camera_offset = -self.camera.lerp_position(lerp_amount)*0.3
+            camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
+            for x in range(-1, surface.width//width+1):
+                for y in range(-1, surface.height//height+1):
+                    surface.blit(self.__parl_a, (width*x, height*y)+camera_offset)
 
 
 

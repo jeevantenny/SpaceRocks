@@ -1,4 +1,6 @@
 {
+    "parl_a": "backgrounds/space_background",
+    "parl_b": "backgrounds/space_background_big",
     "background_palette": "background/test_background",
     "background_tint": "#448866",
 

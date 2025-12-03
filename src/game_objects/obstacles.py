@@ -1,35 +1,67 @@
 import pygame as pg
 import random
 
+from src.custom_types import Timer
 from src.game_errors import InitializationError
-from src.file_processing import load_json
+from src.file_processing import load_json, assets
 
-from .components import ObjectAnimation, ObjectCollision
+from . import GameObject
+from .components import ObjectAnimation, ObjectTexture, ObjectVelocity, ObjectHitbox, ObjectCollision
+from .projectiles import EnemyBullet
 
 
 __all__ = [
     "Asteroid"
 ]
-        
+
+
+
+
+class Damageable(GameObject):
+    "Objects that take damage from attacks and lose Health. Once health depletes they will be killed."
+    def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):
+        super().__init__(**kwargs)
+        self._health = health
+        self.__points = points
+        self.__point_display_height = point_display_height
+    
+    @property
+    def points(self) -> int:
+        return self.__points
+
+    @property
+    def health(self) -> int:
+        return self._health
+
+    @property
+    def point_display_height(self) -> int:
+        return self.__point_display_height
+
+
+    def damage(self, amount: int) -> None:
+        self._health -= min(self._health, amount)
+        if not self._health:
+            self.kill()
+
+
+    def force_kill(self):
+        self._health = 0
+        super().force_kill()
 
 
 
 
 
 
-class Asteroid(ObjectAnimation, ObjectCollision):
+class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
+
+    save_entity_progress=True
+
     __asteroid_data = load_json("data/asteroids")
-
     __asset_key = "asteroid"
 
     # Lower max speed for asteroids ensure that they are never to fast to dodge
     _max_speed = 10
-
-
-    def __new__(cls, *args, **kwargs):
-        if cls.__asteroid_data is None:
-            raise InitializationError(f"No asteroid data has been defined. Could not create Asteroid object.")
-        return super().__new__(cls)
 
 
     def __init__(self,
@@ -43,6 +75,10 @@ class Asteroid(ObjectAnimation, ObjectCollision):
             position=position,
             hitbox_size=self.__hitbox_size,
             bounce=0.95,
+
+            health=self.__data["health"],
+            points=self.__data["points"],
+            point_display_height=self.size*6,
 
             texture_map_path=self.__data["texture_map"],
             anim_path=self.__asset_key,
@@ -65,7 +101,7 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
         self.set_rotation(object_data["rotation"])
         self.set_angular_vel(object_data["angular_vel"])
-        self.health = object_data["health"]
+        self._health = object_data["health"]
 
         # To address an issue where asteroids will show wrong texture when loaded from
         # save file and when the pause menu is showing.
@@ -76,17 +112,11 @@ class Asteroid(ObjectAnimation, ObjectCollision):
     def __setup_id(self, id: str) -> None:
         self.__id = id
         self.__data: dict[str, str | int] = self.__asteroid_data[id]
-        self.health = self.__data["health"]
-
 
 
     @property
     def size(self) -> int:
         return self.__data["size_value"]
-    
-    @property
-    def points(self) -> int:
-        return self.__data["points"]
     
     @property
     def subrock(self) -> str | None:
@@ -124,15 +154,10 @@ class Asteroid(ObjectAnimation, ObjectCollision):
                 self.force_kill()
 
 
-    def get_display_point_pos(self) -> tuple[float, float]:
-        return (self.rect.centerx, self.rect.top)
-
 
     def damage(self, amount: int, knockback: pg.Vector2 | None = None) -> None:
-        self.health -= min(self.health, amount)
-        if not self.health:
-            self.kill()
-        else:
+        super().damage(amount)
+        if self._health:
             self._queue_sound("entity.asteroid.small_explode")
             if knockback:
                 self.accelerate(knockback*self.__knockback_amount)
@@ -140,12 +165,12 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
     def do_collision(self):
-        return bool(self.health)
+        return bool(self._health)
 
 
 
     def kill(self, spawn_subrocks=True):
-        self.health = 0
+        self._health = 0
         if spawn_subrocks and self.subrock is not None:
             self.__spawn_subrock()
 
@@ -172,3 +197,68 @@ class Asteroid(ObjectAnimation, ObjectCollision):
 
 
 
+class EnemyShip(Damageable, ObjectTexture, ObjectVelocity, ObjectHitbox):
+    save_entity_progress=False
+    __move_speed = 6
+    __shoot_range = 80
+    __shoot_deviation = 30
+
+    def __init__(self, position: pg.typing.Point):
+        super().__init__(
+            position=position,
+            hitbox_size=(16, 16),
+            texture=assets.load_texture_map("enemies")["ufo"],
+
+            points=100
+        )
+
+        self.__player_ship = None
+        self.__speed = 0
+        self.__shoot_interval = Timer(20)
+
+    def update(self):
+        super().update()
+        self.__shoot_interval.update()
+        
+        if self.__player_ship is None:
+            from .spaceship import PlayerShip
+            for obj in self.primary_group:
+                if isinstance(obj, PlayerShip):
+                    self.__player_ship = obj
+                    break
+        
+        elif self.__player_ship.health:
+            displacement = self.__player_ship.position-self.position
+            distance = displacement.magnitude()
+            
+            if distance > 50:
+                self.__speed = min(self.__speed+1, self.__move_speed)
+            else:
+                self.__speed = max(self.__speed-1, 0)
+            
+            if self.__speed:
+                velocity = displacement.copy()
+                velocity.scale_to_length(self.__speed)
+                self.set_velocity(velocity)
+
+                if self.__shoot_interval.complete and distance < self.__shoot_range:
+                    self.__shoot(displacement.rotate(random.randint(-self.__shoot_deviation, self.__shoot_deviation)))
+            else:
+                self.clear_velocity()
+            
+            if self.colliderect(self.__player_ship.rect):
+                self.__player_ship.kill()
+                self.kill()
+        
+        # for obj in self.overlapping_objects():
+        #     if isinstance(obj, Asteroid):
+        #         self.kill()
+
+
+        
+
+    
+
+    def __shoot(self, direction: pg.Vector2) -> None:
+        self.primary_group.add(EnemyBullet(self.position, direction, self._velocity))
+        self.__shoot_interval.restart()

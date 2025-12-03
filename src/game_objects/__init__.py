@@ -20,7 +20,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
     Game objects represent objects that exist within the game world
     """
-    save_entity_progress=True
+    save_entity_progress=False
     distance_based_sound=True
 
     def __init__(self, *, position: pg.typing.Point, group: "ObjectGroup | None" = None) -> None:

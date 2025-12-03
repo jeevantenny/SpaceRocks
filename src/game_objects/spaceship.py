@@ -101,7 +101,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             return
 
         for obj in self.overlapping_objects():
-            if isinstance(obj, Asteroid) and obj.health:
+            if isinstance(obj, Asteroid) and obj._health:
                 self.kill()
                 break
 
@@ -143,6 +143,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
     def force_kill(self):
         self.__stop_thruster_sound()
+        self.health = False
         super().force_kill()
 
 
@@ -179,6 +180,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
 class PlayerShip(Spaceship):
+    save_entity_progress=True
     def __init__(self, position):
         super().__init__(position)
         self._attack_types: list[type[GameObject]] = [Asteroid]
@@ -305,9 +307,9 @@ class PlayerShip(Spaceship):
             self.combo = 1.0
             return
         
-        for asteroid in bullet.hit_list:
-            if not asteroid.health:
-                points = min(math.ceil(asteroid.points * self.combo), self.__score_limit-self.score)
+        for obj in bullet.hit_list:
+            if not obj._health:
+                points = min(math.ceil(obj.points * self.combo), self.__score_limit-self.score)
                 self.score += points
                 if self.combo >= 25:
                     text_surface = font.small_font.render(f"+{points} MAX COMBO", 1, "#dd99ff", "#550055", False)
@@ -316,5 +318,5 @@ class PlayerShip(Spaceship):
                 else:
                     text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
 
-                self.primary_group.add(DisplayText(asteroid.get_display_point_pos(), text_surface))
+                self.primary_group.add(DisplayText(obj.position, text_surface, obj.point_display_height))
                 self.combo = min(self.combo*1.1, 25)

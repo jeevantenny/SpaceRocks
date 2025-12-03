@@ -136,11 +136,7 @@ class ObjectTexture(GameObject):
     
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
         blit_texture = self._get_blit_texture(lerp_amount)
-        if isinstance(self, ObjectVelocity):
-            center = self._get_lerp_pos(lerp_amount) + offset
-        else:
-            center = self.position + offset
-
+        center = self._get_blit_pos(offset, lerp_amount)
         blit_pos = center - pg.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
 
@@ -153,6 +149,15 @@ class ObjectTexture(GameObject):
     
     def _get_blit_texture(self, lerp_amount=0.0) -> pg.Surface:
         return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)))
+    
+
+    def _get_blit_pos(self, offset: pg.typing.Point, lerp_amount=0.0) -> pg.Vector2:
+        "Returns the center position of the texture/frame to be blit."
+        if isinstance(self, ObjectVelocity):
+            return self._get_lerp_pos(lerp_amount) + offset
+        else:
+            return self.position + offset
+
     
 
 

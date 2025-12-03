@@ -52,13 +52,14 @@ class DisplayText(ObjectTexture):
     save_entity_progress=False
     draw_layer = 5
 
-    def __init__(self, position: pg.typing.Point, text_surface: pg.Surface):
+    def __init__(self, position: pg.typing.Point, text_surface: pg.Surface, y_offset: int):
         super().__init__(
             position=position,
             texture=text_surface
         )
         
         self.__lifetime = 12
+        self.__y_offset = y_offset
 
 
 
@@ -70,3 +71,6 @@ class DisplayText(ObjectTexture):
             self.kill()
         
         self.position.y -= sin(self.__lifetime*pi/12)*2
+
+    def _get_blit_pos(self, offset, lerp_amount=0):
+        return super()._get_blit_pos(offset, lerp_amount) - (0, self.__y_offset)
