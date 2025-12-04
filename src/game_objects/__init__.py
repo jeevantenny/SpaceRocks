@@ -174,6 +174,7 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 
         self.__full_volume_radius = full_volume_radius
         self.__host_state = host_state
+        self.__subgroups: set[ObjectSubgroup] = set()
 
 
     @property
@@ -189,9 +190,10 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 
 
     def update(self, sound_focus: pg.typing.Point) -> None:
-        for object in self.sprites():
-            object.update() # type: ignore
-            self.__process_entity_sound(object, sound_focus, object.clear_sound_queue())
+        for obj in self.sprites():
+            if obj.primary_group is not None:
+                obj.update() # type: ignore
+                self.__process_entity_sound(obj, sound_focus, obj.clear_sound_queue())
 
 
     def __process_entity_sound(self, _object: T, sound_focus: pg.typing.Point, queue: soundfx.SoundQueue) -> None:
@@ -270,8 +272,17 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
             obj.force_kill() # type: ignore
 
 
+    def remove(self, *sprites):
+        for subgroup in self.__subgroups:
+            subgroup.remove(*sprites)
+        super().remove(*sprites)
+
+
     def make_subgroup(self) -> "ObjectSubgroup":
         return ObjectSubgroup(self, self.__full_volume_radius, self.__host_state)
+
+    def add_subgroup_internal(self, subgroup: "ObjectSubgroup") -> None:
+        self.__subgroups.add(subgroup)
 
 
     def __iter__(self) -> Iterator[T]:
@@ -288,6 +299,7 @@ class ObjectSubgroup(ObjectGroup):
 
     def __init__(self, super_group: ObjectGroup, full_volume_radius=180, host_state: State | None = None):
         super().__init__(full_volume_radius, host_state)
+        super_group.add_subgroup_internal(self)
         self.__super_group = super_group
 
     def add(self, *sprites):

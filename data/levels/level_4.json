@@ -1,15 +1,22 @@
 {
-    "base_color": "#000000",
     "parl_a": "backgrounds/space_background",
     "parl_b": "backgrounds/space_background_big",
-    "background_palette": "background/default_background",
+    "background_palette": "background/test_background",
+    "background_tint": "#448866",
 
-    "asteroid_density": [1, 1],
-    "asteroid_speed": [1, 1],
-    "asteroid_frequency": 0.4,
+    "asteroid_density": [10, 30],
+    "asteroid_speed": [8, 8],
+    "asteroid_frequency": 0.02,
 
     "spawn_asteroids": {
-        "test_duplicator": 1
+        "yellow_small": 4,
+        "yellow_medium": 3
+    },
+
+    "enemy_frequency": 1.0,
+    "enemy_count": 1,
+    "spawn_enemies": {
+        "EnemyShip": 1
     },
 
     "score_range": [3000, 4000],

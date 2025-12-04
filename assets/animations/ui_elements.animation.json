@@ -1,0 +1,26 @@
+{
+    "group_name": "ui_elements.animation",
+
+    "animations": {
+        "toggle_on": {
+            "duration": 5,
+            "anim_speed_multiplier": 1.5,
+            "timeline": {
+                "0": "toggle_1",
+                "1": "toggle_2",
+                "2": "toggle_3",
+                "4": "toggle_4"
+            }
+        },
+        "toggle_off": {
+            "duration": 5,
+            "anim_speed_multiplier": 1.5,
+            "timeline": {
+                "0": "toggle_4",
+                "1": "toggle_3",
+                "2": "toggle_2",
+                "4": "toggle_1"
+            }
+        }
+    }
+}

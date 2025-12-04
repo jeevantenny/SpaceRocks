@@ -84,6 +84,9 @@ class Projectile(ObjectTexture, ObjectVelocity):
         self._distance_traveled += self.__speed
         self._lifetime -= 1
 
+        if self.primary_group is None:
+            return
+
         hit = False
         for obj in self.primary_group:
             hit = self._process_object(obj) or hit
@@ -158,6 +161,7 @@ class PlayerBullet(Projectile):
             assets.load_texture_map("particles")["bullet"],
             object_data["position"],
             object_data["velocity"],
+            18,
             object_data["lifetime"]
         )
 
@@ -187,6 +191,9 @@ class PlayerBullet(Projectile):
                 
             self.hit_list.add(obj)
             return True
+        elif isinstance(obj, EnemyBullet):
+            obj.kill()
+            return False
 
         else:
             return False
@@ -269,7 +276,7 @@ class EnemyBullet(Projectile):
         if isinstance(obj, PlayerShip) and self._collides_with(obj):
             obj.kill()
             return True
-        elif isinstance(obj, Asteroid) and self._collides_with(obj):
+        elif isinstance(obj, Asteroid) and obj.health and self._collides_with(obj):
             obj.damage(1, self._velocity*0.1/obj.size)
             return True
         else:

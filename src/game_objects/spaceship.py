@@ -28,7 +28,6 @@ from .particles import ShipSmoke, DisplayText
 
 class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
     draw_layer = 2
-    distance_based_sound=False
     _rotation_speed = 30
     __asset_key = "spaceship"
 
@@ -180,7 +179,9 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
 class PlayerShip(Spaceship):
+    distance_based_sound=False
     save_entity_progress=True
+    __max_combo_points=200
     def __init__(self, position):
         super().__init__(position)
         self._attack_types: list[type[GameObject]] = [Asteroid]
@@ -235,10 +236,10 @@ class PlayerShip(Spaceship):
             if inputs.check_input("ship_forward"):
                 self._thrust()
 
-            if inputs.check_input("left"):
+            if inputs.check_input("ship_left"):
                 self._turn(-1)
 
-            if inputs.check_input("right"):
+            if inputs.check_input("ship_right"):
                 self._turn(1)
             
             if  inputs.check_input("shoot") and self.alive():
@@ -297,6 +298,27 @@ class PlayerShip(Spaceship):
 
     def remove_powerup(self, powerup) -> None:
         self.__powerups.remove(powerup)
+    
+
+    def take_points(self, points: int) -> int:
+        """
+        Takes points and adds to the PlayerShips's score based on the current combo. Returns how
+        many points were added to the score.
+        """
+
+        combo_points = math.ceil(points * self.combo)
+        if combo_points > self.__max_combo_points:
+            add_points = max(points, self.__max_combo_points)
+        else:
+            add_points = combo_points
+
+        if self.__score_limit is not None:
+            add_points = min(add_points, self.__score_limit-self.score)
+
+        self.score += add_points
+        self.combo = min(self.combo*1.1, 50)
+
+        return add_points
 
 
     def __process_from_bullet(self, bullet: PlayerBullet) -> None:
@@ -309,14 +331,14 @@ class PlayerShip(Spaceship):
         
         for obj in bullet.hit_list:
             if not obj._health:
-                points = min(math.ceil(obj.points * self.combo), self.__score_limit-self.score)
-                self.score += points
-                if self.combo >= 25:
+                prev_combo = self.combo
+                points = self.take_points(obj.points)
+
+                if prev_combo >= 25:
                     text_surface = font.small_font.render(f"+{points} MAX COMBO", 1, "#dd99ff", "#550055", False)
-                elif self.combo > 1:
+                elif prev_combo > 1:
                     text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
                 else:
                     text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
 
                 self.primary_group.add(DisplayText(obj.position, text_surface, obj.point_display_height))
-                self.combo = min(self.combo*1.1, 25)

@@ -39,6 +39,8 @@ class Damageable(GameObject):
 
 
     def damage(self, amount: int) -> None:
+        if not self._health:
+            return
         self._health -= min(self._health, amount)
         if not self._health:
             self.kill()
@@ -199,34 +201,48 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 
 class EnemyShip(Damageable, ObjectTexture, ObjectVelocity, ObjectHitbox):
     save_entity_progress=False
-    __move_speed = 6
-    __shoot_range = 80
-    __shoot_deviation = 30
+    __move_speed = 4
+    __player_shoot_range = 200
+    __asteroid_shoot_range = 60
+    __shoot_deviation = 20
 
     def __init__(self, position: pg.typing.Point):
         super().__init__(
             position=position,
-            hitbox_size=(16, 16),
+            hitbox_size=(25, 25),
             texture=assets.load_texture_map("enemies")["ufo"],
 
-            points=100
+            points=50
         )
 
         self.__player_ship = None
         self.__speed = 0
-        self.__shoot_interval = Timer(20)
+        self.__shoot_interval = Timer(18)
+        self.__start_attack_delay = Timer(35).start()
 
     def update(self):
         super().update()
         self.__shoot_interval.update()
+        self.__start_attack_delay.update()
+    
+        for obj in self.primary_group:
+            if isinstance(obj, Asteroid) and obj.health:
+                if self.colliderect(obj.rect):
+                    self.kill()
+                    return
+                elif self.__shoot_interval.time_elapsed > 6 and self.distance_to(obj) < self.__asteroid_shoot_range:
+                    self.__shoot(obj.position-self.position)
         
+
         if self.__player_ship is None:
             from .spaceship import PlayerShip
             for obj in self.primary_group:
                 if isinstance(obj, PlayerShip):
                     self.__player_ship = obj
                     break
+
         
+
         elif self.__player_ship.health:
             displacement = self.__player_ship.position-self.position
             distance = displacement.magnitude()
@@ -240,19 +256,17 @@ class EnemyShip(Damageable, ObjectTexture, ObjectVelocity, ObjectHitbox):
                 velocity = displacement.copy()
                 velocity.scale_to_length(self.__speed)
                 self.set_velocity(velocity)
-
-                if self.__shoot_interval.complete and distance < self.__shoot_range:
-                    self.__shoot(displacement.rotate(random.randint(-self.__shoot_deviation, self.__shoot_deviation)))
             else:
                 self.clear_velocity()
+            
+
+            if self.__start_attack_delay.complete and self.__shoot_interval.complete and distance < self.__player_shoot_range:
+                self.__shoot(displacement.rotate(random.randint(-self.__shoot_deviation, self.__shoot_deviation)))
             
             if self.colliderect(self.__player_ship.rect):
                 self.__player_ship.kill()
                 self.kill()
         
-        # for obj in self.overlapping_objects():
-        #     if isinstance(obj, Asteroid):
-        #         self.kill()
 
 
         
@@ -262,3 +276,4 @@ class EnemyShip(Damageable, ObjectTexture, ObjectVelocity, ObjectHitbox):
     def __shoot(self, direction: pg.Vector2) -> None:
         self.primary_group.add(EnemyBullet(self.position, direction, self._velocity))
         self.__shoot_interval.restart()
+        self._queue_sound("entity.ship.shoot", 0.8)

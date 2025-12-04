@@ -1,32 +1,41 @@
 {
     "keyboard_mouse": {
-        "ship_forward": "K_w",
-        "shoot": "K_space",
+        "select": "K_return",
+        "back": "K_esc",
         "left": "K_a",
         "right": "K_d",
         "pause": "K_esc",
-        "select": "K_return"
+        "settings": "K_q",
+
+        "ship_forward": "K_w",
+        "shoot": "K_space"
     },
 
     "controllers": {
         "default": "Nintendo Switch Joy-Con (L/R)",
 
         "Nintendo Switch Joy-Con (L/R)": {
-            "ship_forward": "sw_r_bumper",
-            "shoot": "sw_a",
+            "select": "sw_a",
+            "back": "sw_b",
             "left": "K_a",
             "right": "K_d",
             "pause": "sw_plus",
-            "select": "sw_a"
+            "settings": "sw_y",
+
+            "ship_forward": "sw_r_bumper",
+            "shoot": "sw_a"
         },
         "Nintendo Switch Joy-Con (L)": {
-            "same_as": "Nintendo Switch Joy-Con (R)",
-            "pause": "sw_minus"
+            "same_as": "Nintendo Switch Joy-Con (L/R)",
+            "select": "sw_al_right",
+            "back": "sw_al_down",
+            "pause": "sw_minus",
+            "settings": "sw_al_up",
+            "shoot": "sw_al_right"
         },
         "Nintendo Switch Joy-Con (R)": {
-            "same_as": "Nintendo Switch Joy-Con (L/R)",
-            "shoot": "sw_al_right",
-            "select": "sw_al_right"
+            "same_as": "Nintendo Switch Joy-Con (L)",
+            "pause": "sw_plus"
         },
         "Xbox 360 Controller": {
             "same_as": "Nintendo Switch Joy-Con (L/R)"

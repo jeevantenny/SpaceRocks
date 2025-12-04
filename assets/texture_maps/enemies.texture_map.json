@@ -1,6 +1,6 @@
 {
     "texture": "game_objects/enemies",
     "mappings": {
-        "ufo": [1, 1, 17, 17]
+        "ufo": [1, 1, 22, 22]
     }
 }

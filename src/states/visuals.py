@@ -1,7 +1,7 @@
 import pygame as pg
 
-from src.ui import blit_to_center, font, elements
 from src.custom_types import Timer
+from src.ui import blit_to_center, font, effects
 
 from . import PassThroughState
 
@@ -35,7 +35,7 @@ class ShowLevelName(PassThroughState):
 
     def __init__(self, level_name: str):
         super().__init__()
-        self.__title = elements.AnimatedText(level_name, "show_level_name_b", font.large_font)
+        self.__title = effects.AnimatedText(level_name, "show_level_name_b", font.large_font)
     
 
     def update(self):

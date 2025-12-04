@@ -231,12 +231,14 @@ class SuperLaser(PowerUp):
             points = 0
             for asteroid in self.__laser.killed_list:
                 points += asteroid.points
-            spaceship.score += points
+            
             if points:
+                points_added = spaceship.take_points(points)
                 spaceship.primary_group.add(
-                    DisplayText(spaceship.position+self.__laser.get_rotation_vector()*40, font.large_font.render(
-                        f"+{points}", 1, "#cc8800", "#442200", False
-                    ))
+                    DisplayText(
+                        spaceship.position+self.__laser.get_rotation_vector()*40,
+                        font.large_font.render(f"+{points_added}", 1, "#cc8800", "#442200", False)  
+                    )
                 )
 
             self.__laser = None

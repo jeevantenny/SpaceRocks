@@ -11,6 +11,186 @@
             "value": "a"
         }
     ],
+    "back": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "escape",
+            "type": "tap"
+        },
+        {
+            "input_device": "controller",
+            "key": "b",
+            "type": "tap"
+        }
+    ],
+    "left": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "a",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "a",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "left",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "left",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": -0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_left"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_left",
+            "threshold": 8
+        }
+    ],
+    "right": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "d",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "d",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "right",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "right",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": 0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_right"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_right",
+            "threshold": 8
+        }
+    ],
+    "up": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "w",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "w",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "up",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "up",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "y",
+            "value": -0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_up"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_up",
+            "threshold": 8
+        }
+    ],
+    "down": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "s",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "s",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "down",
+            "type": "tap"
+        },
+        {
+            "input_device": "keyboard_mouse",
+            "key": "down",
+            "type": "hold",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "y",
+            "value": 0.7
+        },
+        {
+            "input_device": "controller",
+            "type": "action_button",
+            "value": "d_down"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_down",
+            "threshold": 8
+        }
+    ],
     "pause": [
         {
             "input_device": "keyboard_mouse",
@@ -33,6 +213,24 @@
             "value": "alt_menu"
         }
     ],
+    "settings": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "q",
+            "type": "tap"
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
+            "value": "y"
+        }
+    ],
+
+
+
+
+
+
     "ship_forward": [
         {
             "input_device": "keyboard_mouse",
@@ -63,6 +261,44 @@
             "value": "l_bumper"
         }
     ],
+    "ship_left": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "a",
+            "type": "hold"
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": -0.5
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_left"
+        }
+    ],
+    "ship_right": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "d",
+            "type": "hold"
+        },
+        {
+            "input_device": "controller",
+            "type": "stick",
+            "side": "left",
+            "axis": "x",
+            "value": 0.5
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "d_right"
+        }
+    ],
     "shoot": [
         {
             "input_device": "keyboard_mouse",
@@ -85,44 +321,6 @@
             "input_device": "controller",
             "type": "hold_button",
             "value": "a"
-        }
-    ],
-    "left": [
-        {
-            "input_device": "keyboard_mouse",
-            "key": "a",
-            "type": "hold"
-        },
-        {
-            "input_device": "controller",
-            "type": "stick",
-            "side": "left",
-            "axis": "x",
-            "value": -0.5
-        },
-        {
-            "input_device": "controller",
-            "type": "hold_button",
-            "value": "d_left"
-        }
-    ],
-    "right": [
-        {
-            "input_device": "keyboard_mouse",
-            "key": "d",
-            "type": "hold"
-        },
-        {
-            "input_device": "controller",
-            "type": "stick",
-            "side": "left",
-            "axis": "x",
-            "value": 0.5
-        },
-        {
-            "input_device": "controller",
-            "type": "hold_button",
-            "value": "d_right"
         }
     ]
 }

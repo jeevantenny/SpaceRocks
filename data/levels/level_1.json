@@ -4,7 +4,7 @@
     "parl_b": "backgrounds/space_background_big",
     "background_palette": "background/default_background",
 
-    "asteroid_density": [10, 20],
+    "asteroid_density": [10, 15],
     "asteroid_speed": [1, 5],
     "asteroid_frequency": 0.4,
 

@@ -1,8 +1,9 @@
 "Contains the Play state that handles the actual Gameplay."
 
 import pygame as pg
-from typing import Self
+import math
 import random
+from typing import Self
 
 import config
 import debug
@@ -18,7 +19,7 @@ from src.game_objects.projectiles import Projectile
 from src.game_objects.powerups import PowerUp, PowerupCollectable
 from src.game_objects.camera import Camera
 
-from src.ui import font, elements
+from src.ui import font, effects, hud
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
@@ -121,6 +122,9 @@ class Play(State):
 
         self.__timer = 0
 
+        if self.spaceship.score >= self.__level_data.score_range[1]:
+            self.__level_cleared = True
+
         return self
 
 
@@ -135,7 +139,7 @@ class Play(State):
 
         self.__prev_highscore = self.highscore
         self.highscore_changed = False
-        self.__progress_bar = elements.ProgressBar()
+        self.__progress_bar = hud.ProgressBar()
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
         self.__level_cleared = False
@@ -167,8 +171,12 @@ class Play(State):
         "Creates all the object groups and the camera."
 
         self.entities = ObjectGroup(host_state=self)
-        self.asteroids: ObjectGroup[Asteroid] = self.entities.make_subgroup()
-        self.powerups: ObjectGroup[PowerupCollectable] = self.entities.make_subgroup()
+        self.spawned_entities = self.entities.make_subgroup()
+
+        self.asteroids: ObjectGroup[Asteroid] = self.spawned_entities.make_subgroup()
+        self.powerups: ObjectGroup[PowerupCollectable] = self.spawned_entities.make_subgroup()
+        self.enemies = self.spawned_entities.make_subgroup()
+
         self.camera = Camera((0, 0))
 
 
@@ -183,7 +191,9 @@ class Play(State):
 
             if inputs.keyboard_mouse.tap_keys[pg.K_k]:
                 if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
-                    self.spaceship.force_kill()
+                    self.spaceship.kill()
+                    if self.spaceship.health:
+                        self.spaceship.force_kill()
                 else:
                     for asteroid in self.asteroids.sprites():
                         self.spaceship.score += asteroid.points
@@ -248,7 +258,7 @@ class Play(State):
         if self.__timer:
             self.__timer -= 1
 
-        self.__info_text = font.font_with_icons.render("Press<pause> to pause")
+        self.__info_text = font.font_with_icons.render("Pause<pause>")
 
         
 
@@ -272,7 +282,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density():.1f}, combo: {self.spaceship.combo}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
 
@@ -325,7 +335,7 @@ class Play(State):
         
 
         if self.is_top_state():
-            surface.blit(self.__info_text, (10, surface.height-20+entrance_offset))
+            surface.blit(self.__info_text, (10, surface.height-18+entrance_offset))
 
 
 
@@ -334,11 +344,15 @@ class Play(State):
     def __game_loop(self):
         if not self.__level_cleared:
             # Asteroid Spawning
-            if not debug.Cheats.no_asteroids and self.__should_spawn_asteroid():
-                self.__spawn_asteroid()
+            if not debug.Cheats.no_obstacles:
+                if self.__should_spawn_asteroid():
+                    self.__spawn_asteroid()
+
+                if self.__should_spawn_enemy():
+                    self.__spawn_enemy()
 
             if self.powerups.count() == 0 and self.__level_data.spawn_powerups and random.random() < self.__level_data.powerup_frequency:
-                self.__spawn_powerup()
+                self.__spawn_powerup()             
             
             # Moves to next level once the player has gained enough points to complete the current one.
             if self.spaceship.score >= self.__level_data.score_range[1]:
@@ -352,8 +366,9 @@ class Play(State):
 
 
         # Removes any asteroids beyond the despawn radius
-        for obj in self.asteroids.sprites() + self.powerups.sprites():
+        for obj in self.spawned_entities.sprites():
             if obj.distance_to(self.spaceship) > self.__despawn_radius:
+                print(f"killed {obj}")
                 obj.force_kill()
 
 
@@ -423,6 +438,12 @@ class Play(State):
 
 
 
+    def __should_spawn_asteroid(self) -> bool:
+        "Returns wether an asteroid should spawn in the tick."
+        return (self.__level_data.spawn_asteroids
+                and self.__required_asteroid_density() > self.__asteroid_density()
+                and random.random() < self.__level_data.asteroid_frequency)
+
     def __spawn_asteroid(self) -> None:
         spawn_pos = self.__get_object_spawn_pos()
         velocity = self.__get_object_spawn_velocity(spawn_pos, self.__get_asteroid_speed())
@@ -437,11 +458,15 @@ class Play(State):
         self.asteroids.add(asteroid)
 
 
+    def __should_spawn_enemy(self) -> bool:
+        "Returns wether an enemy should spawn in the tick."
+        return (self.__level_data.spawn_enemies
+                and self.enemies.count() < self.__level_data.enemy_count
+                and random.random() < self.__level_data.enemy_frequency)
 
-    def __should_spawn_asteroid(self) -> bool:
-        return (random.random() < self.__level_data.asteroid_frequency
-                and self.__required_asteroid_density() > self.__asteroid_density()
-                and self.__level_data.spawn_asteroids)
+    def __spawn_enemy(self) -> None:
+        spawn_pos = self.__get_object_spawn_pos()
+        self.enemies.add(EnemyShip(spawn_pos))
     
 
     
@@ -470,11 +495,12 @@ class Play(State):
         return (self.__get_relative_score())/(self.__level_data.score_range[1]-self.__level_data.score_range[0])
 
 
-    def __required_asteroid_density(self) -> float:
+    def __required_asteroid_density(self) -> int:
+
         "Required asteroid density based on the player's score. Used to determine wether to spawn more asteroids."
         asteroid_density = self.__level_data.asteroid_density[0]
         asteroid_density += (self.__level_data.asteroid_density[1]-self.__level_data.asteroid_density[0])*self.__get_increment_percent()
-        return asteroid_density
+        return math.ceil(asteroid_density)
 
     def __get_asteroid_speed(self) -> float:
         "Gets a random speed for the asteroid based on the current level and the player's score."

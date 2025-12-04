@@ -13,7 +13,7 @@ class Cheats():
     ## Cheats
 
     **invincible** - makes spaceship immune to asteroids and go through them  
-    **no_asteroids** - prevents spawning of asteroids  
+    **no_obstacles** - prevents spawning of obstacles like asteroid or enemies 
     **instant_respawn** - UNIMPLEMENTED  
     **enemy_ship** - UNIMPLEMENTED  
     **test_state** - loads a test state instead of regular game states
@@ -25,7 +25,7 @@ class Cheats():
     """
 
     invincible = False
-    no_asteroids = False
+    no_obstacles = False
     instance_respawn = False
     enemy_ship = False
     test_state = False
