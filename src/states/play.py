@@ -17,7 +17,7 @@ from src.game_objects.projectiles import Bullet
 from src.game_objects.powerups import PowerUp, PowerupCollectable
 from src.game_objects.camera import Camera
 
-from src.ui import font, elements
+from src.ui import font, effects, hud
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
@@ -113,6 +113,9 @@ class Play(State):
 
         self.__timer = 0
 
+        if self.spaceship.score >= self.__level_data.score_range[1]:
+            self.__level_cleared = True
+
         return self
 
 
@@ -127,7 +130,7 @@ class Play(State):
 
         self.__prev_highscore = self.highscore
         self.highscore_changed = False
-        self.__progress_bar = elements.ProgressBar()
+        self.__progress_bar = hud.ProgressBar()
         
         self.__game_over_timer = Timer(27, False, self.__game_over)
         self.__level_cleared = False
@@ -229,7 +232,7 @@ class Play(State):
         if self.__timer:
             self.__timer -= 1
 
-        self.__info_text = font.font_with_icons.render("Press<pause> to pause")
+        self.__info_text = font.font_with_icons.render("Pause<pause>")
 
         
 
@@ -304,7 +307,7 @@ class Play(State):
         
 
         if self.is_top_state():
-            surface.blit(self.__info_text, (10, surface.height-20+entrance_offset))
+            surface.blit(self.__info_text, (10, surface.height-18+entrance_offset))
 
 
 

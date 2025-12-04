@@ -3,6 +3,15 @@
 
     "mappings": {
         "progress_bar_base": [1, 1, 91, 11],
-        "progress_bar_overlay": [2, 13, 88, 8]
+        "progress_bar_overlay": [2, 13, 88, 8],
+
+        "toggle_1": [1, 55, 31, 13],
+        "toggle_2": [1, 69, 31, 13],
+        "toggle_3": [1, 83, 31, 13],
+        "toggle_4": [1, 97, 31, 13],
+
+        "slider_base": [34, 22, 75, 12],
+        "slider_bar": [34, 35, 75, 12],
+        "slider_handle": [36, 48, 11, 8]
     }
 }

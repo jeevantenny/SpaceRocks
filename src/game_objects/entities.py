@@ -246,10 +246,10 @@ class PlayerShip(Spaceship):
             if inputs.check_input("ship_forward"):
                 self._thrust()
 
-            if inputs.check_input("left"):
+            if inputs.check_input("ship_left"):
                 self._turn(-1)
 
-            if inputs.check_input("right"):
+            if inputs.check_input("ship_right"):
                 self._turn(1)
             
             if  inputs.check_input("shoot") and self.alive():

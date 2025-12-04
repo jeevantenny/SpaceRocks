@@ -5,6 +5,7 @@ from functools import partial, lru_cache
 
 from . import load_icon
 
+from src.input_device import InputInterpreter
 from src.file_processing import assets
 
 
@@ -25,11 +26,16 @@ class Font:
         if cache:
             return self.__render_cached(text, size, color_a, color_b)
         else:
-            return self.__render(text, size, color_a, color_b)
+            return self.__render_internal(text, size, color_a, color_b)
+
+
+    @lru_cache(8)
+    def __render_cached(self, text, size, color_a, color_b) -> pg.Surface:
+        return self.__render_internal(text, size, color_a, color_b)
 
         
     
-    def __render(self, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011") -> pg.Surface:
+    def __render_internal(self, text: str, size=1, color_a: pg.typing.ColorLike="#dd6644", color_b: pg.typing.ColorLike="#550011") -> pg.Surface:
         sized_font = self.__font(self.__base_size*size)
 
         main = sized_font.render(text, False, color_a, assets.COLORKEY)
@@ -41,11 +47,6 @@ class Font:
         surface.blit(main, (0, 0))
 
         return surface
-
-
-    @lru_cache(8)
-    def __render_cached(self, text, size, color_a, color_b) -> pg.Surface:
-        return self.__render(text, size, color_a, color_b)
 
 
 
@@ -116,7 +117,21 @@ class IconFont(Font):
     def __init__(self, base_size, shadow_offset):
         super().__init__("assets/fonts/tiny5-Regular.ttf", base_size, shadow_offset)
 
-    def render(self, text, size=1):
+    def render(self, text, size=1, cache=True):
+        if cache:
+            controller = InputInterpreter.get_current_instance().controller
+            return self.__render_cached(text, size, controller.device_name if controller is not None else None)
+        else:
+            return self.__render_internal(text, size)
+    
+
+    @lru_cache(4)
+    def __render_cached(self, text: str, size: int, controller: str | None) -> pg.Surface:
+        return self.__render_internal(text, size)
+
+
+    def __render_internal(self, text: str, size: int) -> pg.Surface:
+        # print(f"Rendered {text}")
         elements = self.__get_text_elements(text)
         surface_width = sum([e.width+1 for e in elements])+1
         surface_height = max(elements, key=lambda x: x.height).height
@@ -128,8 +143,8 @@ class IconFont(Font):
             x_offset += e.width+1
         
         return pg.transform.scale_by(surface, size) if size != 1 else surface
+        
     
-
     def __get_text_elements(self, text: str) -> list[pg.Surface]:
         elements = []
         back_pt = 0

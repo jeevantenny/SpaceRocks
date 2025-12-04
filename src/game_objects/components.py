@@ -189,20 +189,11 @@ class ObjectAnimation(ObjectTexture):
         self.__controller_path = controller_path
         self._palette_swap = palette_swap
 
-        self.__init_base()
-
-
-
-
-    def __init_base(self) -> None:
         self.__texture_map = assets.load_texture_map(self.__texture_map_path, self._palette_swap)
-
-        anim_data = assets.load_anim_data(self.__anim_path)
-        animations = {}
-        for name, data in anim_data["animations"].items():
-            animations[name] = Animation(name, data)
-
-        self.__controller = AnimController(assets.load_anim_controller_data(self.__controller_path), animations)
+        self.__controller = AnimController(
+            assets.load_anim_controller_data(self.__controller_path),
+            Animation.load_from_dict(assets.load_anim_data(self.__anim_path))
+        )
 
 
     @property
@@ -219,6 +210,10 @@ class ObjectAnimation(ObjectTexture):
 
     def _update_animations(self):
         self.__controller.update(self)
+
+    
+    def _advance_animation(self, amount: float) -> None:
+        self.__controller.advance_animations(amount)
 
 
     

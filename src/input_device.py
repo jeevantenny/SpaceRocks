@@ -7,7 +7,7 @@ from collections import defaultdict
 from src.custom_types import TapKeys, HoldKeys, InputType, BindData, KeybindsType
 from src.math_functions import sign
 
-from src.file_processing import load_json
+from src.file_processing import load_json, data
 
 
 
@@ -256,7 +256,10 @@ class Controller:
 
     def update(self) -> None:
         if self.__rumble_queue:
-            self.__joystick.rumble(*self.__rumble_queue.pop(0))
+            if data.load_settings()["controller_rumble"]:
+                self.__joystick.rumble(*self.__rumble_queue.pop(0))
+            else:
+                self.__rumble_queue.clear()
 
 
 
@@ -273,13 +276,13 @@ class Controller:
 
 
     def rumble(self, pattern_name: str, intensity: float, wait_until_clear: bool) -> None:
-        if self.__joystick is None or wait_until_clear and self.__rumble_queue:
+        if pattern_name not in self.__rumble_patterns:
+            raise ValueError(f"Invalid rumble pattern {pattern_name}")
+
+        if self.__joystick is None or not data.load_settings()["controller_rumble"] or data(wait_until_clear and self.__rumble_queue):
             return
         
         self.__rumble_queue.clear()
-
-        if pattern_name not in self.__rumble_patterns:
-            raise ValueError(f"Invalid rumble pattern {pattern_name}")
 
         prev_time = -1
         for time, values in self.__rumble_patterns[pattern_name].items():

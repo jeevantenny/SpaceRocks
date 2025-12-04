@@ -2,7 +2,7 @@
 
 import pygame as pg
 
-from src.file_processing import assets
+from src.file_processing import assets, data
 
 
 type SoundQueue = list[tuple[str, float]]
@@ -12,7 +12,10 @@ type SoundQueue = list[tuple[str, float]]
 def play_sound(name: str, volume=1.0, loops=0) -> pg.Channel:
     if pg.mixer.get_init() is not None:
         sound = assets.load_sound(name)
-        return sound.play(pg.math.clamp(volume, 0, 1), loops)
+        return sound.play(
+            pg.math.clamp(volume, 0, 1)*data.load_settings().soundfx_volume,
+            loops
+            )
 
 
 

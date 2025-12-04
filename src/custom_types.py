@@ -3,10 +3,10 @@ Contains various types that will be used throughout the game.
 """
 
 import pygame as pg
-from typing import Self, Any, Literal, Callable, Generator, NamedTuple
 import random
-from collections import defaultdict
 
+from typing import Self, Any, Literal, Callable, Generator, NamedTuple
+from collections import defaultdict
 
 
 
@@ -62,15 +62,15 @@ class Timer:
 
     @property
     def countdown(self) -> float:
-        return self.__time_left
+        return pg.math.clamp(self.__time_left, 0, self.__duration)
     
     @property
     def time_elapsed(self) -> float:
-        return self.__duration - self.__time_left
+        return self.__duration - self.countdown
     
     @property
     def complete(self) -> bool:
-        return self.__time_left == 0.0
+        return self.__time_left <= 0.0
     
     @property
     def completion_amount(self) -> float:
@@ -86,9 +86,12 @@ class Timer:
     def restart(self) -> None:
         self.start()
 
+    def advance(self, ticks: float) -> None:
+        self.__time_left -= ticks
+
 
     def end(self) -> None:
-        self.__time_left == 0.0
+        self.__time_left = 0.0
         if self.__exec_after is not None:
             self.__exec_after()
 
@@ -138,6 +141,9 @@ class Stopwatch:
 
     def pause(self):
         self.__running = False
+
+    def advance(self, amount: float) -> None:
+        self.__time += amount
     
 
     def update(self, speed_multiplier=1.0) -> None:
@@ -166,6 +172,15 @@ class Animation:
             self.__flipbook = False
             self.__anim_time = Timer(self.duration, self.loop)
             self.__timeline = self.__convert_timeline(self.__anim_data["timeline"])
+
+
+    @classmethod
+    def load_from_dict(cls, anim_dict: dict[str, AnimData]) -> dict[str, Self]:
+        "Creates `Animation` objects from animation data loaded from animation.json file."
+        return {
+            name: cls(name, anim_data)
+            for name, anim_data in anim_dict["animations"].items()
+        }
             
 
 
@@ -208,6 +223,16 @@ class Animation:
 
     def restart(self) -> None:
         self.__anim_time.restart()
+
+
+    def advance(self, amount: float) -> None:
+        "Advances the animation by a certain amount of time (in ticks)."
+        self.__anim_time.advance(amount*self.anim_speed_multiplier)
+
+
+    def skip_to_end(self) -> None:
+        "Skips to last frame of animation."
+        self.__anim_time.end()
 
 
 
@@ -290,7 +315,6 @@ class AnimController:
 
 
 
-
     def update(self, animated_obj) -> None:
         self.do_transitions(animated_obj)
 
@@ -317,7 +341,19 @@ class AnimController:
     def restart_animations(self) -> None:
         for anim in self.current_animations():
             anim.restart()
+
+
+    def advance_animations(self, amount: float) -> None:
+        "Advances all animations in current state by a certain amount og time (in ticks)."
+        for animation in self.current_animations():
+            animation.advance(amount)
+
     
+
+    def skip_to_end(self) -> None:
+        "Skips all animations in current state to the last frame."
+        for animation in self.current_animations():
+            animation.skip_to_end()
 
 
     def current_animations(self) -> Generator[Animation, Any, None]:
@@ -352,6 +388,14 @@ class AnimController:
     def __test_condition(self, obj, condition: str) -> bool:
         return bool(eval(condition, None, locals()))
     
+
+
+
+
+class UserSettings(NamedTuple):
+    soundfx_volume: float = 0.7
+    controller_rumble: bool = True
+    show_version_number: bool = True
 
 
 
