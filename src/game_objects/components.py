@@ -144,7 +144,7 @@ class ObjectTexture(GameObject):
         blit_pos = center - pg.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
 
-        if debug.debug_mode:
+        if debug.Cheats.show_bounding_boxes:
             pg.draw.line(surface, "white", center, center+self.get_rotation_vector()*10)
         
         super().draw(surface, lerp_amount, offset)
@@ -273,7 +273,7 @@ class ObjectHitbox(GameObject):
 
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> str | None:
         super().draw(surface, lerp_amount, offset)
-        if debug.debug_mode:
+        if debug.Cheats.show_bounding_boxes:
             blit_rect: pg.Rect = self.rect
             if isinstance(self, ObjectVelocity):
                 blit_rect.center = self._get_lerp_pos(lerp_amount)+offset

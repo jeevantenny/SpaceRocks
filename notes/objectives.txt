@@ -2,7 +2,9 @@
 - Change ObjectHitbox Component to use circle hitboxes
 ✅ Add status bar for level completeness
 - Add more asteroid types
+- Add more enemy types
 - Add animation for moving to next level
+- Better support for looping soundfx (current implementation is a bit glitchy)
 - Better fullscreen mode
 - Add more levels
 - Boss...?
