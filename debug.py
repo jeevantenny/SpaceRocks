@@ -4,9 +4,8 @@ from functools import wraps
 from time import perf_counter
 from typing import Callable
 
+DEBUG_MODE = False
 PAUSE_ON_CRASH = False
-
-debug_mode = False
 
 class Cheats():
     """
@@ -14,6 +13,7 @@ class Cheats():
 
     **invincible** - makes spaceship immune to asteroids and go through them  
     **no_asteroids** - prevents spawning of asteroids  
+    **show_bounding_boxes** - shows bounding boxes for entities  
     **instant_respawn** - UNIMPLEMENTED  
     **enemy_ship** - UNIMPLEMENTED  
     **test_state** - loads a test state instead of regular game states
@@ -26,6 +26,7 @@ class Cheats():
 
     invincible = False
     no_asteroids = False
+    show_bounding_boxes = False
     instance_respawn = False
     enemy_ship = False
     test_state = False

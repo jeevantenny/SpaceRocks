@@ -65,7 +65,7 @@ class Camera:
         blit_offset = pg.Vector2(output_surface.size)*0.5 - lerp_pos
 
         entities.draw(output_surface, lerp_amount, blit_offset)
-        if debug.debug_mode:
+        if debug.Cheats.show_bounding_boxes:
             pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
             self.__draw_target_crosshair(output_surface)
 

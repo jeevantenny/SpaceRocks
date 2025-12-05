@@ -125,7 +125,7 @@ class Bullet(ObjectTexture, ObjectVelocity):
     def draw(self, surface, lerp_amount=0, offset=(0, 0)):
         super().draw(surface, lerp_amount, offset)
 
-        if debug.debug_mode:
+        if debug.Cheats.show_bounding_boxes:
             for line in self.__get_collision_lines(offset):
                 pg.draw.line(surface, "blue", *line)
 
