@@ -188,11 +188,7 @@ class Game:
             self.__set_screen_mode(not self.__fullscreen)
 
 
-        if keyboard.hold_keys[KMOD_CTRL] and keyboard.tap_keys[K_d]:
-            debug.debug_mode = not debug.debug_mode
-
-
-        if debug.debug_mode and keyboard.hold_keys[KMOD_CTRL]:
+        if debug.DEBUG_MODE and keyboard.hold_keys[KMOD_CTRL]:
             if self.state_stack.top_state is not None and keyboard.tap_keys[K_BACKSPACE]:
                 self.state_stack.pop()
 
@@ -221,7 +217,7 @@ class Game:
             self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
             pg.transform.scale(self.pixel_scaled_window, self.screen.size, self.screen)
 
-            if debug.debug_mode:
+            if debug.DEBUG_MODE:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
                 debug_message = self.state_stack.debug_info()
                 if debug_message:

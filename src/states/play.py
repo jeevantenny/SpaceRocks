@@ -183,14 +183,15 @@ class Play(State):
 
 
     def userinput(self, inputs):
-        if debug.debug_mode:
+        if debug.DEBUG_MODE:
             if inputs.keyboard_mouse.tap_keys[pg.K_r]:
                 self.spaceship.position = pg.Vector2(200, 150)
                 self.spaceship.set_velocity((0, 0))
 
+            keyboard = inputs.keyboard_mouse
 
-            if inputs.keyboard_mouse.tap_keys[pg.K_k]:
-                if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
+            if keyboard.tap_keys[pg.K_k]:
+                if keyboard.hold_keys[pg.KMOD_SHIFT]:
                     self.spaceship.kill()
                     if self.spaceship.health:
                         self.spaceship.force_kill()
@@ -199,20 +200,23 @@ class Play(State):
                         self.spaceship.score += asteroid.points
                         asteroid.kill(False)
 
-            if inputs.keyboard_mouse.tap_keys[pg.K_b]:
+            if keyboard.tap_keys[pg.K_b]:
                 self.spaceship.score += 100
 
-            if inputs.keyboard_mouse.tap_keys[pg.K_c]:
+            if keyboard.tap_keys[pg.K_c]:
                 self.spaceship.combo *= 2
 
-            if inputs.keyboard_mouse.tap_keys[pg.K_x]:
+            if keyboard.tap_keys[pg.K_x]:
                 self.entities.add(EnemyShip((0, -400)))
                 print(f"Spawned EnemyShip")
 
 
-            if inputs.keyboard_mouse.tap_keys[pg.K_t]:
+            if keyboard.tap_keys[pg.K_t]:
                 self.reinit_next_level(self.__level_data.next_level)
                 self.spaceship.score = self.__level_data.score_range[0]
+
+            if keyboard.tap_keys[pg.K_g]:
+                debug.Cheats.show_bounding_boxes = not debug.Cheats.show_bounding_boxes
 
 
         self.spaceship.userinput(inputs)

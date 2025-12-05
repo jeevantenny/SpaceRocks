@@ -245,7 +245,7 @@ class SuperLaser(PowerUp):
 
 
     def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
-        if not (debug.debug_mode and self.__charge_timer.complete):
+        if not (debug.Cheats.show_bounding_boxes and self.__charge_timer.complete):
             return
         
         offset = pg.Vector2(offset)
