@@ -30,7 +30,7 @@
             "select": "sw_al_right",
             "back": "sw_al_down",
             "pause": "sw_minus",
-            "settings": "sw_al_up",
+            "settings": "sw_al_left",
             "shoot": "sw_al_right"
         },
         "Nintendo Switch Joy-Con (R)": {

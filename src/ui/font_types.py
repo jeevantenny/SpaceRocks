@@ -5,7 +5,7 @@ from functools import partial, lru_cache
 
 from . import load_icon
 
-from src.input_device import Controller
+from src.input_device import Controller, InputInterpreter
 from src.file_processing import assets
 
 
@@ -120,7 +120,12 @@ class IconFont(Font):
     def render(self, text, size=1, cache=True):
         if cache:
             controller = Controller.current_instance
-            return self.__render_cached(text, size, controller.device_name if controller is not None else None)
+            if controller is not None and InputInterpreter.current_input_type() == "controller":                
+                current_controller_name = controller.device_name
+            else:
+                current_controller_name = None
+
+            return self.__render_cached(text, size, current_controller_name)
         else:
             return self.__render_internal(text, size)
     

@@ -19,8 +19,8 @@
         },
         {
             "input_device": "controller",
-            "key": "b",
-            "type": "tap"
+            "type": "tap_button",
+            "value": "b"
         }
     ],
     "left": [
@@ -55,7 +55,7 @@
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "d_left"
         },
         {
@@ -97,7 +97,7 @@
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "d_right"
         },
         {
@@ -139,7 +139,7 @@
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "d_up"
         },
         {
@@ -181,7 +181,7 @@
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "tap_button",
             "value": "d_down"
         },
         {

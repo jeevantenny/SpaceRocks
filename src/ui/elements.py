@@ -1,7 +1,7 @@
 import pygame as pg
 from typing import Iterable
 
-from src.custom_types import Animation, AnimController
+from src.custom_types import Timer, Animation, AnimController
 from src.math_functions import sign
 from src.input_device import InputInterpreter
 from src.file_processing import assets
@@ -38,6 +38,7 @@ class ElementList:
         self.__container = list(elements)
         self.__current = 0
         self.__wrap_list = wrap_list
+        self.__scroll_interval = Timer(2)
 
     @property
     def current_index(self) -> int:
@@ -52,10 +53,13 @@ class ElementList:
     
     def userinput(self, inputs: InputInterpreter) -> None:
         if self.__container:
-            if inputs.check_input("up"):
-                self.__increment_selector(-1)
-            if inputs.check_input("down"):
-                self.__increment_selector(1)
+            if self.__scroll_interval.complete:
+                if inputs.check_input("up"):
+                    self.__increment_selector(-1)
+                    self.__scroll_interval.start()
+                if inputs.check_input("down"):
+                    self.__increment_selector(1)
+                    self.__scroll_interval.start()
 
             self.__container[self.current_index].userinput(inputs)
 
@@ -69,6 +73,7 @@ class ElementList:
         
 
     def update(self) -> None:
+        self.__scroll_interval.update()
         for element in self.__container:
             element.update()
 
