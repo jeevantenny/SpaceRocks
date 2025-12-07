@@ -119,8 +119,13 @@ class IconFont(Font):
 
     def render(self, text, size=1, cache=True):
         if cache:
-            controller = InputInterpreter.get_current_instance().controller
-            return self.__render_cached(text, size, controller.device_name if controller is not None else None)
+            controller = InputInterpreter.get_controller()
+            if controller is not None and InputInterpreter.current_input_type() == "controller":                
+                current_controller_name = controller.device_name
+            else:
+                current_controller_name = None
+
+            return self.__render_cached(text, size, current_controller_name)
         else:
             return self.__render_internal(text, size)
     

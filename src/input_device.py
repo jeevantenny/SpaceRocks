@@ -117,8 +117,8 @@ class Controller:
 
 
     @property
-    def device_name(self) -> str | None:
-        self.__joystick.get_name()
+    def device_name(self) -> str:
+        return self.__joystick.get_name()
 
 
     @property
@@ -256,7 +256,7 @@ class Controller:
 
     def update(self) -> None:
         if self.__rumble_queue:
-            if data.load_settings()["controller_rumble"]:
+            if data.load_settings().controller_rumble:
                 self.__joystick.rumble(*self.__rumble_queue.pop(0))
             else:
                 self.__rumble_queue.clear()
@@ -279,7 +279,7 @@ class Controller:
         if pattern_name not in self.__rumble_patterns:
             raise ValueError(f"Invalid rumble pattern {pattern_name}")
 
-        if self.__joystick is None or not data.load_settings()["controller_rumble"] or data(wait_until_clear and self.__rumble_queue):
+        if self.__joystick is None or not data.load_settings().controller_rumble or (wait_until_clear and self.__rumble_queue):
             return
         
         self.__rumble_queue.clear()
@@ -324,7 +324,7 @@ class InputInterpreter:
     __action_icons = load_json(f"{INPUT_DETAILS_DIR}/action_icons")
     __current_instance: "InputInterpreter | None" = None
 
-    def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
+    def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller | None):
         self.__current_input_type: InputType
 
         self.__keyboard_mouse = keyboard_mouse
@@ -343,10 +343,14 @@ class InputInterpreter:
     @controller.setter
     def controller(self, value: Controller | None) -> None:
         self.__controller = value
-        if self.controller is not None:
+        if self.__controller is not None:
             self.__current_input_type = "controller"
         else:
             self.__current_input_type = "keyboard_mouse"
+
+    @classmethod
+    def get_controller(cls) -> Controller | None:
+        return cls.__current_instance.controller
 
 
     @classmethod
