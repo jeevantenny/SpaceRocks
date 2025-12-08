@@ -92,6 +92,7 @@ class Controller:
     __controller_mappings = load_json(f"{INPUT_DETAILS_DIR}/controller_mappings")
     __rumble_patterns = load_json(f"{INPUT_DETAILS_DIR}/rumble_patterns")
     __stick_dead_zone = 0.3
+    __default_active_zone = 0.5
 
     def __init__(self, joystick: pg.joystick.JoystickType):
         self.__joystick = joystick
@@ -100,8 +101,7 @@ class Controller:
         if working_name not in self.__controller_mappings:
             working_name = self.__controller_mappings["default"]
 
-        working_name = self.__controller_mappings[working_name].get("same_as", working_name)
-        self.__mappings: dict[str, dict[str, Any]] = self.__controller_mappings[working_name]
+        self.__mappings: dict[str, dict[str, Any]] = self.__get_mappings(working_name)
 
 
         self.__tap_buttons: TapKeys = defaultdict(bool)
@@ -114,6 +114,14 @@ class Controller:
         self.__right_trigger = 0.0
 
         self.__rumble_queue = []
+
+    
+    def __get_mappings(self, controller_name: str) -> dict[str, dict[str, Any]]:
+        mappings = self.__controller_mappings[controller_name]
+        if "same_as" in mappings:
+            mappings = self.__get_mappings(mappings["same_as"]) | mappings
+        
+        return mappings
 
 
     @property
@@ -145,8 +153,8 @@ class Controller:
 
     
     def get_userinput(self, events: list[pg.Event]) -> None:
-        self.__tap_buttons.clear()
 
+        self.__tap_buttons.clear()
         for button, value in self.__hold_buttons.items():
             if value:
                 self.__hold_buttons[button] += 1
@@ -179,19 +187,32 @@ class Controller:
 
                     case "l_stick_x":
                         self.__set_stick_value(self.__left_stick, 0, event.value)
+                        self.__set_button("l_stick_left", event.value < -self.__default_active_zone)
+                        self.__set_button("l_stick_right", event.value > self.__default_active_zone)
+
                     case "l_stick_y":
                         self.__set_stick_value(self.__left_stick, 1, event.value)
+                        self.__set_button("l_stick_up", event.value < -self.__default_active_zone)
+                        self.__set_button("l_stick_down", event.value > self.__default_active_zone)
 
                     case "r_stick_x":
                         self.__set_stick_value(self.__right_stick, 0, event.value)
+                        self.__set_button("r_stick_left", event.value < -self.__default_active_zone)
+                        self.__set_button("r_stick_right", event.value > self.__default_active_zone)
+
                     case "r_stick_y":
                         self.__set_stick_value(self.__right_stick, 1, event.value)
+                        self.__set_button("r_stick_up", event.value < -self.__default_active_zone)
+                        self.__set_button("r_stick_down", event.value > self.__default_active_zone)
+
                     
                     case "l_trigger":
                         if abs(event.value) > self.__stick_dead_zone:
                             self.__left_trigger = event.value
                         else:
                             self.__left_trigger = 0.0
+
+                        self.__set_button("l_trigger", event.value > self.__default_active_zone)
                     
                     case "r_trigger":
                         if abs(event.value) > self.__stick_dead_zone:
@@ -199,39 +220,29 @@ class Controller:
                         else:
                             self.__right_trigger = 0.0
 
+                        self.__set_button("r_trigger", event.value > self.__default_active_zone)
+
             
             # Controller D-pad/Hat if supported (some controllers have this as buttons)
             elif event.type == JOYHATMOTION and "hats" in self.__mappings:
                 hat_name = self.__mappings["hats"].get(str(event.hat))
 
                 if hat_name == "dpad":
-                    if event.value[0] == -1:   
-                        if not self.__hold_buttons["d_left"]:
-                            self.__tap_buttons["d_left"] = True
-                        self.__hold_buttons["d_left"] = 1
-                    else:
-                        self.__hold_buttons["d_left"] = 0
+                    self.__set_button("d_left", event.value[0] == -1)
+                    self.__set_button("d_right", event.value[0] == 1)
+                    self.__set_button("d_down", event.value[1] == -1)
+                    self.__set_button("d_up", event.value[1] == 1)
 
-                    if  event.value[0] == 1:
-                        if not self.__hold_buttons["d_right"]:
-                            self.__tap_buttons["d_right"] = True
-                        self.__hold_buttons["d_right"] = 1
-                    else:
-                        self.__hold_buttons["d_right"] = 0
 
-                    if event.value[1] == -1:
-                        if not self.__hold_buttons["d_down"]:
-                            self.__tap_buttons["d_down"] = True
-                        self.__hold_buttons["d_down"] = 1
-                    else:
-                        self.__hold_buttons["d_down"] = 0
 
-                    if event.value[1] == 1:
-                        if not self.__hold_buttons["d_up"]:
-                            self.__tap_buttons["d_up"] = True
-                        self.__hold_buttons["d_up"] = 1
-                    else:
-                        self.__hold_buttons["d_up"] = 0
+
+    def __set_button(self, button: str, pressed: bool) -> None:
+        if pressed:
+            if not self.hold_buttons[button]:
+                self.__tap_buttons[button] = True
+                self.__hold_buttons[button] = 1
+        else:
+            self.__hold_buttons[button] = 0
 
 
 
@@ -257,7 +268,8 @@ class Controller:
     def update(self) -> None:
         if self.__rumble_queue:
             if data.load_settings().controller_rumble:
-                self.__joystick.rumble(*self.__rumble_queue.pop(0))
+                rumble = self.__rumble_queue.pop(0)
+                self.__joystick.rumble(rumble[0], rumble[1], rumble[2]*50)
             else:
                 self.__rumble_queue.clear()
 
