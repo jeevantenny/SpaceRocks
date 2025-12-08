@@ -19,8 +19,8 @@
         },
         {
             "input_device": "controller",
-            "key": "b",
-            "type": "tap"
+            "type": "tap_button",
+            "value": "b"
         }
     ],
     "left": [
@@ -48,14 +48,18 @@
         },
         {
             "input_device": "controller",
-            "type": "stick",
-            "side": "left",
-            "axis": "x",
-            "value": -0.7
+            "type": "tap_button",
+            "value": "l_stick_left"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "hold_button",
+            "value": "l_stick_left",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
             "value": "d_left"
         },
         {
@@ -90,14 +94,18 @@
         },
         {
             "input_device": "controller",
-            "type": "stick",
-            "side": "left",
-            "axis": "x",
-            "value": 0.7
+            "type": "tap_button",
+            "value": "l_stick_right"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "hold_button",
+            "value": "l_stick_right",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
             "value": "d_right"
         },
         {
@@ -132,14 +140,18 @@
         },
         {
             "input_device": "controller",
-            "type": "stick",
-            "side": "left",
-            "axis": "y",
-            "value": -0.7
+            "type": "tap_button",
+            "value": "l_stick_up"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "hold_button",
+            "value": "l_stick_up",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
             "value": "d_up"
         },
         {
@@ -174,14 +186,18 @@
         },
         {
             "input_device": "controller",
-            "type": "stick",
-            "side": "left",
-            "axis": "y",
-            "value": 0.7
+            "type": "tap_button",
+            "value": "l_stick_down"
         },
         {
             "input_device": "controller",
-            "type": "action_button",
+            "type": "hold_button",
+            "value": "l_stick_down",
+            "threshold": 8
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
             "value": "d_down"
         },
         {
@@ -272,7 +288,7 @@
             "type": "stick",
             "side": "left",
             "axis": "x",
-            "value": -0.5
+            "value": -0.4
         },
         {
             "input_device": "controller",
@@ -291,7 +307,7 @@
             "type": "stick",
             "side": "left",
             "axis": "x",
-            "value": 0.5
+            "value": 0.4
         },
         {
             "input_device": "controller",

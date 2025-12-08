@@ -372,7 +372,6 @@ class Play(State):
         # Removes any asteroids beyond the despawn radius
         for obj in self.spawned_entities.sprites():
             if obj.distance_to(self.spaceship) > self.__despawn_radius:
-                print(f"killed {obj}")
                 obj.force_kill()
 
 

@@ -1,7 +1,7 @@
 import pygame as pg
 from pygame.locals import *
 
-from typing import Any, Literal
+from typing import Any, Literal, Self
 from collections import defaultdict
 
 from src.custom_types import TapKeys, HoldKeys, InputType, BindData, KeybindsType
@@ -11,7 +11,7 @@ from src.file_processing import load_json, data
 
 
 
-INPUT_FORMAT_DIR = "data/input_devices"
+INPUT_DETAILS_DIR = "data/input_devices"
 
 
 
@@ -20,8 +20,15 @@ def controller_rumble(pattern_name: str, intensity=0.5, wait_until_clear=False) 
     Makes the controller vibrate in a certain pattern defined in `rumble_patterns.json` with a specific intensity.
     The `wait_until_clear` parameter means thr rumble pattern will not be played if a pattern is already playing.
     """
-    if Controller.current_instance is not None and  InputInterpreter.current_input_type() == "controller":
-        Controller.current_instance.rumble(pattern_name, intensity, wait_until_clear)
+    if InputInterpreter.current_input_type() == "controller":
+        InputInterpreter.get_current_instance().controller.rumble(pattern_name, intensity, wait_until_clear)
+
+
+def stop_controller_rumble() -> None:
+    "Stops all controller rumble."
+    if InputInterpreter.get_current_instance().controller is not None:
+        InputInterpreter.get_current_instance().controller.stop_rumble()
+    
 
 
 
@@ -82,21 +89,19 @@ class KeyboardMouse:
 
 
 class Controller:
-    __controller_mappings = load_json(f"{INPUT_FORMAT_DIR}/controller_mappings")
-    __rumble_patterns = load_json(f"{INPUT_FORMAT_DIR}/rumble_patterns")
+    __controller_mappings = load_json(f"{INPUT_DETAILS_DIR}/controller_mappings")
+    __rumble_patterns = load_json(f"{INPUT_DETAILS_DIR}/rumble_patterns")
     __stick_dead_zone = 0.3
+    __default_active_zone = 0.5
 
-    current_instance: "Controller | None" = None
-
-    def __init__(self, joystick: pg.joystick.JoystickType | None = None):
+    def __init__(self, joystick: pg.joystick.JoystickType):
         self.__joystick = joystick
-        if self.__joystick is not None:
-            working_name = self.device_name
-            if working_name not in self.__controller_mappings:
-                working_name = self.__controller_mappings["default"]
 
-            working_name = self.__controller_mappings[working_name].get("same_as", working_name)
-            self.__mappings: dict[str, dict[str, Any]] = self.__controller_mappings[working_name]
+        working_name = self.device_name
+        if working_name not in self.__controller_mappings:
+            working_name = self.__controller_mappings["default"]
+
+        self.__mappings: dict[str, dict[str, Any]] = self.__get_mappings(working_name)
 
 
         self.__tap_buttons: TapKeys = defaultdict(bool)
@@ -109,23 +114,26 @@ class Controller:
         self.__right_trigger = 0.0
 
         self.__rumble_queue = []
+
+    
+    def __get_mappings(self, controller_name: str) -> dict[str, dict[str, Any]]:
+        mappings = self.__controller_mappings[controller_name]
+        if "same_as" in mappings:
+            mappings = self.__get_mappings(mappings["same_as"]) | mappings
         
-        type(self).current_instance = self
+        return mappings
 
 
     @property
-    def device_name(self) -> str | None:
-        if self.__joystick is not None:
-            return self.__joystick.get_name()
-        else:
-            return None
+    def device_name(self) -> str:
+        return self.__joystick.get_name()
 
 
     @property
     def tap_buttons(self) -> TapKeys:
         return self.__tap_buttons.copy()
     @property
-    def hold_keys(self) -> HoldKeys:
+    def hold_buttons(self) -> HoldKeys:
         return self.__hold_buttons.copy()
     
     @property
@@ -145,16 +153,15 @@ class Controller:
 
     
     def get_userinput(self, events: list[pg.Event]) -> None:
+
         self.__tap_buttons.clear()
-
-        if self.__joystick is None:
-            return
-
         for button, value in self.__hold_buttons.items():
             if value:
                 self.__hold_buttons[button] += 1
 
         for event in events:
+            
+            # Controller Buttons
             if event.type == JOYBUTTONDOWN:
                 button_name = self.__mappings["buttons"].get(str(event.button))
 
@@ -162,40 +169,97 @@ class Controller:
                     self.__tap_buttons[button_name] = True
                     self.__tap_buttons["any"] = True
                     self.__hold_buttons[button_name] = 1
-
-                #     print(event.button, button_name)
-                # else:
-                #     print(event.button)
                 
-            if event.type == JOYBUTTONUP:
+            elif event.type == JOYBUTTONUP:
                 button_name = self.__mappings["buttons"].get(str(event.button))
 
                 if button_name is not None:
                     self.__hold_buttons[button_name] = 0
             
-            if event.type == JOYAXISMOTION:
-                axis_data = self.__mappings["axis"].get(str(event.axis))
+
+            # Controller Thumb-sticks or Axis if supported
+            elif event.type == JOYAXISMOTION and "axis" in self.__mappings:
+                axis_name = self.__mappings["axis"].get(str(event.axis))
+
+                match axis_name:
+                    case None:
+                        continue
+
+                    case "l_stick_x":
+                        self.__set_stick_value(self.__left_stick, 0, event.value)
+                        self.__set_button("l_stick_left", event.value < -self.__default_active_zone)
+                        self.__set_button("l_stick_right", event.value > self.__default_active_zone)
+
+                    case "l_stick_y":
+                        self.__set_stick_value(self.__left_stick, 1, event.value)
+                        self.__set_button("l_stick_up", event.value < -self.__default_active_zone)
+                        self.__set_button("l_stick_down", event.value > self.__default_active_zone)
+
+                    case "r_stick_x":
+                        self.__set_stick_value(self.__right_stick, 0, event.value)
+                        self.__set_button("r_stick_left", event.value < -self.__default_active_zone)
+                        self.__set_button("r_stick_right", event.value > self.__default_active_zone)
+
+                    case "r_stick_y":
+                        self.__set_stick_value(self.__right_stick, 1, event.value)
+                        self.__set_button("r_stick_up", event.value < -self.__default_active_zone)
+                        self.__set_button("r_stick_down", event.value > self.__default_active_zone)
+
+                    
+                    case "l_trigger":
+                        if abs(event.value) > self.__stick_dead_zone:
+                            self.__left_trigger = event.value
+                        else:
+                            self.__left_trigger = 0.0
+
+                        self.__set_button("l_trigger", event.value > self.__default_active_zone)
+                    
+                    case "r_trigger":
+                        if abs(event.value) > self.__stick_dead_zone:
+                            self.__right_trigger = event.value
+                        else:
+                            self.__right_trigger = 0.0
+
+                        self.__set_button("r_trigger", event.value > self.__default_active_zone)
+
+            
+            # Controller D-pad/Hat if supported (some controllers have this as buttons)
+            elif event.type == JOYHATMOTION and "hats" in self.__mappings:
+                hat_name = self.__mappings["hats"].get(str(event.hat))
+
+                if hat_name == "dpad":
+                    self.__set_button("d_left", event.value[0] == -1)
+                    self.__set_button("d_right", event.value[0] == 1)
+                    self.__set_button("d_down", event.value[1] == -1)
+                    self.__set_button("d_up", event.value[1] == 1)
 
 
-                if axis_data is not None:
-                    match axis_data["stick"]:
-                        case "left_stick":
-                            self.__set_stick_value(self.__left_stick, axis_data["axis"], event.value)
-  
-                        case "right_stick":
-                            self.__set_stick_value(self.__right_stick, axis_data["axis"], event.value)
-                        
-                        case "l_trigger":
-                            if abs(event.value) > self.__stick_dead_zone:
-                                self.__left_trigger = event.value
-                            else:
-                                self.__left_trigger = 0.0
-                        
-                        case "r_trigger":
-                            if abs(event.value) > self.__stick_dead_zone:
-                                self.__right_trigger = event.value
-                            else:
-                                self.__right_trigger = 0.0
+
+
+    def __set_button(self, button: str, pressed: bool) -> None:
+        if pressed:
+            if not self.hold_buttons[button]:
+                self.__tap_buttons[button] = True
+                self.__hold_buttons[button] = 1
+        else:
+            self.__hold_buttons[button] = 0
+
+
+
+
+    def __set_stick_value(self, stick: pg.Vector2, side: int, value: float):
+        if abs(value) > self.__stick_dead_zone:
+            set_value = value
+        else:
+            set_value = 0.0
+        
+        if side == 0:
+            stick.x = set_value
+        elif side == 1:
+            stick.y = set_value
+        else:
+            raise ValueError(f"Invalid stick side {side}")
+
     
 
 
@@ -203,22 +267,11 @@ class Controller:
 
     def update(self) -> None:
         if self.__rumble_queue:
-            if data.load_settings()["controller_rumble"]:
-                self.__joystick.rumble(*self.__rumble_queue.pop(0))
+            if data.load_settings().controller_rumble:
+                rumble = self.__rumble_queue.pop(0)
+                self.__joystick.rumble(rumble[0], rumble[1], rumble[2]*50)
             else:
                 self.__rumble_queue.clear()
-
-
-
-
-
-
-
-    def __set_stick_value(self, stick: pg.Vector2, axis: str, value: float):
-        if abs(value) > self.__stick_dead_zone:
-            setattr(stick, axis, value)
-        else:
-            setattr(stick, axis, 0.0)
 
 
 
@@ -238,7 +291,7 @@ class Controller:
         if pattern_name not in self.__rumble_patterns:
             raise ValueError(f"Invalid rumble pattern {pattern_name}")
 
-        if self.__joystick is None or not data.load_settings()["controller_rumble"] or data(wait_until_clear and self.__rumble_queue):
+        if self.__joystick is None or not data.load_settings().controller_rumble or (wait_until_clear and self.__rumble_queue):
             return
         
         self.__rumble_queue.clear()
@@ -253,8 +306,6 @@ class Controller:
                 self.__rumble_queue.append(working_values)
             
             prev_time = time
-
-
 
 
     
@@ -281,18 +332,15 @@ class Controller:
 
 
 class InputInterpreter:
-    __keybinds: KeybindsType = load_json(f"{INPUT_FORMAT_DIR}/action_mappings")
-    __action_icons = load_json(f"{INPUT_FORMAT_DIR}/action_icons")
+    __keybinds: KeybindsType = load_json(f"{INPUT_DETAILS_DIR}/action_mappings")
+    __action_icons = load_json(f"{INPUT_DETAILS_DIR}/action_icons")
     __current_instance: "InputInterpreter | None" = None
 
-    def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller| None):
+    def __init__(self, keyboard_mouse: KeyboardMouse, controller: Controller | None):
         self.__current_input_type: InputType
 
         self.__keyboard_mouse = keyboard_mouse
-        if controller is None:
-            self.controller = Controller(None)
-        else:
-            self.controller = controller
+        self.controller = controller
         
         type(self).__current_instance = self
 
@@ -307,15 +355,24 @@ class InputInterpreter:
     @controller.setter
     def controller(self, value: Controller | None) -> None:
         self.__controller = value
-        if self.controller.device_name is not None:
+        if self.__controller is not None:
             self.__current_input_type = "controller"
         else:
             self.__current_input_type = "keyboard_mouse"
+
+    @classmethod
+    def get_controller(cls) -> Controller | None:
+        return cls.__current_instance.controller
 
 
     @classmethod
     def current_input_type(cls) -> InputType:
         return cls.__current_instance.__current_input_type
+    
+
+    @classmethod
+    def get_current_instance(cls) -> Self | None:
+        return cls.__current_instance
 
 
     
@@ -335,34 +392,34 @@ class InputInterpreter:
 
     def get_userinput(self, events: list[pg.Event]) -> None:
         self.__keyboard_mouse.get_userinput(events)
-        if self.__controller.tap_buttons["any"]:
-            self.__current_input_type = "controller"
-
-        self.__controller.get_userinput(events)
         if self.__keyboard_mouse.tap_keys["any"]:
             self.__current_input_type = "keyboard_mouse"
 
+        if self.controller is not None:
+            self.__controller.get_userinput(events)
+            if self.__controller.tap_buttons["any"]:
+                self.__current_input_type = "controller"
+
 
     def check_input(self, action_name: str) -> bool:
-        results: list[bool] = []
+        result = False
 
         for bind_data in self.__get_bind_options(action_name):
             if bind_data["input_device"] == "keyboard_mouse":
                 key_code = pg.key.key_code(bind_data["key"])
                 if bind_data["type"] == "hold":
-                    results.append(self.__keyboard_mouse.hold_keys[key_code] > bind_data.get("threshold", 0))
+                    result = self.__keyboard_mouse.hold_keys[key_code] > bind_data.get("threshold", 0)
                 else:
-                    results.append(self.__keyboard_mouse.tap_keys[key_code])
+                    result = self.__keyboard_mouse.tap_keys[key_code]
         
 
-            elif bind_data["input_device"] == "controller":
+            elif bind_data["input_device"] == "controller" and self.controller is not None:
                 match bind_data["type"]:
                     case "tap_button":
-                        results.append(self.__controller.tap_buttons[bind_data["value"]])
+                        result = self.__controller.tap_buttons[bind_data["value"]]
                     
                     case "hold_button":
-                        # print(self.__controller.hold_keys)
-                        results.append(self.__controller.hold_keys[bind_data["value"]] > bind_data.get("threshold", 0))
+                        result = self.__controller.hold_buttons[bind_data["value"]] > bind_data.get("threshold", 0)
 
                     case "stick" | "trigger":
                         side = bind_data["side"]
@@ -370,16 +427,18 @@ class InputInterpreter:
 
                         if bind_data["type"] == "stick":
                             axis = bind_data["axis"]
-                            value = self.__controller.get_stick_value(side, axis)
+                            stick_value = self.__controller.get_stick_value(side, axis)
                         elif side == "right":
-                            value = self.__controller.right_trigger
+                            stick_value = self.__controller.right_trigger
                         else:
-                            value = self.__controller.left_trigger
+                            stick_value = self.__controller.left_trigger
 
-                        results.append(abs(value) > abs(target_value) and sign(value) == sign(target_value))
+                        result = abs(stick_value) > abs(target_value) and sign(stick_value) == sign(target_value)
         
+            if result:
+                return True
 
-        return any(results)
+        return False
     
 
 

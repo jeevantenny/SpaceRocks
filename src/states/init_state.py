@@ -4,7 +4,7 @@ from src.game_errors import SaveFileError
 from src.file_processing import data
 
 from . import State, StateStack
-from .menus import TitleScreen, PauseMenu, Settings
+from .menus import TitleScreen, PauseMenu
 from .play import Play
 from .visuals import BackgroundTint
 from .info_states import DemoState

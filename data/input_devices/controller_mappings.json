@@ -23,29 +23,13 @@
             "8": "r_stick_in"
         },
         "axis": {
-            "0": {
-                "stick": "left_stick",
-                "axis": "x"
-            },
-            "1": {
-                "stick": "left_stick",
-                "axis": "y"
-            },
+            "0": "l_stick_x",
+            "1": "l_stick_y",
+            "2": "r_stick_x",
+            "3": "r_stick_y",
 
-            "2": {
-                "stick": "right_stick",
-                "axis": "x"
-            },
-            "3": {
-                "stick": "right_stick",
-                "axis": "y"
-            },
-            "4": {
-                "stick": "l_trigger"
-            },
-            "5": {
-                "stick": "r_trigger"
-            }
+            "4": "l_trigger",
+            "5": "r_trigger"
         }
     },
     "Nintendo Switch Joy-Con (L)": {
@@ -72,35 +56,21 @@
             "9": "r_stick_in"
         },
         "axis": {
-            "0": {
-                "stick": "left_stick",
-                "axis": "x"
-            },
-            "1": {
-                "stick": "left_stick",
-                "axis": "y"
-            },
+            "0": "l_stick_x",
+            "1": "l_stick_y",
+            "3": "r_stick_x",
+            "4": "r_stick_y",
 
-            "3": {
-                "stick": "right_stick",
-                "axis": "x"
-            },
-            "4": {
-                "stick": "right_stick",
-                "axis": "y"
-            },
-
-            "2": {
-                "stick": "l_trigger"
-            },
-            "5": {
-                "stick": "r_trigger"
-            }
+            "2": "l_trigger",
+            "5": "r_trigger"
+        },
+        "hats": {
+            "0": "dpad"
         }
     },
 
 
     "Playstation 4 Controller": {
-        "same_as":"Nintendo Switch Joy-Con (L/R)"
+        "same_as": "Nintendo Switch Joy-Con (L/R)"
     }
 }
