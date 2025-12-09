@@ -1,9 +1,10 @@
 import pygame as pg
 
 import debug
-from src.math_functions import unit_vector
+from src.math_functions import unit_vector, format_angle, sign
 
 from . import ObjectGroup
+from .components import ObjectVelocity
 
 
 
@@ -99,3 +100,76 @@ class Camera:
 
     def clear_velocity(self) -> None:
         self.__velocity *= 0
+
+
+
+
+
+
+
+
+class RotoZoomCamera(Camera):
+    __rotation_speed = 15
+    def __init__(self, start_pos):
+        super().__init__(start_pos)
+        self.__rotation = 0
+        self.__target_rotation = 0
+        self.__angular_vel = 0
+
+    def get_rotation(self) -> int:
+        return self.__rotation
+    
+    def get_lerp_rotation(self, lerp_amount=0.0) -> float:
+        return format_angle(self.__rotation-self.__angular_vel*(1-lerp_amount))
+    
+    def set_rotation(self, value: int) -> None:
+        self.__rotation = format_angle(int(value))
+
+    def set_target_rotation(self, rotation: int) -> None:
+        self.__target_rotation = format_angle(rotation)
+    
+    def rotate(self, amount: int) -> None:
+        self.set_rotation(self.__rotation+amount)
+    
+    def update(self):
+        super().update()
+        difference = self.__target_rotation-self.__rotation
+        amount = abs(difference)
+        if amount < 5:
+            self.set_rotation(self.__target_rotation)
+            self.__angular_vel = 0
+        else:
+            if amount > 180:
+                difference *= -1
+
+            self.__angular_vel = min(int(difference*0.1), self.__rotation_speed)
+            self.rotate(self.__angular_vel)
+    
+        # print(difference)
+
+
+    def capture(self, output_surface, entities, lerp_amount=0):
+        camera_lerp_pos = self.lerp_position(lerp_amount)
+        camera_lerp_rotation = self.get_lerp_rotation(lerp_amount)
+        blit_offset = pg.Vector2(output_surface.size)*0.5 - camera_lerp_pos
+
+        # print(f"{camera_lerp_rotation:.2f}", self.__rotation, self.__angular_vel)
+
+        for entity in entities.get_draw_order():
+            if isinstance(entity, ObjectVelocity):
+                entity_pos: pg.Vector2 = entity.get_lerp_pos(lerp_amount)
+            else:
+                entity_pos = entity.position
+
+            blit_pos = entity_pos - camera_lerp_pos
+            blit_pos.rotate_ip(camera_lerp_rotation)
+            blit_pos += camera_lerp_pos - entity_pos + blit_offset
+            entity.draw(
+                output_surface, lerp_amount,
+                blit_pos,
+                -camera_lerp_rotation if not entity.ignore_camera_rotation else 0)
+
+        if debug.Cheats.show_bounding_boxes:
+            pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
+            # self.__draw_target_crosshair(output_surface)
+    

@@ -49,7 +49,7 @@ class Play(State):
 
         self.__setup()
         self.__setup_level(level_name)
-        self.__setup_game_objects()
+        self._setup_game_objects()
 
         self.spaceship = PlayerShip((0, 0))
         self.spaceship.set_score_limit(self.__level_data.score_range[1])
@@ -94,7 +94,7 @@ class Play(State):
         super().__init__(self)
         self.__setup()
         self.__setup_level(save_data.level_name)
-        self.__setup_game_objects()
+        self._setup_game_objects()
 
         object_dict = {}
 
@@ -167,7 +167,7 @@ class Play(State):
             self.__parl_b = assets.load_texture(self.__level_data.parl_b, self.__level_data.background_palette)
 
 
-    def __setup_game_objects(self) -> None:
+    def _setup_game_objects(self) -> None:
         "Creates all the object groups and the camera."
 
         self.entities = ObjectGroup(host_state=self)
@@ -273,7 +273,7 @@ class Play(State):
 
     def draw(self, surface, lerp_amount=0.0):
         surface.fill(self.__base_color)
-        self.__draw_scrolling_background(surface, lerp_amount)
+        self._draw_scrolling_background(surface, lerp_amount)
 
         self.camera.capture(surface, self.entities, lerp_amount)
 
@@ -286,7 +286,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo:.2f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
 
@@ -299,7 +299,7 @@ class Play(State):
 
 
 
-    def __draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
+    def _draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         # Background B
         if self.__parl_b is not None:
             width, height = self.__parl_b.size
@@ -365,7 +365,7 @@ class Play(State):
                 self.__delete_offscreen_asteroids()
         
         else:
-            if len(self.asteroids) == 0:
+            if self.spawned_entities.count() == 0:
                 self.reinit_next_level(self.__level_data.next_level)
 
 
@@ -374,10 +374,7 @@ class Play(State):
             if obj.distance_to(self.spaceship) > self.__despawn_radius:
                 obj.force_kill()
 
-
-        self.entities.update(self.camera.position)
-        self.camera.set_target(self.spaceship.position + self.spaceship.get_velocity()*2)
-        self.camera.update()
+        self._update_game_objects()
 
         # Records wether the highscore changes self.highscore will be incremented along with the score.
         if not self.highscore_changed and self.spaceship.score > self.highscore:
@@ -388,6 +385,14 @@ class Play(State):
 
         if self.__display_score > prev_score:
             self._queue_sound("game.point", 0.3)
+
+
+
+    def _update_game_objects(self) -> None:
+        self.entities.update(self.camera.position)
+        self.camera.set_target(self.spaceship.position + self.spaceship.get_velocity()*2)
+        self.camera.update()
+
 
 
 

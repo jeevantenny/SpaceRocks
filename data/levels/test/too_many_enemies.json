@@ -8,6 +8,11 @@
         1,
         5
     ],
-    "score_range": [90000, 99999],
-    "next_level": "level_20"
+    "enemy_frequency": 0.1,
+    "enemy_count": 20,
+    "spawn_enemies": {
+        "EnemyShip": 1
+    },
+    "score_range": [0, 500],
+    "next_level": "level_1"
 }

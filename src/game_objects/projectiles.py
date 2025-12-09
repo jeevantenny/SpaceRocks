@@ -99,8 +99,8 @@ class Projectile(ObjectTexture, ObjectVelocity):
             
         
 
-    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
-        super().draw(surface, lerp_amount, offset)
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        super().draw(surface, lerp_amount, offset, rotation)
 
         if debug.Cheats.show_bounding_boxes:
             for line in self.__get_collision_lines(offset):
@@ -245,7 +245,7 @@ class Laser(ObjectTexture):
         self.__damage_duration.update()
 
 
-    def draw(self, surface, lerp_amount=0, offset=(0, 0)) -> None:
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0) -> None:
         for line in self.__collision_lines:
             pg.draw.line(surface, "green", pg.Vector2(line[0])+offset, pg.Vector2(line[1])+offset)
 

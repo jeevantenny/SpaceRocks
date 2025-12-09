@@ -16,7 +16,9 @@ class Cheats():
     **show_bounding_boxes** - shows bounding boxes for entities  
     **instant_respawn** - UNIMPLEMENTED  
     **enemy_ship** - UNIMPLEMENTED  
+    
     **test_state** - loads a test state instead of regular game states
+    **test_level"" - loads a level to test out when Play state is used
 
     **demo_mode:**  
     Loads the game in demo mode. The game will show a message indicating
@@ -29,8 +31,11 @@ class Cheats():
     show_bounding_boxes = False
     instance_respawn = False
     enemy_ship = False
-    test_state = False
     demo_mode = False
+    no_lerp = False
+
+    test_state = None
+    test_level = None
 
 
 

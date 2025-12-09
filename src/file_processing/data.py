@@ -58,7 +58,7 @@ def load_level(name: str) -> LevelData:
             base_color=             level_data.get("base_color", "#000000"),
             parl_a=                 level_data.get("parl_a"),
             parl_b=                 level_data.get("parl_b"),
-            background_palette=     level_data["background_palette"],
+            background_palette=     level_data.get("background_palette"),
             background_tint=        level_data.get("background_tint", "#4E6382"),
 
             asteroid_density=       tuple(level_data["asteroid_density"]),

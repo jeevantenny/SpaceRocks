@@ -3,7 +3,7 @@ import pygame as pg
 import config
 import debug
 
-from src.misc import increment_score, level_completion_amount
+from src.misc import increment_score, get_start_level
 from src.custom_types import LevelData
 from src.input_device import InputInterpreter
 from src.file_processing import data
@@ -276,8 +276,8 @@ class GameOverScreen(State):
 
 
     def draw(self, surface, lerp_amount=0):
-        self.prev_state.draw(surface, lerp_amount)
-        blit_to_center(self.title.render(), surface)
+        self.prev_state.draw(surface, 1)
+        blit_to_center(self.title.render(lerp_amount), surface)
         
             
 
@@ -316,7 +316,7 @@ class ShowScore(State):
 
                 # Empties the state stack and adds a new Play state.
                 self.state_stack.quit()
-                Play("level_1").add_to_stack(self.state_stack)
+                Play(get_start_level()).add_to_stack(self.state_stack)
                 
 
 

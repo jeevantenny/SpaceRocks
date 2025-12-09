@@ -71,7 +71,7 @@ class ObjectVelocity(GameObject):
         self._velocity += pg.Vector2(value)
 
 
-    def _get_lerp_pos(self, lerp_amount=0.0) -> pg.Vector2:
+    def get_lerp_pos(self, lerp_amount=0.0) -> pg.Vector2:
         return self.position - self._velocity*(1-lerp_amount)
 
 
@@ -134,8 +134,8 @@ class ObjectTexture(GameObject):
 
 
     
-    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
-        blit_texture = self._get_blit_texture(lerp_amount)
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0), rotation=0) -> None:
+        blit_texture = self._get_blit_texture(lerp_amount, rotation)
         center = self._get_blit_pos(offset, lerp_amount)
         blit_pos = center - pg.Vector2(blit_texture.get_size())*0.5
         surface.blit(blit_texture, blit_pos)
@@ -147,14 +147,14 @@ class ObjectTexture(GameObject):
 
 
     
-    def _get_blit_texture(self, lerp_amount=0.0) -> pg.Surface:
-        return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)))
+    def _get_blit_texture(self, lerp_amount=0.0, rotation=0) -> pg.Surface:
+        return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)) + rotation)
     
 
     def _get_blit_pos(self, offset: pg.typing.Point, lerp_amount=0.0) -> pg.Vector2:
         "Returns the center position of the texture/frame to be blit."
         if isinstance(self, ObjectVelocity):
-            return self._get_lerp_pos(lerp_amount) + offset
+            return self.get_lerp_pos(lerp_amount) + offset
         else:
             return self.position + offset
 
@@ -228,9 +228,9 @@ class ObjectAnimation(ObjectTexture):
     
 
 
-    def _get_blit_texture(self, lerp_amount=0):
+    def _get_blit_texture(self, lerp_amount=0, rotation=0):
         self.texture = self.__controller.get_frame(self.__texture_map, lerp_amount)
-        return super()._get_blit_texture(lerp_amount)
+        return super()._get_blit_texture(lerp_amount, rotation)
     
     def _set_anim_state(self, state_name: str) -> None:
         self.__controller.set_state(state_name)
@@ -276,12 +276,12 @@ class ObjectHitbox(GameObject):
 
 
 
-    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> str | None:
-        super().draw(surface, lerp_amount, offset)
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0), rotation=0) -> str | None:
+        super().draw(surface, lerp_amount, offset, rotation)
         if debug.Cheats.show_bounding_boxes:
             blit_rect: pg.Rect = self.rect
             if isinstance(self, ObjectVelocity):
-                blit_rect.center = self._get_lerp_pos(lerp_amount)+offset
+                blit_rect.center = self.get_lerp_pos(lerp_amount)+offset
             pg.draw.rect(surface, "red", blit_rect, 1)
     
 

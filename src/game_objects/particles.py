@@ -71,6 +71,7 @@ class DisplayText(ObjectTexture):
     "Shows how many points were obtained from destroying an asteroid."
     save_entity_progress=False
     draw_layer = 5
+    ignore_camera_rotation=True
 
     def __init__(self, position: pg.typing.Point, text_surface: pg.Surface, y_offset=0):
         super().__init__(

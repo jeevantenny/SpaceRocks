@@ -214,7 +214,10 @@ class Game:
         "Renders game onto screen."
 
         if self.state_stack:
-            lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
+            if debug.Cheats.no_lerp:
+                lerp_amount = 1
+            else:
+                lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
             self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
             pg.transform.scale(self.pixel_scaled_window, self.screen.size, self.screen)
 

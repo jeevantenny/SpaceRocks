@@ -22,6 +22,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
     """
     save_entity_progress=False
     distance_based_sound=True
+    ignore_camera_rotation=False
 
     def __init__(self, *, position: pg.typing.Point, group: "ObjectGroup | None" = None) -> None:
         if group:
@@ -142,7 +143,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         ...
 
 
-    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0), rotation=0) -> None:
         "Draws to the sprite onto a surface. The sprite must have a texture. "
         ...
 
@@ -218,15 +219,19 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
 
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None: # type: ignore
         "Draws all objects in group to surface with some offset."
-        from .components import ObjectTexture, ObjectHitbox
 
-        draw_order = sorted(
+        for obj in self.get_draw_order():
+            obj.draw(surface, lerp_amount, offset)
+
+
+    def get_draw_order(self) -> list[T]:
+        "Return the order in which sprites should be drawn."
+        from .components import ObjectTexture
+        return sorted(
             self.get_type(ObjectTexture),
             key=lambda x: x.draw_layer
         )
 
-        for obj in draw_order:
-            obj.draw(surface, lerp_amount, offset)
 
 
 

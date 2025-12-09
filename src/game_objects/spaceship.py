@@ -49,6 +49,13 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
         self._attack_types: list[type[GameObject]] = [Asteroid]
 
+
+
+    
+    @property
+    def thrust(self) -> bool:
+        return self.__thrust
+
                 
 
     def __init_from_data__(self, object_data):
@@ -260,8 +267,8 @@ class PlayerShip(Spaceship):
                 
 
 
-    def draw(self, surface, lerp_amount=0, offset=(0, 0)):
-        super().draw(surface, lerp_amount, offset)
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        super().draw(surface, lerp_amount, offset, rotation)
         self.__powerups.draw(self, surface, lerp_amount, offset)
 
 
