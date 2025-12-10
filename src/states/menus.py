@@ -207,7 +207,6 @@ class Settings(State):
 
 
     def update(self):
-        self.prev_state.update()
         self.__elements.update()
     
 

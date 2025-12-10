@@ -148,7 +148,7 @@ class ObjectTexture(GameObject):
 
     
     def _get_blit_texture(self, lerp_amount=0.0, rotation=0) -> pg.Surface:
-        return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)) + rotation)
+        return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)) - rotation)
     
 
     def _get_blit_pos(self, offset: pg.typing.Point, lerp_amount=0.0) -> pg.Vector2:

@@ -141,7 +141,7 @@ class Play(State):
         self.highscore_changed = False
         self.__progress_bar = hud.ProgressBar()
         
-        self.__game_over_timer = Timer(27, False, self.__game_over)
+        self.__game_over_timer = Timer(27, False, self._game_over)
         self.__level_cleared = False
         self.__timer = 10
 
@@ -414,7 +414,7 @@ class Play(State):
 
     
     
-    def __game_over(self) -> None:
+    def _game_over(self) -> None:
         "Updates the score and shows the game over screen."
         self.__set_score()
         for obj in self.entities.sprites():

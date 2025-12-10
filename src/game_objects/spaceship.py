@@ -29,6 +29,7 @@ from .particles import ShipSmoke, DisplayText
 class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
     draw_layer = 2
     _rotation_speed = 30
+    _thrust_power = 1
     __asset_key = "spaceship"
 
     def __init__(self, position):
@@ -80,7 +81,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
     def update(self) -> None:
         if self.__thrust:
-            self.accelerate(pg.Vector2(0, -1).rotate(self._rotation))
+            self.accelerate(pg.Vector2(0, -self._thrust_power).rotate(self._rotation))
             self.__release_smoke()
             if self.__thruster_audio_chan is None:
                 self.__start_thrust_sound()
@@ -235,6 +236,7 @@ class PlayerShip(Spaceship):
 
     def set_score_limit(self, limit: int) -> None:
         self.__score_limit = limit
+        self.score = min(self.score, limit)
 
 
 

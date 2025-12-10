@@ -31,6 +31,9 @@ class Camera:
         return self.__position.copy()
 
 
+    def get_target(self) -> pg.Vector2:
+        return self.__target_pos.copy()
+
 
     def set_target(self, position: pg.typing.Point) -> None:
         self.__target_pos = pg.Vector2(position)
@@ -68,18 +71,15 @@ class Camera:
         entities.draw(output_surface, lerp_amount, blit_offset)
         if debug.Cheats.show_bounding_boxes:
             pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
-            self.__draw_target_crosshair(output_surface)
+            blit_offset = pg.Vector2(output_surface.size)*0.5 - self.__position
+            self._draw_crosshair(output_surface, self.__target_pos+blit_offset)
 
 
-    def __draw_target_crosshair(self, surface: pg.Surface) -> None:
-        blit_offset = pg.Vector2(surface.size)*0.5 - self.position
-        pos = self.__target_pos + blit_offset
-        # pg.draw.circle(surface, "white", self.__target_pos+offset, 2)
-
-        pg.draw.line(surface, "black", pos-(0, 4), pos+(0, 4), 3)
-        pg.draw.line(surface, "black", pos-(4, 0), pos+(4, 0), 3)
-        pg.draw.line(surface, "white", pos-(0, 3), pos+(0, 3))
-        pg.draw.line(surface, "white", pos-(3, 0), pos+(3, 0))
+    def _draw_crosshair(self, surface: pg.Surface, position: pg.typing.Point) -> None:
+        pg.draw.line(surface, "black", position-(0, 4), position+(0, 4), 3)
+        pg.draw.line(surface, "black", position-(4, 0), position+(4, 0), 3)
+        pg.draw.line(surface, "white", position-(0, 3), position+(0, 3))
+        pg.draw.line(surface, "white", position-(3, 0), position+(3, 0))
     
 
 
@@ -109,7 +109,7 @@ class Camera:
 
 
 class RotoZoomCamera(Camera):
-    __rotation_speed = 15
+    __rotation_speed = 8
     def __init__(self, start_pos):
         super().__init__(start_pos)
         self.__rotation = 0
@@ -119,33 +119,31 @@ class RotoZoomCamera(Camera):
     def get_rotation(self) -> int:
         return self.__rotation
     
-    def get_lerp_rotation(self, lerp_amount=0.0) -> float:
+    def get_lerp_rotation(self, lerp_amount: float) -> float:
         return format_angle(self.__rotation-self.__angular_vel*(1-lerp_amount))
     
     def set_rotation(self, value: int) -> None:
         self.__rotation = format_angle(int(value))
 
     def set_target_rotation(self, rotation: int) -> None:
-        self.__target_rotation = format_angle(rotation)
+        self.__target_rotation = format_angle(int(rotation))
+
+    def set_angular_vel(self, value: int) -> None:
+        self.__angular_vel = value
     
     def rotate(self, amount: int) -> None:
         self.set_rotation(self.__rotation+amount)
     
     def update(self):
         super().update()
-        difference = self.__target_rotation-self.__rotation
+        difference = int(self.__target_rotation-self.__rotation)
         amount = abs(difference)
-        if amount < 5:
-            self.set_rotation(self.__target_rotation)
-            self.__angular_vel = 0
-        else:
-            if amount > 180:
-                difference *= -1
 
-            self.__angular_vel = min(int(difference*0.1), self.__rotation_speed)
-            self.rotate(self.__angular_vel)
-    
-        # print(difference)
+        if amount > 180:
+            difference *= -1
+
+        self.__angular_vel = sign(difference)*pg.math.clamp(int(amount*0.1), 1, self.__rotation_speed)
+        self.rotate(self.__angular_vel)
 
 
     def capture(self, output_surface, entities, lerp_amount=0):
@@ -162,7 +160,7 @@ class RotoZoomCamera(Camera):
                 entity_pos = entity.position
 
             blit_pos = entity_pos - camera_lerp_pos
-            blit_pos.rotate_ip(camera_lerp_rotation)
+            blit_pos.rotate_ip(-camera_lerp_rotation)
             blit_pos += camera_lerp_pos - entity_pos + blit_offset
             entity.draw(
                 output_surface, lerp_amount,
@@ -170,6 +168,9 @@ class RotoZoomCamera(Camera):
                 -camera_lerp_rotation if not entity.ignore_camera_rotation else 0)
 
         if debug.Cheats.show_bounding_boxes:
-            pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
-            # self.__draw_target_crosshair(output_surface)
+            # crosshair_pos = (self.get_target()-self.position).rotate(self.__rotation) + self.position
+            # blit_offset = pg.Vector2(output_surface.size)*0.5 - self.position
+
+            crosshair_pos = (self.get_target()-self.position).rotate(-self.__rotation) + pg.Vector2(output_surface.size)*0.5
+            self._draw_crosshair(output_surface, crosshair_pos)
     
