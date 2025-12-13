@@ -60,7 +60,8 @@ class Projectile(ObjectTexture, ObjectVelocity):
             position: pg.typing.Point,
             velocity: pg.typing.Point,
             width: int,
-            lifetime: int
+            lifetime: int,
+            rotation=0
             ):
 
         super().__init__(
@@ -70,10 +71,9 @@ class Projectile(ObjectTexture, ObjectVelocity):
 
         self.set_velocity(velocity)
         self.__speed = self._velocity.magnitude()
+        self.set_rotation(rotation)
         self.__width = width
-        # self.move(direction*5)
 
-        self.set_rotation(-self._velocity.angle_to((0, -1)))
         self._distance_traveled = 0.0
         self._lifetime = lifetime
 
@@ -148,7 +148,8 @@ class PlayerBullet(Projectile):
             position,
             direction*self.__speed+shooter_vel,
             18,
-            self.__lifetime_value
+            self.__lifetime_value,
+            -direction.angle_to((0, -1))
         )
 
         from .obstacles import Asteroid
@@ -162,9 +163,9 @@ class PlayerBullet(Projectile):
             object_data["position"],
             object_data["velocity"],
             18,
-            object_data["lifetime"]
+            object_data["lifetime"],
+            object_data["rotation"]
         )
-
         self._distance_traveled = object_data["distance_traveled"]
 
         from .obstacles import Damageable
@@ -176,6 +177,7 @@ class PlayerBullet(Projectile):
         data = super().get_data()
         data.update({"position": tuple(self.position),
                      "velocity": tuple(self._velocity),
+                     "rotation": self._rotation,
                      "lifetime": self._lifetime,
                      "distance_traveled": self._distance_traveled})
         return data
@@ -266,7 +268,8 @@ class EnemyBullet(Projectile):
             position+direction*10,
             direction*self.__speed+shooter_vel,
             10,
-            self.__lifetime_value
+            self.__lifetime_value,
+            -direction.angle_to((0, -1))
         )
 
     

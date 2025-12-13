@@ -273,7 +273,8 @@ class Play(State):
 
     def draw(self, surface, lerp_amount=0.0):
         surface.fill(self.__base_color)
-        self._draw_scrolling_background(surface, lerp_amount)
+        if not debug.Cheats.ignore_colorkey:
+            self._draw_scrolling_background(surface, lerp_amount)
 
         self.camera.capture(surface, self.entities, lerp_amount)
 

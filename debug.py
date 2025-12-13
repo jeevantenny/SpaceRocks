@@ -16,6 +16,8 @@ class Cheats():
     **show_bounding_boxes** - shows bounding boxes for entities  
     **instant_respawn** - UNIMPLEMENTED  
     **enemy_ship** - UNIMPLEMENTED  
+    **no_lerp** - Turns of frame interpolation
+    **ignore_colorkey** - turns of colorkey transparency, this also turns off background parallax
     
     **test_state** - loads a test state instead of regular game states
     **test_level"" - loads a level to test out when Play state is used
@@ -31,12 +33,13 @@ class Cheats():
     show_bounding_boxes = False
     instance_respawn = False
     enemy_ship = False
-    demo_mode = False
     no_lerp = False
+    ignore_colorkey = False
 
     test_state = None
     test_level = None
 
+    demo_mode = False
 
 
 def timeit(func: Callable):

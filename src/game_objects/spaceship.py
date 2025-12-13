@@ -189,7 +189,9 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 class PlayerShip(Spaceship):
     distance_based_sound=False
     save_entity_progress=True
+    __max_combo=50
     __max_combo_points=200
+
     def __init__(self, position):
         super().__init__(position)
         self._attack_types: list[type[GameObject]] = [Asteroid]
@@ -325,7 +327,7 @@ class PlayerShip(Spaceship):
             add_points = min(add_points, self.__score_limit-self.score)
 
         self.score += add_points
-        self.combo = min(self.combo*1.1, 50)
+        self.combo = min(math.ceil(self.combo*1.1), self.__max_combo)
 
         return add_points
 
@@ -343,7 +345,7 @@ class PlayerShip(Spaceship):
                 prev_combo = self.combo
                 points = self.take_points(obj.points)
 
-                if prev_combo >= 25:
+                if prev_combo >= self.__max_combo:
                     text_surface = font.small_font.render(f"+{points} MAX COMBO", 1, "#dd99ff", "#550055", False)
                 elif prev_combo > 1:
                     text_surface = font.small_font.render(f"+{points} COMBO", cache=False)

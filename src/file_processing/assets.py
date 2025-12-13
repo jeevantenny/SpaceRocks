@@ -4,9 +4,10 @@ import pygame as pg
 from typing import overload
 from functools import lru_cache
 
-from . import load_json
-
+import debug
 from src.custom_types import GameSound, TextureMap, AnimData, ControllerData
+
+from . import load_json
 
 
 asset_cache = lru_cache(8)
@@ -31,7 +32,8 @@ def load_texture(path: str, palette_swap_name: str | None = None, file_type="png
     "Loads a texture from the textures folder as a pygame.Surface"
     texture_path = f"{TEXTURES_DIR}/{path}.{file_type}"
     texture = pg.image.load(texture_path).convert()
-    texture.set_colorkey(COLORKEY)
+    if not debug.Cheats.ignore_colorkey:
+        texture.set_colorkey(COLORKEY)
     if palette_swap_name is not None:
         texture = palette_swap(texture, palette_swap_name)
     # print(path, palette_swap_name)
@@ -45,7 +47,8 @@ def load_texture(path: str, palette_swap_name: str | None = None, file_type="png
 def colorkey_surface(size: pg.typing.Point) -> pg.Surface:
     "Creates a surface that is made transparent using the colorkey."
     surface = pg.Surface(size)
-    surface.set_colorkey(COLORKEY)
+    if not debug.Cheats.ignore_colorkey:
+        surface.set_colorkey(COLORKEY)
     surface.fill(COLORKEY)
     return surface
 
