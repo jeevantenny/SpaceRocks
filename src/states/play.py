@@ -23,7 +23,7 @@ from src.ui import font, effects, hud
 
 from . import State
 from .menus import PauseMenu, GameOverScreen
-from .visuals import BackgroundTint, ShowLevelName
+from .visuals import BackgroundTint, ShowText
 from .info_states import PowerupInfo, NoMoreLevels
 
 
@@ -70,16 +70,20 @@ class Play(State):
         self.entities.add(self.spaceship)
 
         self.spaceship.set_position((0, 0))
-        self.spaceship.clear_velocity()
+        self.spaceship.set_velocity(self.spaceship.get_rotation_vector()*10)
         self.spaceship.set_score_limit(self.__level_data.score_range[1])
 
         self.camera.set_position((0, 0))
+        self.camera.set_velocity((0, 0))
+
+        self.__lvl_transition_timer.restart()
+        self.__hud_timer.restart()
+        self.__object_spawn_delay.restart()
 
         self.__display_score = self.spaceship.score
         self.__level_cleared = False
-        self.__timer = 10
 
-        ShowLevelName(level_name.replace("_", " ").upper()).add_to_stack(self.state_stack)
+        ShowText(level_name.replace("_", " ").upper()).add_to_stack(self.state_stack)
 
 
     
@@ -120,7 +124,7 @@ class Play(State):
         self.camera.set_position(self.spaceship.position)
         self.__display_score = save_data.score
 
-        self.__timer = 0
+        self.__hud_timer.end()
 
         if self.spaceship.score >= self.__level_data.score_range[1]:
             self.__level_cleared = True
@@ -141,9 +145,12 @@ class Play(State):
         self.highscore_changed = False
         self.__progress_bar = hud.ProgressBar()
         
+        self.__hud_timer = Timer(10).start()
+        self.__lvl_transition_timer = Timer(60)
+        self.__object_spawn_delay = Timer(15)
         self.__game_over_timer = Timer(27, False, self._game_over)
+
         self.__level_cleared = False
-        self.__timer = 10
 
 
 
@@ -151,7 +158,6 @@ class Play(State):
         "Assigned attributes related to the current level."
 
         self.__level_data = data.load_level(level_name)
-        self.__base_color = self.__level_data.base_color
 
         self.__parl_a: pg.Surface | None
         self.__parl_b: pg.Surface | None
@@ -229,38 +235,40 @@ class Play(State):
 
 
     def update(self):
-        if self.spaceship.health:
-            # The game loop runs as long as the player ship is alive.
-            self.__game_loop()
-        elif self.__game_over_timer.complete:
-            # Adds a pause between when the player dies and the game over screen is shown.
-            # The timer automatically calls the game over scree once complete.
-            self.__game_over_timer.start()
+        if self.__lvl_transition_timer.complete:
+            if self.spaceship.health:
+                # The game loop runs as long as the player ship is alive.
+                self.__game_loop()
+            elif self.__game_over_timer.complete:
+                # Adds a pause between when the player dies and the game over screen is shown.
+                # The timer automatically calls the game over scree once complete.
+                self.__game_over_timer.start()
 
-            # Clears velocity and angular velocity
-            self.camera.clear_velocity()
+                # Clears velocity and angular velocity
+                self.camera.clear_velocity()
 
-            for entity in self.entities.sprites():
-                # Bullets are deleted immediately
-                if isinstance(entity, Projectile):
-                    entity.force_kill()
-                    continue
-                
-                if isinstance(entity, components.ObjectVelocity):
-                    entity.clear_velocity()
-                if isinstance(entity, Asteroid):
-                    entity.set_angular_vel(0)
-        
-        else:
-            self.entities.update(self.camera.position)
-            if self.is_top_state():
-                self.__game_over_timer.update()
+                for entity in self.entities.sprites():
+                    # Bullets are deleted immediately
+                    if isinstance(entity, Projectile):
+                        entity.force_kill()
+                        continue
+                    
+                    if isinstance(entity, components.ObjectVelocity):
+                        entity.clear_velocity()
+                    if isinstance(entity, Asteroid):
+                        entity.set_angular_vel(0)
+            
+            else:
+                self.entities.update(self.camera.position)
+                if self.is_top_state():
+                    self.__game_over_timer.update()
         
         self._join_sound_queue(self.entities.clear_sound_queue())
             
-
-        if self.__timer:
-            self.__timer -= 1
+        self.__lvl_transition_timer.update()
+        if self.__lvl_transition_timer.complete:
+            self.__hud_timer.update()
+            self.__object_spawn_delay.update()
 
         self.__info_text = font.font_with_icons.render("Pause<pause>")
 
@@ -272,11 +280,19 @@ class Play(State):
 
 
     def draw(self, surface, lerp_amount=0.0):
-        surface.fill(self.__base_color)
+        # if self.spaceship.get_velocity().magnitude_squared() < 1500:
+        
+        if data.load_settings().motion_blur and self.is_top_state():
+            surface.fill((70, 70, 70), special_flags=pg.BLEND_RGB_SUB)
+            surface.fill(self.__level_data.base_color, special_flags=pg.BLEND_RGB_ADD)
+        else:
+            surface.fill(self.__level_data.base_color)
+
         if not debug.Cheats.ignore_colorkey:
             self._draw_scrolling_background(surface, lerp_amount)
 
-        self.camera.capture(surface, self.entities, lerp_amount)
+        if self.__lvl_transition_timer.complete:
+            self.camera.capture(surface, self.entities, lerp_amount)
 
 
 
@@ -310,7 +326,7 @@ class Play(State):
                 for y in range(-1, surface.height//height+1):
                     surface.blit(self.__parl_b, (width*x, height*y)+camera_offset)
 
-        # Background B
+        # Background A
         if self.__parl_a is not None:
             width, height = self.__parl_a.size
             camera_offset = -self.camera.lerp_position(lerp_amount)*0.3
@@ -322,8 +338,8 @@ class Play(State):
 
 
     def __draw_hud(self, surface: pg.Surface) -> None:
-        if self.__timer:
-            entrance_offset = 80*(self.__timer*0.1)**2
+        if not self.__hud_timer.complete:
+            entrance_offset = 80*(self.__hud_timer.countdown*0.1)**2
         else:
             entrance_offset = 0
         
@@ -356,17 +372,17 @@ class Play(State):
                 if self.__should_spawn_enemy():
                     self.__spawn_enemy()
 
-            if self.powerups.count() == 0 and self.__level_data.spawn_powerups and random.random() < self.__level_data.powerup_frequency:
+            if self.__should_spawn_powerup():
                 self.__spawn_powerup()             
             
-            # Moves to next level once the player has gained enough points to complete the current one.
+            # Stops objects from spawning once the level has been cleared
             if self.spaceship.score >= self.__level_data.score_range[1]:
                 self.__level_cleared = True
-                ShowLevelName("Level Cleared").add_to_stack(self.state_stack)
+                ShowText("Level Cleared").add_to_stack(self.state_stack)
                 self.__delete_offscreen_asteroids()
         
         else:
-            if self.spawned_entities.count() == 0:
+            if self.spaceship.get_velocity().magnitude_squared() > 5000:
                 self.reinit_next_level(self.__level_data.next_level)
 
 
@@ -377,7 +393,7 @@ class Play(State):
 
         self._update_game_objects()
 
-        # Records wether the highscore changes self.highscore will be incremented along with the score.
+        # Records wether the highscore has changed.
         if not self.highscore_changed and self.spaceship.score > self.highscore:
             self.highscore_changed = True
         prev_score = self.__display_score
@@ -450,6 +466,7 @@ class Play(State):
     def __should_spawn_asteroid(self) -> bool:
         "Returns wether an asteroid should spawn in the tick."
         return (self.__level_data.spawn_asteroids
+                and self.__object_spawn_delay.complete
                 and self.__required_asteroid_density() > self.__asteroid_density()
                 and random.random() < self.__level_data.asteroid_frequency)
 
@@ -470,6 +487,7 @@ class Play(State):
     def __should_spawn_enemy(self) -> bool:
         "Returns wether an enemy should spawn in the tick."
         return (self.__level_data.spawn_enemies
+                and self.__object_spawn_delay.complete
                 and self.enemies.count() < self.__level_data.enemy_count
                 and random.random() < self.__level_data.enemy_frequency)
 
@@ -478,6 +496,14 @@ class Play(State):
         self.enemies.add(EnemyShip(spawn_pos))
     
 
+
+
+    def __should_spawn_powerup(self) -> bool:
+        "Returns wether a powerup should spawn in the tick."
+        return (self.__level_data.spawn_powerups
+                and self.__object_spawn_delay.complete
+                and self.powerups.count() == 0
+                and random.random() < self.__level_data.powerup_frequency)
     
     def __spawn_powerup(self) -> None:
         powerups_name = weighted_choice(self.__level_data.powerup_spawn_weights)

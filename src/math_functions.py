@@ -32,7 +32,8 @@ def unit_vector(vector: pg.Vector2) -> pg.Vector2:
     
 
 def format_angle[T: (int, float)](angle: T) -> T:
-    "Ensures angle is between >-180 and <=180."
+    "Ensures 0 <= angle < 360."
+    return angle % 360
     if angle > 180:
         angle -= 360
     elif angle <= -180:

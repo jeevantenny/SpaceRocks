@@ -36,7 +36,11 @@ class Camera:
 
 
     def set_target(self, position: pg.typing.Point) -> None:
-        self.__target_pos = pg.Vector2(position)
+        self.__target_pos.xy = position
+
+    
+    def set_velocity(self, value: pg.typing.Point) -> None:
+        self.__velocity.xy = value
 
 
     def update(self) -> None:
@@ -110,6 +114,7 @@ class Camera:
 
 class RotoZoomCamera(Camera):
     __rotation_speed = 8
+    __rotation_acceleration = 1
     def __init__(self, start_pos):
         super().__init__(start_pos)
         self.__rotation = 0
@@ -129,7 +134,7 @@ class RotoZoomCamera(Camera):
         self.__target_rotation = format_angle(int(rotation))
 
     def set_angular_vel(self, value: int) -> None:
-        self.__angular_vel = value
+        self.__angular_vel = pg.math.clamp(value, -self.__rotation_speed, self.__rotation_speed)
     
     def rotate(self, amount: int) -> None:
         self.set_rotation(self.__rotation+amount)
@@ -138,12 +143,25 @@ class RotoZoomCamera(Camera):
         super().update()
         difference = int(self.__target_rotation-self.__rotation)
         amount = abs(difference)
-
+        direction = sign(difference)
         if amount > 180:
-            difference *= -1
+            amount = 360 - amount
+            direction *= -1
+        
+        
+        # print(amount)
 
-        self.__angular_vel = sign(difference)*pg.math.clamp(int(amount*0.1), 1, self.__rotation_speed)
+        # target_vel = direction*
+        target_vel = direction*pg.math.clamp(int(amount*0.1), 1, self.__angular_vel*direction+1)
+        self.set_angular_vel(target_vel)
+        # print((target_vel < self.__angular_vel < 0), (target_vel > self.__angular_vel > 0))
+        # if (target_vel < self.__angular_vel < 0) or (target_vel > self.__angular_vel > 0):
+        #     self.set_angular_vel(self.__angular_vel+sign(target_vel))
+        # else:
+        #     self.set_angular_vel(target_vel)
         self.rotate(self.__angular_vel)
+
+        print(self.__angular_vel)
 
 
     def capture(self, output_surface, entities, lerp_amount=0):

@@ -185,10 +185,12 @@ class Settings(State):
         settings = data.load_settings()
         self.__soundfx = elements.Slider((0, 100), int(settings.soundfx_volume*100), 10, "Sound FX")
         self.__controller_rumble = elements.Toggle(settings.controller_rumble, "Controller Rumble")
+        self.__motion_blur = elements.Toggle(settings.motion_blur, "Motion blur")
         self.__show_version_num = elements.Toggle(settings.show_version_number, "Show version number")
         self.__elements = elements.ElementList([
             self.__soundfx,
             self.__controller_rumble,
+            self.__motion_blur,
             # elements.Slider((0, 100), 0, 5, "Congo Bongo!"),
             elements.UIPadding(15),
             self.__show_version_num
@@ -238,7 +240,8 @@ class Settings(State):
         data.update_settings(
             soundfx_volume=round(self.__soundfx.value*0.01, 2),
             controller_rumble=self.__controller_rumble.on,
-            show_version_number=self.__show_version_num.on
+            show_version_number=self.__show_version_num.on,
+            motion_blur=self.__motion_blur.on
         )
 
 

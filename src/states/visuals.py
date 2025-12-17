@@ -30,24 +30,25 @@ class BackgroundTint(PassThroughState):
 
 
 
-class ShowLevelName(PassThroughState):
-    "Shows the name of the current level."
+class ShowText(PassThroughState):
+    "Shows text above previous state at the center of the screen."
 
-    def __init__(self, level_name: str):
+    def __init__(self, text: str, offset=(0, 0)):
         super().__init__()
-        self.__title = effects.AnimatedText(level_name, "show_level_name_b", font.large_font)
+        self.__text = effects.AnimatedText(text, "show_level_name_b", font.large_font)
+        self.__offset = offset
     
 
     def update(self):
         super().update()
-        self.__title.update()
+        self.__text.update()
 
-        if self.__title.animations_complete and self.is_top_state():
+        if self.__text.animations_complete and self.is_top_state():
             self.state_stack.pop()
 
     def draw(self, surface, lerp_amount=0):
         super().draw(surface, lerp_amount)
-        blit_to_center(self.__title.render(), surface, (0, -40))
+        blit_to_center(self.__text.render(), surface, self.__offset)
         
 
 

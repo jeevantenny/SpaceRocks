@@ -41,7 +41,7 @@ class PlayBossLevel(Play):
     
     def _update_game_objects(self):
         if self.spaceship.thrust and self.spaceship.get_speed() > 10:
-            self.camera.set_target_rotation(vector_direction(self.spaceship.get_velocity()))
+            self.camera.set_target_rotation(self.spaceship.get_rotation())
 
         super()._update_game_objects()
 
