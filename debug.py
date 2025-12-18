@@ -12,7 +12,8 @@ class Cheats():
     ## Cheats
 
     **invincible** - makes spaceship immune to asteroids and go through them  
-    **no_obstacles** - prevents spawning of obstacles like asteroid or enemies 
+    **no_obstacles** - prevents spawning of obstacles like asteroid or enemies  
+    **no_point_combo** - player will gain no additional points from consecutive hits on asteroids  
     **show_bounding_boxes** - shows bounding boxes for entities  
     **instant_respawn** - UNIMPLEMENTED  
     **enemy_ship** - UNIMPLEMENTED  
@@ -30,6 +31,7 @@ class Cheats():
 
     invincible = False
     no_obstacles = False
+    no_point_combo = False
     show_bounding_boxes = False
     instance_respawn = False
     enemy_ship = False

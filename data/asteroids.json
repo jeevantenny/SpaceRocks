@@ -3,14 +3,14 @@
         "texture_map": "asteroid_small",
         "hitbox_size": 16,
         "health": 1,
-        "points": 3,
+        "points": 15,
         "size_value": 1
     },
     "blue_medium": {
         "texture_map": "asteroid_medium",
         "hitbox_size": 30,
         "health": 2,
-        "points": 5,
+        "points": 30,
         "size_value": 2,
         "subrock": "blue_small"
     },
@@ -46,7 +46,7 @@
         "palette": "asteroid/yellow_rocks",
         "hitbox_size": 16,
         "health": 1,
-        "points": 15,
+        "points": 50,
         "size_value": 1
     },
     "yellow_medium": {
@@ -54,7 +54,7 @@
         "palette": "asteroid/yellow_rocks",
         "hitbox_size": 30,
         "health": 2,
-        "points": 30,
+        "points": 100,
         "size_value": 2,
         "subrock": "yellow_small"
     }

@@ -148,7 +148,7 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
             position=position,
             texture=texture,
             hitbox_size=(16, 16),
-            bounce=0.2
+            bounce=0.95
         )
 
         self.accelerate(velocity)

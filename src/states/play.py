@@ -303,7 +303,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo:.2f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo:.0f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
 
@@ -480,6 +480,10 @@ class Play(State):
             velocity,
             asteroid_id
         )
+
+        for a in self.asteroids.sprites():
+            if asteroid.colliderect(a.rect):
+                return self.__spawn_asteroid()
 
         self.asteroids.add(asteroid)
 

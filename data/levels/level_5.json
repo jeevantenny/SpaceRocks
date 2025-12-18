@@ -18,6 +18,6 @@
         "SuperLaser": 1
     },
 
-    "score_range": [4000, 5000],
+    "score_range": [40000, 50000],
     "next_level": "level_6"
 }

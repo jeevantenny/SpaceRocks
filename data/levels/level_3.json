@@ -11,18 +11,12 @@
         "blue_small": 4,
         "blue_medium": 3
     },
-
-    "enemy_frequency": 0.01,
-    "enemy_count": 1,
-    "spawn_enemies": {
-        "EnemyShip": 1
-    },
     
     "powerup_frequency": 0.05,
     "spawn_powerups": {
         "Shield": 1
     },
 
-    "score_range": [2000, 3000],
+    "score_range": [20000, 30000],
     "next_level": "level_4"
 }

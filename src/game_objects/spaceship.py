@@ -86,7 +86,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             if self.__thruster_audio_chan is None:
                 self.__start_thrust_sound()
             else:
-                self.__thruster_audio_chan.set_volume(pg.math.clamp(abs(self._rotation)*0.002+0.3, 0, 1))
+                self.__thruster_audio_chan.set_volume(pg.math.clamp(abs(self._rotation-180)*0.002+0.3, 0, 1))
 
         elif self.__thruster_audio_chan is not None:
             self.__stop_thruster_sound()
@@ -190,7 +190,7 @@ class PlayerShip(Spaceship):
     distance_based_sound=False
     save_entity_progress=True
     __max_combo=50
-    __max_combo_points=200
+    __max_combo_points=500
 
     def __init__(self, position):
         super().__init__(position)
@@ -327,7 +327,8 @@ class PlayerShip(Spaceship):
             add_points = min(add_points, self.__score_limit-self.score)
 
         self.score += add_points
-        self.combo = min(math.ceil(self.combo*1.1), self.__max_combo)
+        if not debug.Cheats.no_point_combo:
+            self.combo = min(math.ceil(self.combo*1.1), self.__max_combo)
 
         return add_points
 
