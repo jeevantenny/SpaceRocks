@@ -24,7 +24,7 @@ SOUNDS_DIR = "assets/sounds"
 COLORKEY = (255, 0, 255)
 
 
-__sound_definition = load_json("assets/sounds")
+__sound_definition = load_json("assets/sound_definitions")
 
 
 @asset_cache

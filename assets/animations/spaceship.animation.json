@@ -40,6 +40,28 @@
                 "6": "explode_6",
                 "8": "blank"
             }
+        },
+        "shield_on": {
+            "duration": 5,
+            "anim_speed_multiplier": 0.8,
+            "timeline": {
+                "0": "shield_on_1",
+                "1": "shield_on_2",
+                "2": "shield_on_3",
+                "3": "shield_on_4",
+                "4": "shield_on_5",
+                "5": "shield_on_6"
+            }
+        },
+        "shield_off": {
+            "duration": 3,
+            "anim_speed_multiplier": 0.8,
+            "timeline": {
+                "0": "shield_off_1",
+                "1": "shield_off_2",
+                "2": "shield_off_3",
+                "3": "shield_off_4"
+            }
         }
     }
 }

@@ -19,6 +19,8 @@ __all__ = [
 class ShipSmoke(ObjectAnimation, ObjectVelocity):
     "The smoke particle produced by the spaceship."
     save_entity_progress=True
+    draw_layer=6
+
     def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point):
         
         super().__init__(

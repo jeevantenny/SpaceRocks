@@ -1,0 +1,7 @@
+{
+    "texture": "game_objects/powerups",
+
+    "mappings": {
+        "shield": [0, 0, 16, 16]
+    }
+}

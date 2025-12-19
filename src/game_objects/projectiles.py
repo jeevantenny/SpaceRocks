@@ -43,15 +43,16 @@ def get_collision_lines(start_pos: pg.Vector2, direction: pg.Vector2, length: in
 
 
 
-def obj_line_collision(obj: ObjectHitbox, lines: CollisionLines) -> bool:
-    return any(map(obj.rect.clipline, lines))
+def rect_line_collision(rect: pg.typing.RectLike, lines: CollisionLines) -> bool:
+    return any(map(rect.clipline, lines))
 
 
 
 
 
 class Projectile(ObjectTexture, ObjectVelocity):
-    draw_layer = 1
+    draw_layer=8
+
     _max_speed = 200
 
     def __init__(
@@ -119,8 +120,8 @@ class Projectile(ObjectTexture, ObjectVelocity):
             self.__width
         )
     
-    def _collides_with(self, obj: ObjectHitbox) -> bool:
-        return obj_line_collision(obj, self.__get_collision_lines())
+    def _collides_with(self, rect: pg.typing.RectLike) -> bool:
+        return rect_line_collision(rect, self.__get_collision_lines())
     
 
     def _process_object(self, obj: GameObject) -> bool:
@@ -139,15 +140,16 @@ class Projectile(ObjectTexture, ObjectVelocity):
 
 class PlayerBullet(Projectile):
     save_entity_progress=True
+
     __speed = 40
     __lifetime_value = 18
 
     def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter_vel: pg.typing.Point):
         super().__init__(
-            assets.load_texture_map("particles")["bullet"],
+            assets.load_texture_map("particles")["player_bullet"],
             position,
             direction*self.__speed+shooter_vel,
-            18,
+            15,
             self.__lifetime_value,
             -direction.angle_to((0, -1))
         )
@@ -159,7 +161,7 @@ class PlayerBullet(Projectile):
     
     def __init_from_data__(self, object_data):
         super().__init__(
-            assets.load_texture_map("particles")["bullet"],
+            assets.load_texture_map("particles")["player_bullet"],
             object_data["position"],
             object_data["velocity"],
             18,
@@ -185,7 +187,7 @@ class PlayerBullet(Projectile):
 
     def _process_object(self, obj):
         from .obstacles import Damageable, Asteroid
-        if isinstance(obj, Damageable) and obj._health and self._collides_with(obj):
+        if isinstance(obj, Damageable) and obj._health and self._collides_with(obj.damage_rect):
             if isinstance(obj, Asteroid):
                 obj.damage(1, self._velocity*0.1/obj.size)
             else:
@@ -193,9 +195,9 @@ class PlayerBullet(Projectile):
                 
             self.hit_list.add(obj)
             return True
-        elif isinstance(obj, EnemyBullet):
-            obj.kill()
-            return False
+        # elif isinstance(obj, EnemyBullet):
+        #     obj.kill()
+        #     return True
 
         else:
             return False
@@ -240,7 +242,7 @@ class Laser(ObjectTexture):
         from .obstacles import Asteroid
         if not self.__damage_duration.complete:
             for obj in self.primary_group:
-                if isinstance(obj, Asteroid) and obj._health and obj_line_collision(obj, self.__collision_lines):
+                if isinstance(obj, Asteroid) and obj._health and rect_line_collision(obj.damage_rect, self.__collision_lines):
                     obj.kill(False)
                     self.killed_list.append(obj)
         
@@ -259,12 +261,12 @@ class Laser(ObjectTexture):
 
 class EnemyBullet(Projectile):
     __speed = 16
-    __lifetime_value = 18
+    __lifetime_value = 100
 
     def __init__(self, position: pg.typing.Point, direction: pg.Vector2, shooter_vel: pg.typing.Point):
         direction = direction.normalize()
         super().__init__(
-            assets.load_texture_map("particles")["bullet"],
+            assets.load_texture_map("particles")["enemy_bullet"],
             position+direction*10,
             direction*self.__speed+shooter_vel,
             10,
@@ -276,10 +278,10 @@ class EnemyBullet(Projectile):
     def _process_object(self, obj):
         from .spaceship import PlayerShip
         from .obstacles import Asteroid
-        if isinstance(obj, PlayerShip) and self._collides_with(obj):
+        if isinstance(obj, PlayerShip) and self._collides_with(obj.rect):
             obj.kill()
             return True
-        elif isinstance(obj, Asteroid) and obj.health and self._collides_with(obj):
+        elif isinstance(obj, Asteroid) and obj.health and self._collides_with(obj.damage_rect):
             obj.damage(1, self._velocity*0.1/obj.size)
             return True
         else:

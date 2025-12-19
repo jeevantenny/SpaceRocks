@@ -1,6 +1,8 @@
 import pygame as pg
 import random
 
+import debug
+
 from src.custom_types import Timer
 from src.game_errors import InitializationError
 from src.file_processing import load_json, assets
@@ -19,11 +21,18 @@ __all__ = [
 
 class Damageable(GameObject):
     "Objects that take damage from attacks and lose Health. Once health depletes they will be killed."
-    def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):
+    def __init__(self, *, damage_hitbox_size: pg.typing.Point, health=1, points=0, point_display_height=0, **kwargs):
         super().__init__(**kwargs)
         self._health = health
         self.__points = points
         self.__point_display_height = point_display_height
+        self.__damage_hitbox_size = damage_hitbox_size
+
+    @property
+    def damage_rect(self) -> pg.FRect:
+        rect = pg.FRect((0, 0), self.__damage_hitbox_size)
+        rect.center = self.position
+        return rect
     
     @property
     def points(self) -> int:
@@ -51,6 +60,12 @@ class Damageable(GameObject):
         super().force_kill()
 
 
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        super().draw(surface, lerp_amount, offset, rotation)
+        if debug.Cheats.show_bounding_boxes and isinstance(self, ObjectHitbox):
+            self._draw_rect(self.damage_rect, "orange", surface, lerp_amount, offset)
+
+
 
 
 
@@ -61,6 +76,7 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 
     __asteroid_data = load_json("data/asteroids")
     __asset_key = "asteroid"
+    __hitbox_padding = 10 # Used to increase the size of damage_rect relative to default hitbox
 
     # Lower max speed for asteroids ensure that they are never to fast to dodge
     _max_speed = 10
@@ -76,6 +92,7 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
         super().__init__(
             position=position,
             hitbox_size=self.__hitbox_size,
+            damage_hitbox_size=(self.__hitbox_size[0]+self.__hitbox_padding, self.__hitbox_size[1]+self.__hitbox_padding),
             bounce=0.95,
 
             health=self.__data["health"],
@@ -199,9 +216,13 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 
 
 
-class EnemyShip(Damageable, ObjectTexture, ObjectVelocity, ObjectHitbox):
+class EnemyShip(Damageable, ObjectAnimation, ObjectVelocity, ObjectHitbox):
     save_entity_progress=False
+    ignore_camera_rotation=True
+    draw_layer=9
+
     __move_speed = 4
+    __rotation_speed = 8
     __player_shoot_range = 200
     __asteroid_shoot_range = 60
     __shoot_deviation = 20
@@ -209,19 +230,31 @@ class EnemyShip(Damageable, ObjectTexture, ObjectVelocity, ObjectHitbox):
     def __init__(self, position: pg.typing.Point):
         super().__init__(
             position=position,
-            hitbox_size=(25, 25),
-            texture=assets.load_texture_map("enemies")["ufo"],
+            hitbox_size=(21, 21),
+            damage_hitbox_size=(32, 32),
+            
+            texture_map_path="enemies",
+            anim_path="saucer",
+            controller_path="enemy",
 
             points=50
         )
 
         self.__player_ship = None
         self.__speed = 0
-        self.__shoot_interval = Timer(18)
+        self.__shoot_interval = Timer(22)
         self.__start_attack_delay = Timer(35).start()
+
+        self.set_angular_vel(self.__rotation_speed)
 
     def update(self):
         super().update()
+
+        if not self._health:
+            if self.animations_complete:
+                self.force_kill()
+            return
+
         self.__shoot_interval.update()
         self.__start_attack_delay.update()
     
@@ -266,6 +299,16 @@ class EnemyShip(Damageable, ObjectTexture, ObjectVelocity, ObjectHitbox):
             if self.colliderect(self.__player_ship.rect):
                 self.__player_ship.kill()
                 self.kill()
+
+
+
+
+
+    def kill(self):
+        self._health = 0
+        self.clear_velocity()
+        self.set_angular_vel(0)
+        self._queue_sound("entity.asteroid.medium_explode")
         
 
 

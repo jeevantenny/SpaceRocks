@@ -32,6 +32,10 @@ class HasSoundQueue:
         self.__sound_queue: SoundQueue = []
 
 
+    def get_sound_queue(self) -> SoundQueue:
+        return self.__sound_queue.copy()
+
+
     def _queue_sound(self, sound_name: str, volume=1.0) -> None:
         self.__sound_queue.append((sound_name, volume))
 

@@ -328,7 +328,7 @@ class AnimController:
         if len(frames) == 1:
             return frames[0]
         
-        from file_processing import assets
+        from src.file_processing import assets
         base_surface = assets.colorkey_surface((max(frames, key=lambda x: x.width).width, max(frames, key=lambda x: x.height).height))
 
         for frame in frames:

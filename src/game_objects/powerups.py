@@ -22,13 +22,12 @@ from .particles import DisplayText
 powerup_list: dict[str, type["PowerUp"]] = {}
 
 
-class PowerUp:
+class PowerUp(soundfx.HasSoundQueue):
     "Gives the player's spaceship additional abilities that they can either be offensive or defensive."
 
-    _info_text = "No information"
+    texture_key: str | None = None
 
-    def __init__(self):
-        ...
+    _info_text = "No information"
 
     def __init_subclass__(cls):
         powerup_list[cls.__name__] = cls
@@ -74,10 +73,11 @@ class PowerUp:
 
 
 
-class PowerUpGroup:
+class PowerUpGroup(soundfx.HasSoundQueue):
     "Stores a collection of powerups collected by the player."
 
     def __init__(self):
+        super().__init__()
         self.__container: set[PowerUp] = set()
 
     def userinput(self, inputs: InputInterpreter) -> None:
@@ -85,8 +85,10 @@ class PowerUpGroup:
             powerup.userinput(inputs)
     
     def update(self, spaceship: PlayerShip) -> None:
-        for powerup in self.__container:
+        for powerup in self.__container.copy():
             powerup.update(spaceship)
+            self._join_sound_queue(powerup.clear_sound_queue())
+
     
     def draw(self, spaceship: PlayerShip, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)):
         for powerup in self.__container:
@@ -135,6 +137,9 @@ class PowerUpGroup:
 
 
 class PowerupCollectable(ObjectTexture, ObjectCollision):
+    __collection_hitbox = (32, 32)
+    ignore_camera_rotation=True
+
     def __init__(
             self,
             position: pg.typing.Point,
@@ -142,8 +147,13 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
             powerup_name: str
             ):
 
-        texture = assets.colorkey_surface((16, 16))
-        texture.fill("green")
+        powerup_type = powerup_list[powerup_name]
+        if powerup_type.texture_key is not None:
+            texture = assets.load_texture_map("powerups")[powerup_type.texture_key]
+        else:
+            texture = assets.colorkey_surface((16, 16))
+            texture.fill("green")
+
         super().__init__(
             position=position,
             texture=texture,
@@ -165,6 +175,13 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
     @property
     def powerup_name(self) -> str:
         return self.__powerup_name
+    
+
+    @property
+    def collection_rect(self) -> pg.FRect:
+        rect = pg.FRect((0, 0), self.__collection_hitbox)
+        rect.center = self.position
+        return rect
 
 
     def get_data(self):
@@ -188,10 +205,16 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
                     self.__player_ship = obj
                     break
         
-        elif self.colliderect(self.__player_ship.rect):
+        elif self.collection_rect.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
             self.host_state.powerup_info(powerup_list[self.__powerup_name])
             self.kill()
+
+
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        super().draw(surface, lerp_amount, offset, rotation)
+        if debug.Cheats.show_bounding_boxes:
+            self._draw_rect(self.collection_rect, "green", surface, lerp_amount, offset)
 
 
 
@@ -275,8 +298,18 @@ class SuperLaser(PowerUp):
 
 
 class Shield(PowerUp):
+    texture_key = "shield"
     def __init__(self):
         super().__init__()
+        self.__used = False
+
+
+
+    def update(self, spaceship):
+        super().update(spaceship)
+        if self.__used:
+            spaceship.remove_powerup(self)
+    
 
     def kill_protection(self, spaceship):
         for obj in spaceship.overlapping_objects():
@@ -285,8 +318,10 @@ class Shield(PowerUp):
                 push_amount.scale_to_length(3)
                 obj.accelerate(push_amount*2)
                 spaceship.accelerate(-push_amount)
-        
-        spaceship.remove_powerup(self)
+
+        self.__used = True
         spaceship.invincibility_frames()
+        
         controller_rumble("small_pulse", 0.8)
+        self._queue_sound("entity.asteroid.small_explode", 0.5)
         return True

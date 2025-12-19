@@ -27,7 +27,7 @@ from .particles import ShipSmoke, DisplayText
 
 
 class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
-    draw_layer = 2
+    draw_layer = 10
     _rotation_speed = 30
     _thrust_power = 1
     __asset_key = "spaceship"
@@ -189,7 +189,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 class PlayerShip(Spaceship):
     distance_based_sound=False
     save_entity_progress=True
-    __max_combo=50
+    __max_combo=10
     __max_combo_points=500
 
     def __init__(self, position):
@@ -227,6 +227,9 @@ class PlayerShip(Spaceship):
         for powerup_name in object_data.get("powerups", []):
             self.__powerups.add(powerup_name)
 
+        self._do_transition()
+        self._skip_animation_to_end()
+
 
     def get_data(self):
         data = super().get_data()
@@ -262,6 +265,8 @@ class PlayerShip(Spaceship):
     def update(self):
         super().update()
         self.__powerups.update(self)
+        self._join_sound_queue(self.__powerups.clear_sound_queue())
+
         self.__invincibility_timer.update()
 
         for bullet in self.__bullets_fired.copy():
@@ -328,7 +333,7 @@ class PlayerShip(Spaceship):
 
         self.score += add_points
         if not debug.Cheats.no_point_combo:
-            self.combo = min(math.ceil(self.combo*1.1), self.__max_combo)
+            self.combo = min(self.combo*1.1, self.__max_combo)
 
         return add_points
 
@@ -346,9 +351,7 @@ class PlayerShip(Spaceship):
                 prev_combo = self.combo
                 points = self.take_points(obj.points)
 
-                if prev_combo >= self.__max_combo:
-                    text_surface = font.small_font.render(f"+{points} MAX COMBO", 1, "#dd99ff", "#550055", False)
-                elif prev_combo > 1:
+                if prev_combo > 1:
                     text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
                 else:
                     text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)

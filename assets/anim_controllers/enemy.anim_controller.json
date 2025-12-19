@@ -1,0 +1,16 @@
+{
+    "name": "enemy.anim_controller",
+    "starting_state": "idle",
+
+    "states": {
+        "idle": {
+            "animations": ["idle"],
+            "transitions": {
+                "explode": "not obj.health"
+            }
+        },
+        "explode": {
+            "animations": ["explode"]
+        }
+    }
+}

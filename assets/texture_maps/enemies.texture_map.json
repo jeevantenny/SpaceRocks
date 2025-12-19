@@ -1,6 +1,12 @@
 {
     "texture": "game_objects/enemies",
     "mappings": {
-        "ufo": [1, 1, 22, 22]
+        "saucer_idle": [1, 1, 21, 21],
+        "saucer_explode_1": [23, 1, 21, 21],
+        "saucer_explode_2": [46, 1, 21, 23],
+        "saucer_explode_3": [69, 1, 23, 23],
+        "saucer_explode_4": [96, 1, 25, 25],
+        "saucer_explode_5": [23, 23, 25, 25],
+        "saucer_explode_6": [27, 23, 25, 25]
     }
 }

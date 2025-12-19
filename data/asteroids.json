@@ -1,7 +1,7 @@
 {
     "blue_small": {
         "texture_map": "asteroid_small",
-        "hitbox_size": 16,
+        "hitbox_size": 12,
         "health": 1,
         "points": 15,
         "size_value": 1
@@ -18,7 +18,7 @@
     "green_small": {
         "texture_map": "asteroid_small",
         "palette": "asteroid/green_rocks",
-        "hitbox_size": 16,
+        "hitbox_size": 12,
         "health": 1,
         "points": 5,
         "size_value": 1
@@ -34,7 +34,7 @@
     },
     "test_duplicator": {
         "texture_map": "asteroid_small",
-        "hitbox_size": 16,
+        "hitbox_size": 12,
         "health": 1,
         "points": 10,
         "size_value": 1,
@@ -44,7 +44,7 @@
     "yellow_small": {
         "texture_map": "asteroid_small",
         "palette": "asteroid/yellow_rocks",
-        "hitbox_size": 16,
+        "hitbox_size": 12,
         "health": 1,
         "points": 50,
         "size_value": 1

@@ -74,7 +74,7 @@ class Play(State):
         self.spaceship.set_score_limit(self.__level_data.score_range[1])
 
         self.camera.set_position((0, 0))
-        self.camera.set_velocity((0, 0))
+        self.camera.reset_motion()
 
         self.__lvl_transition_timer.restart()
         self.__hud_timer.restart()
@@ -244,7 +244,6 @@ class Play(State):
                 # The timer automatically calls the game over scree once complete.
                 self.__game_over_timer.start()
 
-                # Clears velocity and angular velocity
                 self.camera.clear_velocity()
 
                 for entity in self.entities.sprites():
@@ -303,7 +302,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo:.0f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"level: {self.__level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
 
@@ -344,6 +343,8 @@ class Play(State):
             entrance_offset = 0
         
         y_offset = 6
+        if debug.DEBUG_MODE:
+            y_offset += 10
         if self.__prev_highscore:
             self.__show_scores(surface, "Highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.__display_score or self.__display_score == self.spaceship.score))
             y_offset += 16
@@ -379,7 +380,7 @@ class Play(State):
             if self.spaceship.score >= self.__level_data.score_range[1]:
                 self.__level_cleared = True
                 ShowText("Level Cleared").add_to_stack(self.state_stack)
-                self.__delete_offscreen_asteroids()
+                self.__delete_offscreen_spawned_entities()
         
         else:
             if self.spaceship.get_velocity().magnitude_squared() > 5000:
@@ -554,10 +555,10 @@ class Play(State):
         return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < self.__visible_radius)
 
 
-    def __delete_offscreen_asteroids(self) -> None:
-        for asteroid in self.asteroids.sprites():
-            if not asteroid.colliderect(self.camera.get_visible_area(config.PIXEL_WINDOW_SIZE)):
-                asteroid.force_kill()
+    def __delete_offscreen_spawned_entities(self) -> None:
+        for obj in self.spawned_entities.sprites():
+            if not obj.rect.colliderect(self.camera.get_visible_area(config.PIXEL_WINDOW_SIZE)):
+                obj.force_kill()
                 
     
 

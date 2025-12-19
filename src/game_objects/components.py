@@ -220,6 +220,9 @@ class ObjectAnimation(ObjectTexture):
     def _advance_animation(self, amount: float) -> None:
         self.__controller.advance_animations(amount)
 
+    def _skip_animation_to_end(self) -> None:
+        self.__controller.skip_to_end()
+
 
     
     def _do_transition(self) -> None:
@@ -279,10 +282,22 @@ class ObjectHitbox(GameObject):
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0), rotation=0) -> str | None:
         super().draw(surface, lerp_amount, offset, rotation)
         if debug.Cheats.show_bounding_boxes:
-            blit_rect: pg.Rect = self.rect
-            if isinstance(self, ObjectVelocity):
-                blit_rect.center = self.get_lerp_pos(lerp_amount)+offset
-            pg.draw.rect(surface, "red", blit_rect, 1)
+            self._draw_rect(self.rect, "red", surface, lerp_amount, offset)
+
+
+    def _draw_rect(
+            self,
+            rect: pg.typing.RectLike,
+            color: pg.typing.ColorLike,
+            surface: pg.Surface,
+            lerp_amount=0.0,
+            offset=(0, 0)) -> None:
+
+        blit_rect = rect.copy()
+        if isinstance(self, ObjectVelocity):
+            blit_rect.center = self.get_lerp_pos(lerp_amount)+offset
+        pg.draw.rect(surface, color, blit_rect, 1)
+
     
 
 

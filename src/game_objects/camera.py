@@ -43,6 +43,10 @@ class Camera:
         self.__velocity.xy = value
 
 
+    def reset_motion(self) -> None:
+        self.set_velocity((0, 0))
+
+
     def update(self) -> None:
         "Updates position of camera for every game tick."
         displacement = self.__target_pos-self.position
@@ -138,6 +142,10 @@ class RotoZoomCamera(Camera):
     
     def rotate(self, amount: int) -> None:
         self.set_rotation(self.__rotation+amount)
+
+    def reset_motion(self) -> None:
+        super().reset_motion()
+        self.set_angular_vel(0)
     
     def update(self):
         super().update()
@@ -147,29 +155,17 @@ class RotoZoomCamera(Camera):
         if amount > 180:
             amount = 360 - amount
             direction *= -1
-        
-        
-        # print(amount)
 
-        # target_vel = direction*
         target_vel = direction*pg.math.clamp(int(amount*0.1), 1, self.__angular_vel*direction+1)
         self.set_angular_vel(target_vel)
-        # print((target_vel < self.__angular_vel < 0), (target_vel > self.__angular_vel > 0))
-        # if (target_vel < self.__angular_vel < 0) or (target_vel > self.__angular_vel > 0):
-        #     self.set_angular_vel(self.__angular_vel+sign(target_vel))
-        # else:
-        #     self.set_angular_vel(target_vel)
         self.rotate(self.__angular_vel)
 
-        print(self.__angular_vel)
 
 
     def capture(self, output_surface, entities, lerp_amount=0):
         camera_lerp_pos = self.lerp_position(lerp_amount)
         camera_lerp_rotation = self.get_lerp_rotation(lerp_amount)
         blit_offset = pg.Vector2(output_surface.size)*0.5 - camera_lerp_pos
-
-        # print(f"{camera_lerp_rotation:.2f}", self.__rotation, self.__angular_vel)
 
         for entity in entities.get_draw_order():
             if isinstance(entity, ObjectVelocity):
@@ -186,9 +182,6 @@ class RotoZoomCamera(Camera):
                 -camera_lerp_rotation if not entity.ignore_camera_rotation else 0)
 
         if debug.Cheats.show_bounding_boxes:
-            # crosshair_pos = (self.get_target()-self.position).rotate(self.__rotation) + self.position
-            # blit_offset = pg.Vector2(output_surface.size)*0.5 - self.position
-
             crosshair_pos = (self.get_target()-self.position).rotate(-self.__rotation) + pg.Vector2(output_surface.size)*0.5
             self._draw_crosshair(output_surface, crosshair_pos)
     
