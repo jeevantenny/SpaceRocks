@@ -12,7 +12,7 @@ import debug
 
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
-from src.ui import font
+from src.ui import blit_to_center, font
 from src.states import StateStack, init_state
 from src.file_processing import assets
 from src.audio import soundfx
@@ -49,8 +49,11 @@ class Game:
         "Called by the initializer to initialize the object."
         self.run = True
 
+        self.__monitor_size = (pg.display.Info().current_w, pg.display.Info().current_h)
+        self.__fullscreen_scale = self.__monitor_size[1]/config.PIXEL_WINDOW_HEIGHT
+
         self.__set_screen_mode(False)
-        self.pixel_scaled_window = pg.Surface(pg.Vector2(self.screen.size)/config.PIXEL_SCALE)
+        self.game_canvas = pg.Surface(pg.Vector2(self.screen.size)/config.PIXEL_SCALE)
         pg.display.set_caption(config.WINDOW_CAPTION)
         pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
         self.__fullscreen = False
@@ -75,9 +78,9 @@ class Game:
         "Used to switch between windowed and fullscreen mode."
 
         if fullscreen:
-            self.screen = pg.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF|FULLSCREEN)
+            self.screen = pg.display.set_mode(self.__monitor_size, FULLSCREEN)
         else:
-            self.screen = pg.display.set_mode(config.WINDOW_SIZE, DOUBLEBUF)
+            self.screen = pg.display.set_mode(config.WINDOW_SIZE)
         
         self.__fullscreen = fullscreen
 
@@ -215,8 +218,13 @@ class Game:
 
         if self.state_stack:
             lerp_amount = min((self.prev_frame-self.prev_tick)*self.tick_rate, 1)
-            self.state_stack.draw(self.pixel_scaled_window, lerp_amount)
-            pg.transform.scale(self.pixel_scaled_window, self.screen.size, self.screen)
+            self.state_stack.draw(self.game_canvas, lerp_amount)
+            
+            if not self.__fullscreen:
+                pg.transform.scale(self.game_canvas, self.screen.size, self.screen)
+            else:
+                self.screen.fill("black")
+                blit_to_center(pg.transform.scale_by(self.game_canvas, self.__fullscreen_scale), self.screen)
 
             if debug.DEBUG_MODE:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
