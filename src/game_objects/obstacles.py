@@ -71,8 +71,7 @@ class Damageable(GameObject):
 
 
 class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
-
-    save_entity_progress=True
+    progress_save_key = "asteroid"
 
     __asteroid_data = load_json("data/asteroids")
     __asset_key = "asteroid"
@@ -217,7 +216,7 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 
 
 class EnemyShip(Damageable, ObjectAnimation, ObjectVelocity, ObjectHitbox):
-    save_entity_progress=False
+    progress_save_key=None
     ignore_camera_rotation=True
     draw_layer=9
 

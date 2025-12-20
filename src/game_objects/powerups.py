@@ -137,8 +137,10 @@ class PowerUpGroup(soundfx.HasSoundQueue):
 
 
 class PowerupCollectable(ObjectTexture, ObjectCollision):
-    __collection_hitbox = (32, 32)
     ignore_camera_rotation=True
+    progress_save_key="powerup_collectable"
+    
+    __collection_hitbox = (32, 32)
 
     def __init__(
             self,

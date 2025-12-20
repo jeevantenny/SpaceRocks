@@ -20,9 +20,11 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
     Game objects represent objects that exist within the game world
     """
-    save_entity_progress=False
+    progress_save_key: str | None = None
     distance_based_sound=True
     ignore_camera_rotation=False
+
+    __object_type_list: dict[str, type["GameObject"]] = {}
 
     def __init__(self, *, position: pg.typing.Point, group: "ObjectGroup | None" = None) -> None:
         if group:
@@ -32,12 +34,18 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         
         self.position = pg.Vector2(position)
 
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        if cls.progress_save_key is not None:
+            GameObject.__object_type_list[cls.progress_save_key] = cls
+
         
 
     def __init_from_data__(self, object_data: dict) -> None:
         "Alternate way to create game objects using data from save file."
 
-        if not self.save_entity_progress:
+        if not self.progress_save_key:
             raise NotImplementedError(f"{type(self).__name__} should not be reconstructed from data.")
 
 
@@ -54,7 +62,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
     def init_from_data(cls, object_data: dict) -> "GameObject":
         "Called on GameObject class to create object from save data."
 
-        obj_cls = object_data["class"]
+        obj_cls = GameObject.__object_type_list[object_data["save_key"]]
         obj: GameObject = obj_cls.__new__(obj_cls)
         obj.__init_from_data__(object_data)
         return obj
@@ -84,11 +92,11 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         passed into the init_from_data method to recreate the object when loading game from a save file.
         """
 
-        if not self.save_entity_progress:
+        if not self.progress_save_key:
             raise NotImplementedError(f"{type(self).__name__} should not be saved in save data.")
         
         return {"id": id(self),
-                "class": type(self),
+                "save_key": type(self).progress_save_key,
                 "position": tuple(self.position)}
         
 

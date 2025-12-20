@@ -139,7 +139,7 @@ class Projectile(ObjectTexture, ObjectVelocity):
 
 
 class PlayerBullet(Projectile):
-    save_entity_progress=True
+    progress_save_key = "player_bullet"
 
     __speed = 40
     __lifetime_value = 18

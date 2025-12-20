@@ -577,7 +577,7 @@ class Play(State):
         entity_data = [entity.get_data()
                        for entity in self.entities.sprites()
                        
-                       if entity.save_entity_progress]
+                       if entity.progress_save_key is not None]
         
         save_data = SaveData(self.__level_data.level_name, self.spaceship.score, entity_data)
         data.save_progress(save_data)

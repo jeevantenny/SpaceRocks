@@ -21,6 +21,8 @@ class ShipSmoke(ObjectAnimation, ObjectVelocity):
     save_entity_progress=True
     draw_layer=6
 
+    progress_save_key="ship_thruster_smoke"
+
     def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point):
         
         super().__init__(

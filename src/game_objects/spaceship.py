@@ -188,7 +188,8 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 class PlayerShip(Spaceship):
     distance_based_sound=False
-    save_entity_progress=True
+    progress_save_key="player_spaceship"
+
     __max_combo=10
     __max_combo_points=500
 
