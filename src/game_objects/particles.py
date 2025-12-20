@@ -19,6 +19,8 @@ __all__ = [
 class ShipSmoke(ObjectAnimation, ObjectVelocity):
     "The smoke particle produced by the spaceship."
 
+    progress_save_key="ship_thruster_smoke"
+
     def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point):
         
         super().__init__(

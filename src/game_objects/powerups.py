@@ -134,6 +134,8 @@ class PowerUpGroup:
 
 
 class PowerupCollectable(ObjectTexture, ObjectCollision):
+    progress_save_key="powerup_collectable"
+
     def __init__(
             self,
             position: pg.typing.Point,

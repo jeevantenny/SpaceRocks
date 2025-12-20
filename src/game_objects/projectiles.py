@@ -49,6 +49,7 @@ def obj_line_collision(obj: GameObject, lines: CollisionLines) -> bool:
 
 class Bullet(ObjectTexture, ObjectVelocity):
     draw_layer = 1
+    progress_save_key = "player_bullet"
 
     __speed = 40
     __lifetime = 18

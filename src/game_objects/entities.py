@@ -205,6 +205,8 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
 
 
 class PlayerShip(Spaceship):
+    progress_save_key="player_spaceship"
+
     def __init__(self, position):
         super().__init__(position)
         self._attack_types: list[type[GameObject]] = [Asteroid, EnemyShip]
@@ -468,8 +470,9 @@ class EnemyShip(Spaceship):
 
 
 class Asteroid(ObjectAnimation, ObjectCollision):
-    __asteroid_data = load_json("data/asteroids")
+    progress_save_key = "asteroid"
 
+    __asteroid_data = load_json("data/asteroids")
     __asset_key = "asteroid"
 
     # Lower max speed for asteroids ensure that they are never to fast to dodge
