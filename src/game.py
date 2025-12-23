@@ -3,6 +3,7 @@
 import pygame as pg
 from pygame.locals import *
 import threading
+from functools import lru_cache
 
 import traceback
 from time import perf_counter
@@ -43,14 +44,16 @@ class Game:
         self.__setup_engine()
 
 
+    
+    @property
+    def __desktop_size(self) -> None:
+        return pg.display.get_desktop_sizes()[0]
+
 
 
     def __setup_engine(self) -> None:
         "Called by the initializer to initialize the object."
         self.run = True
-
-        self.__monitor_size = (pg.display.Info().current_w, pg.display.Info().current_h)
-        self.__fullscreen_scale = self.__monitor_size[1]/config.PIXEL_WINDOW_HEIGHT
 
         self.__set_screen_mode(False)
         self.game_canvas = pg.Surface(pg.Vector2(self.screen.size)/config.PIXEL_SCALE)
@@ -78,7 +81,7 @@ class Game:
         "Used to switch between windowed and fullscreen mode."
 
         if fullscreen:
-            self.screen = pg.display.set_mode(self.__monitor_size, FULLSCREEN)
+            self.screen = pg.display.set_mode(self.__desktop_size, FULLSCREEN)
         else:
             self.screen = pg.display.set_mode(config.WINDOW_SIZE)
         
@@ -224,7 +227,7 @@ class Game:
                 pg.transform.scale(self.game_canvas, self.screen.size, self.screen)
             else:
                 self.screen.fill("black")
-                blit_to_center(pg.transform.scale_by(self.game_canvas, self.__fullscreen_scale), self.screen)
+                blit_to_center(pg.transform.scale_by(self.game_canvas, self.__fullscreen_scale(self.__desktop_size)), self.screen)
 
             if debug.DEBUG_MODE:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
@@ -234,6 +237,11 @@ class Game:
                 self.screen.blit(self.debug_font.render(blit_text, False, "white", "black"))
 
                 self.__show_stack_view()
+
+
+    @lru_cache(1)
+    def __fullscreen_scale(self, monitor_size: pg.typing.Point) -> float:
+        return min(monitor_size[0]/config.PIXEL_WINDOW_WIDTH, monitor_size[1]/config.PIXEL_WINDOW_HEIGHT)
 
 
     
