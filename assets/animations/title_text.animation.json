@@ -3,20 +3,20 @@
 
     "animations": {
         "main_entrance_a": {
-            "duration": 16,
+            "duration": 19,
             "timeline": {
                 "0": "blank",
-                "5": "style_a_1",
-                "6": "style_a_2",
-                "7": "style_a_3",
-                "8": "style_a_4",
-                "9": "style_a_5",
-                "9.5": "style_a_6",
-                "10": "style_a_7",
-                "10.5": "style_a_8",
-                "12": "style_a_9",
-                "14": "style_a_10",
-                "15": "main"
+                "7": "style_a_1",
+                "8": "style_a_2",
+                "9": "style_a_3",
+                "10": "style_a_4",
+                "11": "style_a_5",
+                "11.5": "style_a_6",
+                "12": "style_a_7",
+                "12.5": "style_a_8",
+                "14": "style_a_9",
+                "16": "style_a_10",
+                "17": "main"
             }
         },
         "main_entrance_b": {

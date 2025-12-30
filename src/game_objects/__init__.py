@@ -92,7 +92,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
         passed into the init_from_data method to recreate the object when loading game from a save file.
         """
 
-        if not self.progress_save_key:
+        if type(self).progress_save_key is None:
             raise NotImplementedError(f"{type(self).__name__} should not be saved in save data.")
         
         return {"id": id(self),

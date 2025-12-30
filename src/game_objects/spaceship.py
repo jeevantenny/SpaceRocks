@@ -179,7 +179,7 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         for _ in range(5):
             direction = self.get_rotation_vector()
             velocity = direction.rotate(random.randint(-15, 15))*random.randint(-15, -3)+self._velocity
-            position = self.position-direction*8+self._velocity
+            position = self.position-direction*16+self._velocity
             self.primary_group.add(ShipSmoke(position, velocity))
         
 
