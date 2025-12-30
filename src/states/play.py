@@ -588,16 +588,13 @@ class Play(State):
 
     def quit(self) -> None:
         # Don't dave any data if the player has no points
-        if not self.spaceship.score:
-            return
-        
-        self.__set_score()
-        # Saves the current state of the game if the player has scored points and had not died.
-        data.save_highscore(self.highscore)
-        if self.spaceship.health:
-            self.__save_progress()
+        if self.spaceship.score:
+            self.__set_score()
+            data.save_highscore(self.highscore)
 
-        # If not it will save the highscore.
-        else:
-            data.delete_progress()
-        self.entities.kill_all()
+            if self.spaceship.health:
+                self.__save_progress()
+            else:
+                data.delete_progress()
+
+            self.entities.kill_all()
