@@ -2,12 +2,11 @@
 
 import os
 import pickle
-from functools import lru_cache
 from json import JSONDecodeError
 
 import debug
 
-from src.custom_types import UserSettings, LevelData, SaveData
+from src.custom_types import LevelData, SaveData
 from src.game_errors import SaveFileError, LevelDataError
 
 from . import load_json, save_json
@@ -20,8 +19,6 @@ SETTINGS_DATA_PATH = "user_data/settings"
 LEVELS_DIR = "data/levels"
 
 SAVE_DATA_PATH = "user_data/progress.bin"
-
-__demo_highscore = 0
 
 
 if not (os.path.exists("user_data") or debug.Cheats.demo_mode):
@@ -42,17 +39,17 @@ def load_level(name: str) -> LevelData:
         level_data = load_json(f"{LEVELS_DIR}/{name}")
     except FileNotFoundError:
         raise ValueError(f"Invalid level name '{name}'")
+
+    asteroids: dict = level_data.get("spawn_asteroids", {})
+    asteroid_weights = (list(asteroids.keys()), list(asteroids.values()))
+
+    enemies: dict = level_data.get("spawn_enemies", {})
+    enemy_weights = (list(enemies.keys()), list(enemies.values()))
+
+    powerups: dict = level_data.get("spawn_powerups", {})
+    powerup_weights = (list(powerups.keys()), list(powerups.values()))
+
     try:
-
-        asteroids: dict = level_data.get("spawn_asteroids", {})
-        asteroid_weights = (list(asteroids.keys()), list(asteroids.values()))
-
-        enemies: dict = level_data.get("spawn_enemies", {})
-        enemy_weights = (list(enemies.keys()), list(enemies.values()))
-
-        powerups: dict = level_data.get("spawn_powerups", {})
-        powerup_weights = (list(powerups.keys()), list(powerups.values()))
-
         level_data_obj = LevelData(
             level_name=             name,
             base_color=             level_data.get("base_color", "#000000"),
@@ -126,16 +123,21 @@ def load_progress() -> SaveData | None:
 
     try:
         with open(SAVE_DATA_PATH, "rb") as fp:
-            save_data = pickle.load(fp)
-            if not isinstance(save_data, SaveData):
-                raise SaveFileError
-            return save_data
+            try:
+                save_data = pickle.load(fp)
+            except EOFError:
+                return None
+            except Exception:
+                raise SaveFileError("Save file got corrupted")
     
-    except (FileNotFoundError, EOFError):
+    except FileNotFoundError:
         return None
+
     
-    except (pickle.UnpicklingError, SaveFileError):
-        raise SaveFileError("Save data got corrupted")
+    if isinstance(save_data, SaveData):
+        return save_data
+    else:
+        raise SaveFileError("Save file is of incorrect type")
     
 
 
@@ -158,42 +160,50 @@ def delete_progress() -> None:
 
 
 
-@lru_cache(1)
-def load_settings() -> UserSettings:
+def __load_settings() -> dict:
     "Loads user settings as a dictionary"
+    if debug.Cheats.demo_mode:
+        return {}
     try:
-        settings = load_json(SETTINGS_DATA_PATH)
+        return load_json(SETTINGS_DATA_PATH)
     except (FileNotFoundError, JSONDecodeError):
-        settings = {}
-    else:
-        settings = {
-            name: value
-            for name, value in settings.items()
-            if name in UserSettings._fields
-        }
+        return {}
 
-    return UserSettings(**settings)
+
+
+def get_setting(name: str) -> bool|float:
+    "Gets the value of a user setting."
+    global __settings_data, __default_settings
+    try:
+        return __settings_data.get(name, __default_settings[name])
+    except KeyError:
+        raise ValueError(f"Invalid setting name '{name}'")
 
 
 def update_settings(**settings_data) -> None:
     "Updates user settings. Only settings that change need to be present in `settings_data`."
-    full_settings = load_settings()._asdict()
-    for setting in settings_data.keys():
-        if setting not in full_settings:
-            raise ValueError(f"Invalid setting name '{setting}'")
+    global __settings_data, __default_settings
     
-    full_settings.update(settings_data)
-    save_json(full_settings, SETTINGS_DATA_PATH)
-    load_settings.cache_clear()
+    for name, value in settings_data.items():
+        if name in __default_settings:
+            __settings_data[name] = value
+        else:
+            raise ValueError(f"Invalid argument '{name}'")
+        
+
+
+def save_settings() -> None:
+    "Saves the current user settings to the settings.json file."
+    if not debug.Cheats.demo_mode:
+        global __settings_data, __default_settings
+        save_json(__settings_data, SETTINGS_DATA_PATH)
 
 
 
 def reset_settings() -> None:
     "Resets all settings to default values."
-    save_json({}, SETTINGS_DATA_PATH)
-    load_settings.cache_clear()
-
-
+    global __settings_data
+    __settings_data = {}
 
 
 
@@ -206,3 +216,17 @@ def delete_user_data() -> None:
     delete_progress()
     save_highscore(0)
     reset_settings()
+
+
+
+__demo_highscore = 0
+__settings_data = __load_settings()
+
+__default_settings = {
+    "soundfx_volume": 0.7,
+    "controller_rumble": True,
+    "motion_blur": True,
+    "scale_blur": False,
+
+    "show_version_number": True
+}

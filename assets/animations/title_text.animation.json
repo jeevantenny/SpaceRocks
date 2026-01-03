@@ -20,13 +20,15 @@
             }
         },
         "main_entrance_b": {
-            "duration": 4,
+            "duration": 5,
+            "anim_speed_multiplier": 1.1,
             "timeline": {
-                "0": "style_b_4",
-                "1": "style_b_3",
-                "2": "style_b_2",
-                "3": "style_b_1",
-                "4": "main"
+                "0": "blank",
+                "1": "style_b_4",
+                "2": "style_b_3",
+                "3": "style_b_2",
+                "4": "style_b_1",
+                "5": "main"
             }
         },
         "main_glint": {
@@ -37,6 +39,7 @@
         },
         "main_exit": {
             "duration": 4,
+            "anim_speed_multiplier": 1.1,
             "timeline": {
                 "0": "style_b_1",
                 "1": "style_b_2",

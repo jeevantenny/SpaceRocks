@@ -395,13 +395,6 @@ class AnimController:
 
 
 
-class UserSettings(NamedTuple):
-    soundfx_volume: float = 0.7
-    controller_rumble: bool = True
-    motion_blur: bool = True
-    show_version_number: bool = True
-
-
 
 class LevelData(NamedTuple):
     level_name: str

@@ -281,7 +281,7 @@ class Play(State):
     def draw(self, surface, lerp_amount=0.0):
         # if self.spaceship.get_velocity().magnitude_squared() < 1500:
         
-        if data.load_settings().motion_blur and self.is_top_state():
+        if data.get_setting("motion_blur") and self.is_top_state():
             surface.fill((70, 70, 70), special_flags=pg.BLEND_RGB_SUB)
             surface.fill(self.__level_data.base_color, special_flags=pg.BLEND_RGB_ADD)
         else:
@@ -343,8 +343,6 @@ class Play(State):
             entrance_offset = 0
         
         y_offset = 6
-        if debug.DEBUG_MODE:
-            y_offset += 10
         if self.__prev_highscore:
             self.__show_scores(surface, "Highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.__display_score or self.__display_score == self.spaceship.score))
             y_offset += 16

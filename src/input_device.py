@@ -267,7 +267,7 @@ class Controller:
 
     def update(self) -> None:
         if self.__rumble_queue:
-            if data.load_settings().controller_rumble:
+            if data.get_setting("controller_rumble"):
                 rumble = self.__rumble_queue.pop(0)
                 self.__joystick.rumble(rumble[0], rumble[1], rumble[2]*50)
             else:
@@ -291,7 +291,7 @@ class Controller:
         if pattern_name not in self.__rumble_patterns:
             raise ValueError(f"Invalid rumble pattern {pattern_name}")
 
-        if self.__joystick is None or not data.load_settings().controller_rumble or (wait_until_clear and self.__rumble_queue):
+        if self.__joystick is None or not data.get_setting("controller_rumble") or (wait_until_clear and self.__rumble_queue):
             return
         
         self.__rumble_queue.clear()
