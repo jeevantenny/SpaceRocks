@@ -21,14 +21,17 @@ class Initializer:
 
         try:
             save_data = data.load_progress()
+            save_error = False
         except SaveFileError as e:
             save_data = None
-            print(*e.args)
+            save_error = True
 
 
         if save_data is None:
             play.Play(get_start_level()).add_to_stack(state_stack)
             menus.TitleScreen().add_to_stack(state_stack)
+            if save_error:
+                info_states.SaveFileCorrupted().add_to_stack(state_stack)
         
         else:
             play.Play.init_from_save(save_data).add_to_stack(state_stack)

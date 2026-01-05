@@ -1,5 +1,5 @@
 import pygame as pg
-from typing import Iterable
+from typing import Iterable, Callable
 
 from src.custom_types import Timer, Animation, AnimController
 from src.math_functions import sign
@@ -139,6 +139,8 @@ class Slider(UIElement):
         self.__bar_texture = texture_map["slider_bar"]
         self.__handle_texture = texture_map["slider_handle"]
 
+        self.__on_slide: Callable[[float], None] | None = None
+
 
     @property
     def size(self) -> pg.typing.Point:
@@ -155,12 +157,20 @@ class Slider(UIElement):
         "Returns how full the slider is from 0.0 to 1.0."
         return (self.__value-self.__min)*self.__inverse_of_range
     
+
+    def on_slide(self, func: Callable[[float], None] | None) -> None:
+        self.__on_slide = func
+    
     def userinput(self, inputs):
+        prev_value = self.__value
         if inputs.check_input("left"):
             self.__value -= self.__step
         if inputs.check_input("right"):
             self.__value += self.__step
         self.__value = pg.math.clamp(self.__value, self.__min, self.__max)
+
+        if prev_value != self.__value and self.__on_slide is not None:
+            self.__on_slide(self.value)
     
     def render(self):
         surface = self.__base_texture.copy()
@@ -187,6 +197,8 @@ class Toggle(UIElement):
         self.__controller.do_transitions(self)
         self.__controller.skip_to_end()
 
+        self.__on_toggle: Callable[[bool], None] | None = None
+
 
     @property
     def size(self) -> pg.typing.Point:
@@ -195,6 +207,10 @@ class Toggle(UIElement):
     @property
     def on(self) -> bool:
         return self.__on
+    
+
+    def on_toggle(self, func: Callable[[bool], None] | None) -> None:
+        self.__on_toggle = func
 
     
     def userinput(self, inputs):
@@ -202,6 +218,8 @@ class Toggle(UIElement):
             or (not self.__on and inputs.check_input("right"))
             or (self.__on and inputs.check_input("left"))):
             self.__on = not self.__on
+            if self.__on_toggle is not None:
+                self.__on_toggle(self.on)
         
     
     def update(self):

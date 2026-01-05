@@ -108,14 +108,15 @@ class TitleScreen(State):
         if not self.__start_gameplay and self.title.animations_complete:
             blit_to_center(self.__info_text, surface, (0, 50))
 
-            if not debug.Cheats.demo_mode and self.is_top_state():
-                settings_info = font.font_with_icons.render("Settings<settings>")
+            if self.is_top_state():
                 info_offset = 18
-                if data.load_settings().show_version_number:
-                    version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
-                    surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
-                    info_offset += 10
+                if not debug.Cheats.demo_mode:
+                    if data.get_setting("show_version_number"):
+                        version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
+                        surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
+                        info_offset += 10
 
+                settings_info = font.font_with_icons.render("Settings<settings>")
                 surface.blit(settings_info, (10, surface.height-info_offset))
 
 
@@ -182,16 +183,21 @@ class PauseMenu(State):
 class Settings(State):
     def __init__(self):
         super().__init__()
-        settings = data.load_settings()
-        self.__soundfx = elements.Slider((0, 100), int(settings.soundfx_volume*100), 10, "Sound FX")
-        self.__controller_rumble = elements.Toggle(settings.controller_rumble, "Controller Rumble")
-        self.__motion_blur = elements.Toggle(settings.motion_blur, "Motion blur")
-        self.__show_version_num = elements.Toggle(settings.show_version_number, "Show version number")
+        self.__soundfx = elements.Slider((0, 100), int(data.get_setting("soundfx_volume")*100), 10, "Sound FX")
+        self.__soundfx.on_slide(lambda x: data.update_settings(soundfx_volume=round(x*0.01, 2)))
+        
+        self.__scale_blur = elements.Toggle(data.get_setting("scale_blur"), "Pixel blur")
+        self.__scale_blur.on_toggle(lambda x: data.update_settings(scale_blur=x))
+
+        self.__controller_rumble = elements.Toggle(data.get_setting("controller_rumble"), "Controller Rumble")
+        self.__motion_blur = elements.Toggle(data.get_setting("motion_blur"), "Motion blur")
+        self.__show_version_num = elements.Toggle(data.get_setting("show_version_number"), "Show version number")
+
         self.__elements = elements.ElementList([
             self.__soundfx,
             self.__controller_rumble,
             self.__motion_blur,
-            # elements.Slider((0, 100), 0, 5, "Congo Bongo!"),
+            self.__scale_blur,
             elements.UIPadding(15),
             self.__show_version_num
         ], wrap_list=True)
@@ -211,7 +217,6 @@ class Settings(State):
     def update(self):
         self.__elements.update()
     
-
     def draw(self, surface, lerp_amount=0):
         self.__draw_background(surface)
         # self.prev_state.draw(surface)
@@ -241,8 +246,11 @@ class Settings(State):
             soundfx_volume=round(self.__soundfx.value*0.01, 2),
             controller_rumble=self.__controller_rumble.on,
             show_version_number=self.__show_version_num.on,
-            motion_blur=self.__motion_blur.on
+            motion_blur=self.__motion_blur.on,
+            scale_blur=self.__scale_blur.on
         )
+
+        data.save_settings()
 
 
 

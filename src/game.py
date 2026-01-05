@@ -15,7 +15,7 @@ from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, 
 
 from src.ui import blit_to_center, font
 from src.states import StateStack, init_state
-from src.file_processing import assets
+from src.file_processing import assets, data
 from src.audio import soundfx
 from src.misc import set_console_style, bar_of_dashes
 
@@ -228,10 +228,18 @@ class Game:
             self.state_stack.draw(self.game_canvas, lerp_amount)
             
             if not self.__fullscreen:
-                pg.transform.scale(self.game_canvas, self.screen.size, self.screen)
+                if data.get_setting("scale_blur"):
+                    pg.transform.smoothscale(self.game_canvas, self.screen.size, self.screen)
+                else:
+                    pg.transform.scale(self.game_canvas, self.screen.size, self.screen)
             else:
                 self.screen.fill("black")
-                blit_to_center(pg.transform.scale_by(self.game_canvas, self.__fullscreen_scale(self.__desktop_size)), self.screen)
+                if data.get_setting("scale_blur"):
+                    blit_to_center(pg.transform.smoothscale_by(self.game_canvas, self.__fullscreen_scale(self.__desktop_size)), self.screen)
+                else:
+                    blit_to_center(pg.transform.scale_by(self.game_canvas, self.__fullscreen_scale(self.__desktop_size)), self.screen)
+                    
+                
 
             if debug.DEBUG_MODE:
                 blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
@@ -290,6 +298,7 @@ class Game:
         if self.error and debug.PAUSE_ON_CRASH:
             input("Save and Exit ->")
         try:
+            data.save_settings()
             self.state_stack.quit()
 
             set_console_style(32, 1)

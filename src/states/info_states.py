@@ -29,6 +29,22 @@ class DemoState(State):
 
 
 
+
+class SaveFileCorrupted(State):
+    def userinput(self, inputs):
+        if inputs.check_input("select"):
+            data.delete_progress()
+            self.state_stack.pop()
+    
+    def draw(self, surface, lerp_amount=0):
+        surface.fill("black")
+        blit_to_center(font.large_font.render("SAVE FILE CORRUPTED", color_a="#aa0055"), surface, (0, -10))
+        blit_to_center(font.small_font.render("The previous save file got corrupted", color_a="#aa0055"), surface, (0, 10))
+        blit_to_center(font.font_with_icons.render("Delete Save File<select>"), surface, (0, 35))
+
+
+
+
 class PowerupInfo(State):
     def __init__(self, powerup_type: type[PowerUp]):
         super().__init__()
@@ -78,7 +94,7 @@ class DeleteUserDataOption(State):
         tap_keys = inputs.keyboard_mouse.tap_keys
         hold_keys = inputs.keyboard_mouse.hold_keys
 
-        if tap_keys[pg.K_ESCAPE]:
+        if inputs.check_input("back"):
             self.state_stack.pop()
 
         if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and tap_keys[pg.K_d]:
@@ -90,10 +106,10 @@ class DeleteUserDataOption(State):
     
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
-        blit_to_center(font.large_font.render("DELETE USER DATA?", 1, "#aa0055"), surface, (0, -20))
-        blit_to_center(font.small_font.render("Are you sure you want to delete all user data?", 1, "#aa0055"), surface, (0, 10))
-        blit_to_center(font.small_font.render("If so press ALT + SHIFT + D", 1, "#aa0055"), surface, (0, 20))
-        blit_to_center(font.small_font.render("Press ESC to cancel"), surface, (0, 30))
+        blit_to_center(font.large_font.render("DELETE USER DATA?", color_a="#aa0055"), surface, (0, -20))
+        blit_to_center(font.small_font.render("Are you sure you want to delete all user data?", color_a="#aa0055"), surface, (0, 5))
+        blit_to_center(font.small_font.render("If so press ALT + SHIFT + D", color_a="#aa0055"), surface, (0, 15))
+        blit_to_center(font.font_with_icons.render("Back<back>"), surface, (0, 35))
 
 
 
@@ -115,5 +131,5 @@ class UserDataDeleted(State):
 
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
-        blit_to_center(font.large_font.render("USER DATA DELETED", 1, "#aa0055"), surface)
+        blit_to_center(font.large_font.render("USER DATA DELETED", color_a="#aa0055"), surface)
         blit_to_center(self.__info_text, surface, (0, 30))
