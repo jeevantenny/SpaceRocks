@@ -59,11 +59,13 @@ class Play(State):
     def reinit_next_level(self, level_name: str) -> None:
         "Reinitializes the current Play object for the next level without creating another Play object."
 
-        try:
-            self.__setup_level(level_name)
-        except ValueError:
-            self.state_stack.push(NoMoreLevels())
+        if level_name == "boss_level":
+            self.state_stack.force_quit()
+            from .boss_level import PlayBossLevel
+            PlayBossLevel().add_to_stack(self.state_stack)
             return
+        
+        self.__setup_level(level_name)
         
         self.entities.remove(self.spaceship)
         self.entities.kill_all()

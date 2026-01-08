@@ -109,7 +109,7 @@ class Projectile(ObjectTexture, ObjectVelocity):
     
     
     def __collision_line_length(self) -> float:
-        return min(self._distance_traveled*0.5-9, self.__speed*2)
+        return pg.math.clamp(self._distance_traveled-30, 1, self.__speed*2)
 
 
     def __get_collision_lines(self, offset: pg.typing.Point = (0, 0)) -> CollisionLines:
@@ -149,7 +149,7 @@ class PlayerBullet(Projectile):
             assets.load_texture_map("particles")["player_bullet"],
             position,
             direction*self.__speed+shooter_vel,
-            15,
+            13,
             self.__lifetime_value,
             -direction.angle_to((0, -1))
         )
