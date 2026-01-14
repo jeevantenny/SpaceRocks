@@ -1,0 +1,20 @@
+{
+    "base_color": "#000000",
+    "parl_a": "backgrounds/space_background",
+    "parl_b": "backgrounds/space_background_big",
+    "background_palette": "background/default_background",
+    "asteroid_density": [
+        400, 400
+    ],
+    "asteroid_speed": [
+        1, 1
+    ],
+    "asteroid_frequency": 1,
+
+    "spawn_asteroids": {
+        "blue_small": 4,
+        "blue_medium": 3
+    },
+    "score_range": [0, 100000],
+    "next_level": "level_1"
+}

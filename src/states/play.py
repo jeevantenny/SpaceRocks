@@ -481,8 +481,12 @@ class Play(State):
         )
 
         for a in self.asteroids.sprites():
-            if asteroid.colliderect(a.rect):
-                return self.__spawn_asteroid()
+            if asteroid.collides_with(a):
+                try:
+                    return self.__spawn_asteroid()
+                except RecursionError:
+                    print(f"Failed to spawn asteroid a {spawn_pos}")
+                    return None
 
         self.asteroids.add(asteroid)
 

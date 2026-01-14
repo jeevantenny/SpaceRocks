@@ -19,20 +19,13 @@ __all__ = [
 
 
 
-class Damageable(GameObject):
+class Damageable(ObjectHitbox):
     "Objects that take damage from attacks and lose Health. Once health depletes they will be killed."
-    def __init__(self, *, damage_hitbox_size: pg.typing.Point, health=1, points=0, point_display_height=0, **kwargs):
+    def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):
         super().__init__(**kwargs)
         self._health = health
         self.__points = points
         self.__point_display_height = point_display_height
-        self.__damage_hitbox_size = damage_hitbox_size
-
-    @property
-    def damage_rect(self) -> pg.FRect:
-        rect = pg.FRect((0, 0), self.__damage_hitbox_size)
-        rect.center = self.position
-        return rect
     
     @property
     def points(self) -> int:
@@ -60,12 +53,6 @@ class Damageable(GameObject):
         super().force_kill()
 
 
-    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
-        super().draw(surface, lerp_amount, offset, rotation)
-        if debug.Cheats.show_bounding_boxes and isinstance(self, ObjectHitbox):
-            self._draw_rect(self.damage_rect, "orange", surface, lerp_amount, offset)
-
-
 
 
 
@@ -90,9 +77,9 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 
         super().__init__(
             position=position,
-            hitbox_size=self.__hitbox_size,
-            damage_hitbox_size=(self.__hitbox_size[0]+self.__hitbox_padding, self.__hitbox_size[1]+self.__hitbox_padding),
-            bounce=0.95,
+            hitbox_size=(self.__hitbox_size[0]+self.__hitbox_padding, self.__hitbox_size[1]+self.__hitbox_padding),
+            bounce=1.0,
+            radius=self.__data["collision_radius"],
 
             health=self.__data["health"],
             points=self.__data["points"],
@@ -166,19 +153,17 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
             super().update()
         else:
             self._update_animations()
-            self.set_velocity((0, 0))
-            self.set_angular_vel(0)
             if self.animations_complete:
                 self.force_kill()
 
 
 
     def damage(self, amount: int, knockback: pg.Vector2 | None = None) -> None:
+        if knockback:
+            self.accelerate(knockback*self.__knockback_amount)
         super().damage(amount)
         if self._health:
             self._queue_sound("entity.asteroid.small_explode")
-            if knockback:
-                self.accelerate(knockback*self.__knockback_amount)
 
 
 
@@ -197,6 +182,8 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
         elif self.size == 2:
             self._queue_sound("entity.asteroid.medium_explode", 0.7)
 
+        self.set_velocity((0, 0))
+        self.set_angular_vel(0)
         self.save_entity_progress = False
 
 
@@ -215,22 +202,22 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 
 
 
-class EnemyShip(Damageable, ObjectAnimation, ObjectVelocity, ObjectHitbox):
+class EnemyShip(Damageable, ObjectAnimation, ObjectHitbox, ObjectCollision):
     progress_save_key=None
     ignore_camera_rotation=True
     draw_layer=9
 
     __move_speed = 4
     __rotation_speed = 8
-    __player_shoot_range = 200
+    __player_shoot_range = 170
     __asteroid_shoot_range = 60
-    __shoot_deviation = 20
+    __shoot_deviation = 30
 
     def __init__(self, position: pg.typing.Point):
         super().__init__(
             position=position,
-            hitbox_size=(21, 21),
-            damage_hitbox_size=(32, 32),
+            hitbox_size=(32, 32),
+            radius=9,
             
             texture_map_path="enemies",
             anim_path="saucer",
@@ -258,12 +245,11 @@ class EnemyShip(Damageable, ObjectAnimation, ObjectVelocity, ObjectHitbox):
         self.__start_attack_delay.update()
     
         for obj in self.primary_group:
-            if isinstance(obj, Asteroid) and obj.health:
-                if self.colliderect(obj.rect):
-                    self.kill()
-                    return
-                elif self.__shoot_interval.time_elapsed > 6 and self.distance_to(obj) < self.__asteroid_shoot_range:
-                    self.__shoot(obj.position-self.position)
+            if (isinstance(obj, Asteroid)
+                and obj.health
+                and self.__shoot_interval.time_elapsed > 6
+                and self.distance_to(obj) < self.__asteroid_shoot_range):
+                self.__shoot(obj.position-self.position)
         
 
         if self.__player_ship is None:
@@ -295,11 +281,15 @@ class EnemyShip(Damageable, ObjectAnimation, ObjectVelocity, ObjectHitbox):
             if self.__start_attack_delay.complete and self.__shoot_interval.complete and distance < self.__player_shoot_range:
                 self.__shoot(displacement.rotate(random.randint(-self.__shoot_deviation, self.__shoot_deviation)))
             
-            if self.colliderect(self.__player_ship.rect):
-                self.__player_ship.kill()
-                self.kill()
+            # if self.colliderect(self.__player_ship.rect):
+            #     self.__player_ship.kill()
+            #     self.kill()
 
 
+    def on_collide(self, collided_with):
+        from .spaceship import PlayerShip
+        if isinstance(collided_with, (Asteroid, PlayerShip)):
+            self.kill()
 
 
 
