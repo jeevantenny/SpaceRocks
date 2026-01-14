@@ -14,7 +14,7 @@ from src.ui import font
 
 
 from . import GameObject
-from .components import ObjectAnimation, ObjectVelocity, ObjectHitbox
+from .components import ObjectAnimation, ObjectHitbox, ObjectCollision
 from .obstacles import Asteroid
 from .projectiles import PlayerBullet
 from .particles import ShipSmoke, DisplayText
@@ -26,7 +26,7 @@ from .particles import ShipSmoke, DisplayText
 
 
 
-class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
+class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
     draw_layer = 10
     _rotation_speed = 30
     _thrust_power = 1
@@ -36,7 +36,9 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         
         super().__init__(
             position=position,
-            hitbox_size=(10, 10),
+            hitbox_size=(16, 16),
+            radius=3,
+            bounce=0.8,
 
             texture_map_path=self.__asset_key,
             anim_path=self.__asset_key,
@@ -91,12 +93,13 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         elif self.__thruster_audio_chan is not None:
             self.__stop_thruster_sound()
 
-
-        if self._angular_vel*self.__turn_direction <= 0:
+        if self.health:
+            if self._angular_vel*self.__turn_direction <= 0:
+                self._angular_vel = 0
+            if self.__turn_direction and abs(self._angular_vel) < self._rotation_speed:
+                self._angular_vel += 8*self.__turn_direction
+        else:
             self._angular_vel = 0
-        if self.__turn_direction and abs(self._angular_vel) < self._rotation_speed:
-            self._angular_vel += 8*self.__turn_direction
-        
 
         super().update()
 
@@ -106,11 +109,6 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
             if self.animations_complete:
                 self.force_kill()
             return
-
-        for obj in self.overlapping_objects():
-            if isinstance(obj, Asteroid) and obj._health:
-                self.kill()
-                break
 
 
         self.__thrust = False
@@ -138,6 +136,10 @@ class Spaceship(ObjectAnimation, ObjectVelocity, ObjectHitbox):
         return self._velocity.magnitude() > self._max_speed-3
 
 
+
+    def on_collide(self, collided_with):
+        if isinstance(collided_with, Asteroid):
+            self.kill()
 
     
     def kill(self):
