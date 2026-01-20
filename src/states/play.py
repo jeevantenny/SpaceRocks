@@ -441,7 +441,7 @@ class Play(State):
                 obj.set_angular_vel(0)
 
         self.__add_background_tint()
-        GameOverScreen(self.__level_data, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
+        GameOverScreen(self.__level_data.level_name, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
 
 
 

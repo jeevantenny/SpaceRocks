@@ -18,7 +18,7 @@ class Font:
     "A font that renders text using a font file such as ttf."
     def __init__(self, font_path: str, base_size: int, shadow_offset: int):
         self.__font = partial(pg.font.Font, font_path)
-        self.__base_size =base_size
+        self.__base_size = base_size
         self.__shadow_offset = shadow_offset
 
     

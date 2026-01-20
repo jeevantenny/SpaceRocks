@@ -1,5 +1,6 @@
 "Contains functions that load data required by the game."
 
+import pygame as pg
 import os
 import pickle
 from json import JSONDecodeError
@@ -19,6 +20,8 @@ SETTINGS_DATA_PATH = "user_data/settings"
 LEVELS_DIR = "data/levels"
 
 SAVE_DATA_PATH = "user_data/progress.bin"
+
+SCORE_LIMIT = 99999
 
 
 if not (os.path.exists("user_data") or debug.Cheats.demo_mode):
@@ -96,8 +99,8 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
         return __demo_highscore
     
     try:
-        return load_json(path)["highscore"]
-    except (FileNotFoundError, JSONDecodeError):
+        return pg.math.clamp(int(load_json(path)["highscore"]), 0, SCORE_LIMIT)
+    except (FileNotFoundError, JSONDecodeError, KeyError, TypeError, ValueError):
         return 0
 
 
@@ -110,7 +113,7 @@ def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
         __demo_highscore = value
         return
     
-    save_json({"highscore": int(value)}, path)
+    save_json({"highscore": pg.math.clamp(int(value), 0, SCORE_LIMIT)}, path)
 
 
 

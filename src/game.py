@@ -128,7 +128,6 @@ class Game:
             # Starts the main game loop
             self.game_process_loop()
         except KeyboardInterrupt:
-            self.run = False
             self.error = KeyboardInterrupt.__name__
             # Closes game during keyboard interrupt
 
@@ -148,7 +147,6 @@ class Game:
                 self.next_tick()
 
         except Exception as e:
-            self.run = False
             self.error = type(e).__name__
             raise e
             
@@ -162,7 +160,6 @@ class Game:
                 self.next_frame()
 
         except Exception as e:
-            self.run = False
             self.error = type(e).__name__
             raise e
 
@@ -293,6 +290,7 @@ class Game:
     def quit(self) -> None:
         "Saves any user data from states before closing application."
 
+        self.run = False
         self.thread.join()
         stop_controller_rumble()
         if self.error and debug.PAUSE_ON_CRASH:
