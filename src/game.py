@@ -161,6 +161,7 @@ class Game:
 
         except Exception as e:
             self.error = type(e).__name__
+            self.run = False
             raise e
 
 
