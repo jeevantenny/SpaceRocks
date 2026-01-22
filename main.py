@@ -1,6 +1,11 @@
 import sys
-from src.game import Game
+import debug
 
 if __name__ == "__main__":
     sys.setrecursionlimit(200)
-    Game().start()
+    if debug.Cheats.basic_engine:
+        from src.basic_engine import BasicEngine
+        BasicEngine().start()
+    else:
+        from src.game import GameEngine
+        GameEngine().start()

@@ -115,7 +115,7 @@ class IconFont(Font):
     """
 
     def __init__(self, base_size, shadow_offset):
-        super().__init__("assets/fonts/tiny5-Regular.ttf", base_size, shadow_offset)
+        super().__init__("assets/fonts/Tiny5-Regular.ttf", base_size, shadow_offset)
 
     def render(self, text, size=1, cache=True):
         if cache:
