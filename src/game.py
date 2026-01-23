@@ -1,4 +1,4 @@
-"Contains the main Game class."
+"Contains the game engine class."
 
 import pygame as pg
 from pygame.locals import *
@@ -23,11 +23,9 @@ from src.misc import set_console_style, bar_of_dashes
 
 class GameEngine:
     """
-    This is core part of the game engine.
-    
-    It uses a game loop that runs on two threads. One runs with the game's tickrate of 20 TPS and handles
-    window management, user-input and game logic. The other thread runs with the framerate of the game to
-    render the window.
+    The engine uses two game loop that run on two threads. The main thread runs with the framerate of the game and
+    handles window management, rendering and event handling. The second thread runs with the game's tickrate of 20
+    TPS and handles user-input processing and game logic. 
     """
 
     def __init__(self) -> None:
