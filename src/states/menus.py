@@ -258,14 +258,14 @@ class Settings(State):
 
 
 class GameOverScreen(State):
-    def __init__(self, level_data: LevelData, score_data: tuple[int, int, bool]):
+    def __init__(self, level_name: str, score_data: tuple[int, int, bool]):
         super().__init__()
         from .play import Play
         self.prev_state: Play
 
         self.__timer = 35
 
-        self.__level_data = level_data
+        self.__level_name = level_name
         self.__score_data = score_data
         self.display_score = 0
         self.title = effects.AnimatedText("game over", "main_entrance_a")
@@ -280,7 +280,7 @@ class GameOverScreen(State):
         self.title.update()
         if self.__timer == 0:
             self.state_stack.pop()
-            ShowScore(self.__level_data, self.__score_data).add_to_stack(self.state_stack)
+            ShowScore(self.__level_name, self.__score_data).add_to_stack(self.state_stack)
         else:
             self.__timer -= 1
 
@@ -297,11 +297,9 @@ class GameOverScreen(State):
 
 class ShowScore(State):
     "Shows the player what score they got on their play-through before comparing it to the highscore."
-    def __init__(self, level_data: LevelData, score_data: tuple[int, int, bool]):
+    def __init__(self, level_name: str, score_data: tuple[int, int, bool]):
         super().__init__()
-        self.__level_data = level_data
-        self.__display_level_name = level_data.level_name.replace('_', ' ').upper()
-        self.__progress_bar = hud.ProgressBar()
+        self.__level_display_name = level_name.replace('_', ' ').upper()
 
         self.score = score_data[0]
         self.highscore = score_data[1]
@@ -327,6 +325,10 @@ class ShowScore(State):
                 # Empties the state stack and adds a new Play state.
                 self.state_stack.quit()
                 Play(get_start_level()).add_to_stack(self.state_stack)
+        
+        if not self.__timer and inputs.check_input("back"):
+            from .init_state import Initializer
+            Initializer(self.state_stack)
                 
 
 
@@ -350,7 +352,7 @@ class ShowScore(State):
 
 
     def __draw_a(self, surface: pg.Surface) -> None:
-        blit_to_center(font.large_font.render(self.__display_level_name), surface, (0, -30))
+        blit_to_center(font.large_font.render(self.__level_display_name), surface, (0, -30))
         text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=(self.display_score==self.score))
         surface.blit(text_surface, (99, 101))
 
@@ -360,7 +362,8 @@ class ShowScore(State):
         self.__display_score(surface, "Score", self.score, (102, 120))
 
         info_text = font.font_with_icons.render("Play Again<select>")
-        surface.blit(info_text, ((surface.width-info_text.width)*0.5, 200))
+        surface.blit(info_text, ((surface.width-info_text.width)*0.5, 190))
+        surface.blit(font.font_with_icons.render("Main menu<back>"), (10, surface.height-18))
 
 
     def __display_score(self, surface: pg.Surface, name: str, score: int, position=(0, 0)) -> None:

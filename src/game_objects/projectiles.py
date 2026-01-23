@@ -187,7 +187,7 @@ class PlayerBullet(Projectile):
 
     def _process_object(self, obj):
         from .obstacles import Damageable, Asteroid
-        if isinstance(obj, Damageable) and obj._health and self._collides_with(obj.damage_rect):
+        if isinstance(obj, Damageable) and obj._health and self._collides_with(obj.rect):
             if isinstance(obj, Asteroid):
                 obj.damage(1, self._velocity*0.1/obj.size)
             else:
@@ -242,7 +242,7 @@ class Laser(ObjectTexture):
         from .obstacles import Asteroid
         if not self.__damage_duration.complete:
             for obj in self.primary_group:
-                if isinstance(obj, Asteroid) and obj._health and rect_line_collision(obj.damage_rect, self.__collision_lines):
+                if isinstance(obj, Asteroid) and obj._health and rect_line_collision(obj.rect, self.__collision_lines):
                     obj.kill(False)
                     self.killed_list.append(obj)
         
@@ -281,7 +281,7 @@ class EnemyBullet(Projectile):
         if isinstance(obj, PlayerShip) and self._collides_with(obj.rect):
             obj.kill()
             return True
-        elif isinstance(obj, Asteroid) and obj.health and self._collides_with(obj.damage_rect):
+        elif isinstance(obj, Asteroid) and obj.health and self._collides_with(obj.rect):
             obj.damage(1, self._velocity*0.1/obj.size)
             return True
         else:

@@ -12,7 +12,7 @@ from src.input_device import controller_rumble
 
 from src.ui import font
 
-from .components import ObjectTexture, ObjectCollision
+from .components import ObjectHitbox, ObjectTexture, ObjectCollision
 from .spaceship import PlayerShip
 from .obstacles import Asteroid
 from .projectiles import Laser
@@ -136,11 +136,9 @@ class PowerUpGroup(soundfx.HasSoundQueue):
 
 
 
-class PowerupCollectable(ObjectTexture, ObjectCollision):
+class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
     ignore_camera_rotation=True
     progress_save_key="powerup_collectable"
-    
-    __collection_hitbox = (32, 32)
 
     def __init__(
             self,
@@ -159,7 +157,8 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
         super().__init__(
             position=position,
             texture=texture,
-            hitbox_size=(16, 16),
+            hitbox_size=(25, 25),
+            radius=8,
             bounce=0.95
         )
 
@@ -177,13 +176,6 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
     @property
     def powerup_name(self) -> str:
         return self.__powerup_name
-    
-
-    @property
-    def collection_rect(self) -> pg.FRect:
-        rect = pg.FRect((0, 0), self.__collection_hitbox)
-        rect.center = self.position
-        return rect
 
 
     def get_data(self):
@@ -207,16 +199,10 @@ class PowerupCollectable(ObjectTexture, ObjectCollision):
                     self.__player_ship = obj
                     break
         
-        elif self.collection_rect.colliderect(self.__player_ship.rect):
+        elif self.rect.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
             self.host_state.powerup_info(powerup_list[self.__powerup_name])
             self.kill()
-
-
-    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
-        super().draw(surface, lerp_amount, offset, rotation)
-        if debug.Cheats.show_bounding_boxes:
-            self._draw_rect(self.collection_rect, "green", surface, lerp_amount, offset)
 
 
 

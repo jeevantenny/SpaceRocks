@@ -17,6 +17,12 @@
         "Shield": 1
     },
 
+    "enemy_frequency": 1,
+    "enemy_count": 1,
+    "spawn_enemies": {
+        "EnemyShip": 1
+    },
+
     "score_range": [20000, 30000],
     "next_level": "level_4"
 }

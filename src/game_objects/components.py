@@ -49,7 +49,7 @@ class ObjectVelocity(GameObject):
     def update(self) -> None:
         super().update()
         self.move(self._velocity)
-        self._velocity = (vector_min(self._velocity, unit_vector(self._velocity)*self._max_speed))
+        self._velocity = vector_min(self._velocity, unit_vector(self._velocity)*self._max_speed)
 
 
 
@@ -282,7 +282,7 @@ class ObjectHitbox(GameObject):
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0), rotation=0) -> str | None:
         super().draw(surface, lerp_amount, offset, rotation)
         if debug.Cheats.show_bounding_boxes:
-            self._draw_rect(self.rect, "red", surface, lerp_amount, offset)
+            self._draw_rect(self.rect, "#ff4400", surface, lerp_amount, offset)
 
 
     def _draw_rect(
@@ -309,132 +309,79 @@ class ObjectHitbox(GameObject):
 
 
 
-class ObjectCollision(ObjectHitbox, ObjectVelocity):
+class ObjectCollision(ObjectVelocity):
     "Allows object to collide with and bounce of other game objects."
 
     speed_bias = 0.5
 
-    def __init__(self, *, bounce=0.0, **kwargs):
+    def __init__(self, *, radius: int, bounce=0.0, **kwargs):
         super().__init__(**kwargs)
 
+        self.__radius = radius
         self.__bounce = bounce*0.5
 
+
+    @property
+    def radius(self) -> int:
+        return self.__radius
 
 
     def update(self) -> None:
         super().update()
         self.process_collision()
 
+
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        super().draw(surface, lerp_amount, offset, rotation)
+        if debug.Cheats.show_bounding_boxes:
+            pg.draw.circle(surface, "red", self.get_lerp_pos(lerp_amount)+offset, self.__radius, 1)
+
     
 
-    def colliding_objects(self) -> Generator[GameObject, Any, None]:
+    def colliding_objects(self) -> Generator["ObjectCollision", Any, None]:
         "Returns all game collision objects in the primary group that collide with this object."
-        for obj in self.overlapping_objects():
-            if isinstance(obj, ObjectCollision) and obj.do_collision():
+        for obj in self.primary_group:
+            if (obj is not self
+                and isinstance(obj, ObjectCollision)
+                and obj.do_collision()
+                and self.collides_with(obj)):
                 yield obj
+
+
+    def collides_with(self, other: "ObjectCollision") -> bool:
+        if isinstance(other, ObjectCollision):
+            return (other.position-self.position).magnitude_squared() < (other.radius+self.radius)**2
+        else:
+            raise TypeError(f"Other object must be of type {ObjectCollision.__name__} not {type(other).__name__}")
     
-
-
-    def get_side_contacts(self) -> dict[str, bool]:
-        "Returns which sides of the hitbox are in contact with other game objects."
-        output = {"top": False, "bottom": False, "left": False, "right": False}
-
-        obj_rect = self.rect
-        
-        if self.primary_group is None:
-            return None
-        
-        for other_obj in self.primary_group.sprites():
-            if other_obj is not self and isinstance(other_obj, ObjectCollision):
-
-                rect = other_obj.rect
-                if obj_rect.right > rect.left and obj_rect.left < rect.right:
-                    if obj_rect.top == rect.bottom:
-                        output["top"] = True
-                    if obj_rect.bottom == rect.top:
-                        output["bottom"] = True
-                        
-                if obj_rect.bottom > rect.top and obj_rect.top < rect.bottom:
-                    if obj_rect.left == rect.right:
-                        output["left"] = True
-                    if obj_rect.right == rect.left:
-                        output["right"] = True
-        
-        return output
-
-
 
     def process_collision(self) -> None:
-        "Processes collision for one game tick."
-        obj_rect = self.rect
-        prev_pos: pg.Vector2 = self.position - self._velocity
-
-
-        def set_change(change: float | None, new_value: float) -> float:
-            if change is None or abs(new_value) < abs(change):
-                return new_value
-            else:
-                return change
-
-        y_change = None
-        x_change = None
-        resultant_vel = pg.Vector2(0, 0)
-        
-        if self.primary_group is None:
-            return None
-        
         for other_obj in self.colliding_objects():
-            rect: pg.Rect = other_obj.rect
-            other_obj_vel: pg.Vector2 = other_obj.get_velocity()
-            resultant_vel = self._velocity - other_obj_vel
+            prev_position = self.position.copy()
+            normal: pg.Vector2 = self.position-other_obj.position
+            normal.scale_to_length(self.radius+other_obj.radius)
 
-            if x_change is None and y_change is None:
-                self.on_collide(other_obj)
-            
-            if obj_rect.colliderect(rect):
-                
-                if resultant_vel.y != 0:
-                    y_change = min(
-                        set_change(y_change, rect.top-obj_rect.bottom),
-                        set_change(y_change, rect.bottom-obj_rect.top),
-                        key=lambda x: abs(x)
-                    )
-                
-                if resultant_vel.x != 0:
-                    x_change = min(
-                        set_change(x_change, rect.left-obj_rect.right),
-                        set_change(x_change, rect.right-obj_rect.left),
-                        key=lambda x: abs(x)
-                    )
+            speed = (self.get_speed() + other_obj.get_speed())*0.5
 
-                if x_change:
-                    other_obj_vel.x += self._velocity.x*self.__bounce
-                if y_change:
-                    other_obj_vel.y += self._velocity.y*self.__bounce
+            self.process_collision_internal(other_obj.position, speed, normal)
+            other_obj.process_collision_internal(prev_position, speed, -normal)
+            other_obj.on_collide(self)
 
-                other_obj.set_velocity(other_obj_vel)
-                other_obj.move(other_obj_vel)
-        
+            self.on_collide(other_obj)
+            break
 
-        if x_change:
-            option_x: pg.Vector2 = self.position + pg.Vector2(x_change, 0)
-        
-        if y_change:
-            option_y: pg.Vector2 = self.position + pg.Vector2(0, y_change)
-        
-        if y_change and (not x_change or (prev_pos-option_y).magnitude() < (prev_pos-option_x).magnitude()):
-            self.position.y += y_change
-            self._velocity.y = -self._velocity.y*self.__bounce
-        elif x_change:
-            self.position.x += x_change
-            self._velocity.x = -self._velocity.x*self.__bounce
-        
-        
         super().process_collision()
 
 
-
-
+    def process_collision_internal(self, other_pos: pg.Vector2, speed: float, normal: pg.Vector2) -> None:
+        self.position = other_pos + normal
+        try:
+            self._velocity.scale_to_length(speed*self.__bounce)
+            self._velocity.reflect_ip(normal)
+        except ValueError:
+            # If the magnitude of velocity is very small the scale_to_length function
+            # raises a ValueError saying that it can't scale a zero vector
+            self.clear_velocity()
 
 
     def on_collide(self, collided_with) -> None:
