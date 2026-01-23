@@ -1,4 +1,4 @@
-"Contains the main Game class."
+"Contains the game engine class."
 
 import pygame as pg
 from pygame.locals import *
@@ -21,13 +21,11 @@ from src.misc import set_console_style, bar_of_dashes
 
 
 
-class Game:
+class GameEngine:
     """
-    This is core part of the game engine.
-    
-    It uses a game loop that runs on two threads. One runs with the game's tickrate of 20 TPS and handles
-    window management, user-input and game logic. The other thread runs with the framerate of the game to
-    render the window.
+    The engine uses two game loop that run on two threads. The main thread runs with the framerate of the game and
+    handles window management, rendering and event handling. The second thread runs with the game's tickrate of 20
+    TPS and handles user-input processing and game logic. 
     """
 
     def __init__(self) -> None:
@@ -55,25 +53,28 @@ class Game:
         "Called by the initializer to initialize the object."
         self.run = True
 
-        self.__set_screen_mode(False)
-        self.game_canvas = pg.Surface(pg.Vector2(self.screen.size)/config.PIXEL_SCALE)
-        pg.display.set_caption(config.WINDOW_CAPTION)
-        pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
+        self.screen = None
+        self.game_canvas = None
         self.__fullscreen = False
+        self.__update_screen_mode = False
 
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
-        font.init()
-
+        self.__event_queue: list[pg.Event] = []
 
         self.state_stack = StateStack()
-        init_state.Initializer(self.state_stack)
 
         game_speed = 1
         self.tick_rate = config.TICKRATE*game_speed
 
-        self.debug_font = pg.font.SysFont("consolas", 13)
-    
+        self.tick_clock = pg.Clock()
+        self.prev_tick = perf_counter()
+        self.delta_time = 1/self.tick_rate
+
+        self.frame_clock = pg.Clock()
+        self.prev_frame = perf_counter()
+
         self.__setup = True
+        self.error: str | None = None
 
 
 
@@ -109,32 +110,32 @@ class Game:
 
         if not self.__setup:
             raise RuntimeWarning("Cannot start game because an exception has occurred during setup.")
-
-        self.tick_clock = pg.Clock()
-        self.prev_tick = perf_counter()
-        self.delta_time = 1/self.tick_rate
-
-        self.frame_clock = pg.Clock()
-        self.prev_frame = perf_counter()
-
-        self.error: str | None = None
         
+        self.__set_screen_mode(False)
+        pg.display.set_caption(config.WINDOW_CAPTION)
+        pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
+        self.game_canvas = pg.Surface(config.PIXEL_WINDOW_SIZE)
 
-        self.thread = threading.Thread(name="display_loop", target=self.display_loop)
+        font.init()
+        self.debug_font = pg.font.SysFont("consolas", 13)
+
+        init_state.Initializer(self.state_stack)
+
+        self.game_process_thread = threading.Thread(name="game_process", target=self.game_process_loop)
+        # Starts game loop that processes game logic
+        self.game_process_thread.start()
+
         try:
-            # Starts the display_loop
-            self.thread.start()
-
-            # Starts the main game loop
-            self.game_process_loop()
+            # Starts display and IO loop
+            self.display_io_loop()
         except KeyboardInterrupt:
-            self.run = False
             self.error = KeyboardInterrupt.__name__
             # Closes game during keyboard interrupt
 
         finally:
             # Ensure that player data is saved when application is closed or crashes.
             self.quit()
+
 
 
 
@@ -148,22 +149,27 @@ class Game:
                 self.next_tick()
 
         except Exception as e:
-            self.run = False
             self.error = type(e).__name__
+            self.run = False
             raise e
             
 
 
-    def display_loop(self) -> None:
-        "Handles rendering to screen."
+    def display_io_loop(self) -> None:
+        "Handles IO and rendering to screen."
         try:
             while self.run:
+                self.__event_queue.extend(pg.event.get())
+                if self.__update_screen_mode:
+                    self.__set_screen_mode(self.__fullscreen)
+                    self.__update_screen_mode = False
+
                 self.draw()
                 self.next_frame()
 
         except Exception as e:
-            self.run = False
             self.error = type(e).__name__
+            self.run = False
             raise e
 
 
@@ -172,17 +178,19 @@ class Game:
     def get_userinput(self) -> None:
         "Record the user inputs for a game tick."
 
-        events = pg.event.get()
+        current_events = self.__event_queue.copy()
         
-        for event in events:
+        for event in current_events:
             if event.type == QUIT:
                 self.run = False
                 break
 
             elif event.type == JOYDEVICEADDED or event.type == JOYDEVICEREMOVED:
                 self.set_controllers()
-        
-        self.input_interpreter.get_userinput(events)
+            
+            self.__event_queue.remove(event)
+
+        self.input_interpreter.get_userinput(current_events)
 
 
     def userinput(self) -> None:
@@ -191,7 +199,8 @@ class Game:
         keyboard = self.input_interpreter.keyboard_mouse
 
         if keyboard.tap_keys[K_F11]:
-            self.__set_screen_mode(not self.__fullscreen)
+            self.__fullscreen = not self.__fullscreen
+            self.__update_screen_mode = True
 
 
         if debug.DEBUG_MODE and keyboard.hold_keys[KMOD_CTRL]:
@@ -293,22 +302,14 @@ class Game:
     def quit(self) -> None:
         "Saves any user data from states before closing application."
 
-        self.thread.join()
+        self.run = False
+        self.game_process_thread.join()
         stop_controller_rumble()
         if self.error and debug.PAUSE_ON_CRASH:
             input("Save and Exit ->")
         try:
-            data.save_settings()
             self.state_stack.quit()
-
-            set_console_style(32, 1)
-            bar_of_dashes()
-
-            print("Game Data Saved")
-            print(f"error: {self.error}")
-
-            bar_of_dashes()
-            set_console_style()
+            data.save_settings()
         
         except:
             traceback.print_exc()
@@ -320,6 +321,17 @@ class Game:
 
             bar_of_dashes()
             set_console_style()
+
+        else:
+            set_console_style(32, 1)
+            bar_of_dashes()
+
+            print("Game Data Saved")
+            print(f"error: {self.error}")
+
+            bar_of_dashes()
+            set_console_style()
+
 
         finally:
             pg.quit()

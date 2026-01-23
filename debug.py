@@ -27,6 +27,9 @@ class Cheats():
     Loads the game in demo mode. The game will show a message indicating
     that it's in demo mode. No data will be read from or written to user_data
     folder the game always starts as if loaded up for the first time.
+
+    **basic_engine:**  
+    Uses the BasicEngine class to run the game instead of the main engine.
     """
 
     invincible = False
@@ -42,6 +45,7 @@ class Cheats():
     test_level = None
 
     demo_mode = False
+    basic_engine = False
 
 
 def timeit(func: Callable):

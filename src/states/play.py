@@ -443,7 +443,7 @@ class Play(State):
                 obj.set_angular_vel(0)
 
         self.__add_background_tint()
-        GameOverScreen(self.__level_data, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
+        GameOverScreen(self.__level_data.level_name, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
 
 
 
@@ -483,8 +483,12 @@ class Play(State):
         )
 
         for a in self.asteroids.sprites():
-            if asteroid.colliderect(a.rect):
-                return self.__spawn_asteroid()
+            if asteroid.collides_with(a):
+                try:
+                    return self.__spawn_asteroid()
+                except RecursionError:
+                    print(f"Failed to spawn asteroid a {spawn_pos}")
+                    return None
 
         self.asteroids.add(asteroid)
 

@@ -26,6 +26,7 @@ class Initializer:
             save_data = None
             save_error = True
 
+        state_stack.quit()
 
         if save_data is None:
             play.Play(get_start_level()).add_to_stack(state_stack)
