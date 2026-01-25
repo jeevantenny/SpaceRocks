@@ -266,8 +266,8 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
         return len(self.sprites())
     
 
-    def get_type[GET_TYPE](self, object_type: type[GET_TYPE]) -> list[GET_TYPE]:
-        return list(filter(lambda x: isinstance(x, object_type), self.sprites()))
+    def get_type[GET_TYPE](self, object_type: type[GET_TYPE]) -> Iterator[GET_TYPE]:
+        return filter(lambda x: isinstance(x, object_type), self.sprites())
     
 
     def kill_type(self, object_type: type[GameObject]) -> None:
