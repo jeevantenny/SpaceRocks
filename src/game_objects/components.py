@@ -282,7 +282,7 @@ class ObjectHitbox(GameObject):
     def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0), rotation=0) -> str | None:
         super().draw(surface, lerp_amount, offset, rotation)
         if debug.Cheats.show_bounding_boxes:
-            self._draw_rect(self.rect, "#ff4400", surface, lerp_amount, offset)
+            self._draw_rect(self.rect, "orange", surface, lerp_amount, offset)
 
 
     def _draw_rect(

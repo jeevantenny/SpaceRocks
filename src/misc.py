@@ -6,7 +6,7 @@ import debug
 
 
 
-def get_start_level():
+def get_start_level() -> str:
     "Gets the name of the level to start the game on."
     level_name = debug.Cheats.test_level
     if level_name is None:

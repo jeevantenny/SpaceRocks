@@ -328,7 +328,8 @@ class ShowScore(State):
         
         if not self.__timer and inputs.check_input("back"):
             from .init_state import Initializer
-            Initializer(self.state_stack)
+            self.state_stack.quit()
+            Initializer.main_title_screen(self.state_stack)
                 
 
 
