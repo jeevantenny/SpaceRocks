@@ -2,6 +2,7 @@ import pygame as pg
 
 import debug
 from src.math_functions import unit_vector, format_angle, sign
+from src.file_processing import assets
 
 from . import ObjectGroup
 from .components import ObjectVelocity
@@ -124,6 +125,8 @@ class RotoZoomCamera(Camera):
         self.__rotation = 0
         self.__target_rotation = 0
         self.__angular_vel = 0
+        self.__zoom = 1.0
+
 
     def get_rotation(self) -> int:
         return self.__rotation
@@ -139,6 +142,14 @@ class RotoZoomCamera(Camera):
 
     def set_angular_vel(self, value: int) -> None:
         self.__angular_vel = pg.math.clamp(value, -self.__rotation_speed, self.__rotation_speed)
+        
+    def get_zoom(self) -> float:
+        return self.__zoom
+    
+    def set_zoom(self, zoom: float) -> None:
+        if zoom < 0.5:
+            raise ValueError("Camera zoom cannot be less than 0.5")
+        self.__zoom = zoom
     
     def rotate(self, amount: int) -> None:
         self.set_rotation(self.__rotation+amount)
@@ -163,9 +174,10 @@ class RotoZoomCamera(Camera):
 
 
     def capture(self, output_surface, entities, lerp_amount=0):
+        scaled_surface = assets.colorkey_surface(pg.Vector2(output_surface.size)*self.__zoom)
         camera_lerp_pos = self.lerp_position(lerp_amount)
         camera_lerp_rotation = self.get_lerp_rotation(lerp_amount)
-        blit_offset = pg.Vector2(output_surface.size)*0.5 - camera_lerp_pos
+        blit_offset = pg.Vector2(scaled_surface.size)*0.5 - camera_lerp_pos
 
         for entity in entities.get_draw_order():
             if isinstance(entity, ObjectVelocity):
@@ -177,9 +189,11 @@ class RotoZoomCamera(Camera):
             blit_pos.rotate_ip(-camera_lerp_rotation)
             blit_pos += camera_lerp_pos - entity_pos + blit_offset
             entity.draw(
-                output_surface, lerp_amount,
+                scaled_surface, lerp_amount,
                 blit_pos,
                 -camera_lerp_rotation if not entity.ignore_camera_rotation else 0)
+            
+        output_surface.blit(pg.transform.scale(scaled_surface, output_surface.size))
 
         if debug.Cheats.show_bounding_boxes:
             crosshair_pos = (self.get_target()-self.position).rotate(-self.__rotation) + pg.Vector2(output_surface.size)*0.5

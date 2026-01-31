@@ -190,10 +190,11 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
     def __spawn_subrock(self):
         positions = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
         positions = map(pg.Vector2, positions)
+        separation = self.__asteroid_data[self.subrock]["collision_radius"] + 1
 
         for pos in positions:
             pos.rotate_ip(self._rotation)
-            new_rock = Asteroid(self.position + pos*8, self._velocity + pos*3, self.subrock)
+            new_rock = Asteroid(self.position + pos*separation, self._velocity + pos*3, self.subrock)
             new_rock.set_velocity(self._velocity+pos)
             self.add_to_groups(new_rock)
 

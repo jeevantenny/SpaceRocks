@@ -23,3 +23,21 @@ class ProgressBar:
         overlay = self.__overlay_texture.subsurface(0, 0, int(88*amount), 8)
         output.blit(overlay, (1, 1))
         return output
+    
+
+
+class LivesIndicator:
+    "Shows how many loves the player has left during boss battle."
+
+    def __init__(self):
+        texture_map = assets.load_texture_map("ui_elements")
+        self.__base_texture = texture_map["lives_indicator_base"]
+        self.__icon_texture = texture_map["lives_indicator_icon"]
+
+
+    def render(self, lives: int) -> pg.Surface:
+        output = self.__base_texture.copy()
+        for i in range(lives):
+            output.blit(self.__icon_texture, (3 + i*12, 3))
+        
+        return output

@@ -248,16 +248,18 @@ class GameEngine:
                 else:
                     blit_to_center(pg.transform.scale_by(self.game_canvas, self.__fullscreen_scale(self.__desktop_size)), self.screen)
                     
-                
+        else:
+            self.screen.fill("black")
 
-            if debug.DEBUG_MODE:
-                blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
-                debug_message = self.state_stack.debug_info()
-                if debug_message:
-                    blit_text = f"{blit_text}\n{debug_message}"
-                self.screen.blit(self.debug_font.render(blit_text, False, "white", "black"))
+        if debug.DEBUG_MODE:
+            blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
+            debug_message = self.state_stack.debug_info()
+            if debug_message:
+                blit_text = f"{blit_text}\n{debug_message}"
+            self.screen.blit(self.debug_font.render(blit_text, False, "white", "black"))
 
-                self.__show_stack_view()
+            self.__show_stack_view()
+
 
 
     @lru_cache(1)

@@ -24,10 +24,10 @@
             "anim_speed_multiplier": 1.1,
             "timeline": {
                 "0": "blank",
-                "1": "style_b_4",
-                "2": "style_b_3",
-                "3": "style_b_2",
-                "4": "style_b_1",
+                "1": "style_b_8",
+                "2": "style_b_6",
+                "3": "style_b_4",
+                "4": "style_b_2",
                 "5": "main"
             }
         },
@@ -41,10 +41,10 @@
             "duration": 4,
             "anim_speed_multiplier": 1.1,
             "timeline": {
-                "0": "style_b_1",
-                "1": "style_b_2",
-                "2": "style_b_3",
-                "3": "style_b_4",
+                "0": "style_b_2",
+                "1": "style_b_4",
+                "2": "style_b_6",
+                "3": "style_b_8",
                 "4": "blank"
             }
         },

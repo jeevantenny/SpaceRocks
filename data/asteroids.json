@@ -16,6 +16,16 @@
         "size_value": 2,
         "subrock": "blue_small"
     },
+    "blue_large": {
+        "texture_map": "asteroid_large",
+        "collision_radius": 32,
+        "hitbox_size": 60,
+        "health": 6,
+        "points": 30,
+        "size_value": 4,
+        "knockback_amount": 0.3,
+        "subrock": "blue_medium"
+    },
 
     "green_small": {
         "texture_map": "asteroid_small",

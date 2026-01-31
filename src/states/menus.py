@@ -113,7 +113,7 @@ class TitleScreen(State):
                 if not debug.Cheats.demo_mode:
                     if data.get_setting("show_version_number"):
                         version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
-                        surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
+                        surface.blit(version_text, (3, surface.width-11))
                         info_offset += 10
 
                 settings_info = font.font_with_icons.render("Settings<settings>")
@@ -170,6 +170,7 @@ class PauseMenu(State):
         if not self.__exit_menu:
             blit_to_center(self.__info_text, surface, (0, 30))
             surface.blit(font.font_with_icons.render("Continue<select>     settings<settings>"), (10, surface.height-18))
+            surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
 
 
     def debug_info(self):

@@ -259,7 +259,7 @@ class PlayerShip(Spaceship):
             if inputs.check_input("ship_right"):
                 self._turn(1)
             
-            if  inputs.check_input("shoot") and self.alive():
+            if inputs.check_input("shoot") and self.alive():
                 self.shoot()
 
             self.__powerups.userinput(inputs)
@@ -301,9 +301,12 @@ class PlayerShip(Spaceship):
 
 
     def kill(self):
-        if self.__invincibility_timer.complete and not (self.__powerups.kill_protection(self) or debug.Cheats.invincible):
-            super().kill()
-            controller_rumble("large_explosion_b", 0.9)
+        if self.__invincibility_timer.complete and not self.__powerups.kill_protection(self):
+            if debug.Cheats.invincible:
+                self.invincibility_frames()
+            else:
+                super().kill()
+                controller_rumble("large_explosion_b", 0.9)
 
 
     def has_powerup(self, powerup_name: str) -> None:

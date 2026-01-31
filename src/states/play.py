@@ -47,7 +47,7 @@ class Play(State):
 
         super().__init__()
 
-        self.__setup()
+        self._setup()
         self.__setup_level(level_name)
         self._setup_game_objects()
 
@@ -98,7 +98,7 @@ class Play(State):
 
         self = cls.__new__(cls)
         super().__init__(self)
-        self.__setup()
+        self._setup()
         self.__setup_level(save_data.level_name)
         self._setup_game_objects()
 
@@ -118,12 +118,11 @@ class Play(State):
         
         self.spaceship.set_score_limit(self.__level_data.score_range[1])
 
+        self.camera.set_position(save_data.camera_pos)
         
         for entity in self.entities.sprites():
             entity.post_init_from_data(object_dict)
 
-
-        self.camera.set_position(self.spaceship.position)
         self.__display_score = save_data.score
 
         self.__hud_timer.end()
@@ -135,10 +134,8 @@ class Play(State):
 
 
 
-    def __setup(self) -> None:
+    def _setup(self) -> None:
         "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
-
-        self.__info_text = font.small_font.render("")
 
         self.__display_score = 0
         self.highscore = data.load_highscore()
@@ -150,7 +147,7 @@ class Play(State):
         self.__hud_timer = Timer(10).start()
         self.__lvl_transition_timer = Timer(60)
         self.__object_spawn_delay = Timer(15)
-        self.__game_over_timer = Timer(27, False, self._game_over)
+        self._game_over_timer = Timer(27, False, self._game_over)
 
         self.__level_cleared = False
 
@@ -230,7 +227,7 @@ class Play(State):
         self.spaceship.userinput(inputs)
 
         if self.spaceship.health and inputs.check_input("pause"):
-            self.__pause_game()
+            self._pause_game()
 
 
     
@@ -240,11 +237,11 @@ class Play(State):
         if self.__lvl_transition_timer.complete:
             if self.spaceship.health:
                 # The game loop runs as long as the player ship is alive.
-                self.__game_loop()
-            elif self.__game_over_timer.complete:
+                self._game_loop()
+            elif self._game_over_timer.complete:
                 # Adds a pause between when the player dies and the game over screen is shown.
                 # The timer automatically calls the game over scree once complete.
-                self.__game_over_timer.start()
+                self._game_over_timer.start()
 
                 self.camera.clear_velocity()
 
@@ -262,7 +259,7 @@ class Play(State):
             else:
                 self.entities.update(self.camera.position)
                 if self.is_top_state():
-                    self.__game_over_timer.update()
+                    self._game_over_timer.update()
         
         self._join_sound_queue(self.entities.clear_sound_queue())
             
@@ -270,8 +267,6 @@ class Play(State):
         if self.__lvl_transition_timer.complete:
             self.__hud_timer.update()
             self.__object_spawn_delay.update()
-
-        self.__info_text = font.font_with_icons.render("Pause<pause>")
 
         
 
@@ -298,7 +293,7 @@ class Play(State):
 
 
         if self.spaceship.health: # type: ignore
-            self.__draw_hud(surface)
+            self._draw_hud(surface)
 
 
 
@@ -338,7 +333,7 @@ class Play(State):
 
 
 
-    def __draw_hud(self, surface: pg.Surface) -> None:
+    def _draw_hud(self, surface: pg.Surface) -> None:
         if not self.__hud_timer.complete:
             entrance_offset = 80*(self.__hud_timer.countdown*0.1)**2
         else:
@@ -357,13 +352,13 @@ class Play(State):
         
 
         if self.is_top_state():
-            surface.blit(self.__info_text, (10, surface.height-18+entrance_offset))
+            surface.blit(font.font_with_icons.render("Pause<pause>"), (10, surface.height-18+entrance_offset))
 
 
 
 
 
-    def __game_loop(self):
+    def _game_loop(self):
         if not self.__level_cleared:
             # Asteroid Spawning
             if not debug.Cheats.no_obstacles:
@@ -419,7 +414,7 @@ class Play(State):
 
 
 
-    def __pause_game(self) -> None:
+    def _pause_game(self) -> None:
         "Adds PauseMenu state to state stack as well as some background tint."
         self.__add_background_tint()
         PauseMenu().add_to_stack(self.state_stack)
@@ -583,7 +578,8 @@ class Play(State):
                        
                        if entity.progress_save_key is not None]
         
-        save_data = SaveData(self.__level_data.level_name, self.spaceship.score, entity_data)
+        camera_pos = tuple(self.camera.position)
+        save_data = SaveData(self.__level_data.level_name, self.spaceship.score, camera_pos, entity_data)
         data.save_progress(save_data)
 
 
