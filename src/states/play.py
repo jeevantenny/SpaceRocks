@@ -36,7 +36,7 @@ class Play(State):
     Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
     and player score.
     """
-    __spawn_radius = 150
+    __spawn_radius = 200
     __visible_radius = 230
     __despawn_radius = 500
     __score_limit = 99999
@@ -561,7 +561,7 @@ class Play(State):
 
     def __delete_offscreen_spawned_entities(self) -> None:
         for obj in self.spawned_entities.sprites():
-            if not obj.rect.colliderect(self.camera.get_visible_area(config.PIXEL_WINDOW_SIZE)):
+            if not obj.rect.colliderect(self.camera.get_visible_area((config.CANVAS_SIDES, config.CANVAS_SIDES))):
                 obj.force_kill()
                 
     

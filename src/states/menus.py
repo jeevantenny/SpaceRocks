@@ -113,7 +113,7 @@ class TitleScreen(State):
                 if not debug.Cheats.demo_mode:
                     if data.get_setting("show_version_number"):
                         version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
-                        surface.blit(version_text, (3, config.PIXEL_WINDOW_HEIGHT-11))
+                        surface.blit(version_text, (3, surface.height-12))
                         info_offset += 10
 
                 settings_info = font.font_with_icons.render("Settings<settings>")
@@ -221,7 +221,7 @@ class Settings(State):
         self.__draw_background(surface)
         # self.prev_state.draw(surface)
         surface.blit(font.large_font.render("Settings"), (20, 20))
-        self.__elements.draw(surface.subsurface(20, 50, 200, surface.height-50))
+        self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), surface.height-50))
         
         surface.blit(font.font_with_icons.render("Back<back>"), (10, surface.height-18))
         surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
@@ -355,23 +355,22 @@ class ShowScore(State):
     def __draw_a(self, surface: pg.Surface) -> None:
         blit_to_center(font.large_font.render(self.__level_display_name), surface, (0, -30))
         text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=(self.display_score==self.score))
-        surface.blit(text_surface, (99, 101))
+        surface.blit(text_surface, (surface.width*0.5 - 61, surface.height*0.5 - 19))
 
 
     def __draw_b(self, surface: pg.Surface) -> None:
-        self.__display_score(surface, "Highscore", self.highscore, (102, 50))
-        self.__display_score(surface, "Score", self.score, (102, 120))
+        self.__display_score(surface, "Highscore", self.highscore, -35)
+        self.__display_score(surface, "Score", self.score, 35)
 
         info_text = font.font_with_icons.render("Play Again<select>")
-        surface.blit(info_text, ((surface.width-info_text.width)*0.5, 190))
+        blit_to_center(info_text, surface, (0, 70))
         surface.blit(font.font_with_icons.render("Main menu<back>"), (10, surface.height-18))
 
 
-    def __display_score(self, surface: pg.Surface, name: str, score: int, position=(0, 0)) -> None:
-        position = pg.Vector2(position)
+    def __display_score(self, surface: pg.Surface, name: str, score: int, y_offset: int) -> None:
         text_surface = font.small_font.render(name, 2)
-        surface.blit(text_surface, position+(60, 0)-pg.Vector2(text_surface.width, 0)*0.5)
+        blit_to_center(text_surface, surface, (0, y_offset-24))
 
         # print(f"{score:05}", score)
         number_surface = font.large_font.render(f"{score:05}", 2)
-        surface.blit(number_surface, position+(0, 15))
+        surface.blit(number_surface, (surface.width*0.5 - 61, surface.height*0.5 - 19 + y_offset))
