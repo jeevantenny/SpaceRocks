@@ -221,7 +221,7 @@ class Settings(State):
         self.__draw_background(surface)
         # self.prev_state.draw(surface)
         surface.blit(font.large_font.render("Settings"), (20, 20))
-        self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), surface.height-50))
+        self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
         
         surface.blit(font.font_with_icons.render("Back<back>"), (10, surface.height-18))
         surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
