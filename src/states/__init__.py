@@ -175,7 +175,7 @@ class StateStack(soundfx.HasSoundQueue):
     def push(self, state: State, transition=True) -> None:
         "Adds a new state to the top of the stack."
 
-        self.__transition_timer.end()
+        self.__transition_timer.stop()
 
         if state in self:
             raise game_errors.DuplicateStateError(state)
@@ -191,7 +191,7 @@ class StateStack(soundfx.HasSoundQueue):
     def pop(self, transition=True, quit_state=True) -> State:
         "Removes and returns the top state."
 
-        self.__transition_timer.end()
+        self.__transition_timer.stop()
         
         state = self.top_state
         if transition and state.exit_duration > 0.0:

@@ -215,6 +215,8 @@ class SuperLaser(PowerUp):
     __charge_time = 16
     __cooldown = 100
 
+    texture_key = "super_laser"
+
     def __init__(self):
         super().__init__()
 
@@ -253,6 +255,7 @@ class SuperLaser(PowerUp):
                 )
 
             self.__laser = None
+            spaceship.remove_powerup(self)
 
 
     def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
@@ -272,7 +275,6 @@ class SuperLaser(PowerUp):
     def __fire_laser(self, spaceship: PlayerShip) -> None:
         self.__laser = Laser(spaceship.position, spaceship.get_rotation(), 50, 1)
         spaceship.primary_group.add(self.__laser)
-
         spaceship.accelerate(-spaceship.get_rotation_vector()*5)
 
 

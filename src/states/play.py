@@ -125,7 +125,7 @@ class Play(State):
 
         self.__display_score = save_data.score
 
-        self.__hud_timer.end()
+        self.__hud_timer.stop()
 
         if self.spaceship.score >= self.__level_data.score_range[1]:
             self.__level_cleared = True

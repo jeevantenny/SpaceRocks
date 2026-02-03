@@ -44,10 +44,14 @@ class PlayBossLevel(Play):
         self.camera = RotoZoomCamera((0, 0))
         self.boss = BossShip((0, -500))
         self.enemies.add(self.boss)
+        # self.camera.set_zoom(1.5)
 
 
     def userinput(self, inputs):
         if debug.DEBUG_MODE:
+            if inputs.keyboard_mouse.tap_keys[pg.K_g]:
+                debug.Cheats.show_bounding_boxes = not debug.Cheats.show_bounding_boxes
+
             if inputs.keyboard_mouse.tap_keys[pg.K_r]:
                 self.spaceship.set_position((0, 0))
                 self.spaceship.clear_velocity()
@@ -75,12 +79,19 @@ class PlayBossLevel(Play):
         self.entities.update(self.camera.position)
         
         boss_displacement = self.boss.position-self.spaceship.position
+        boss_distance = boss_displacement.magnitude()
         self.camera.set_target_rotation(vector_direction(boss_displacement))
-        # self.camera.set_zoom(pg.math.clamp((boss_displacement.magnitude()-200)*0.007, 1, 3))
-        self.camera.set_target(self.spaceship.position + boss_displacement*0.3)
+
+        target_pos = self.spaceship.position + self.spaceship.get_velocity()*2
+        if boss_distance < 300:
+            target_pos += boss_displacement*0.2
+        
+        self.camera.set_target(target_pos)
         self.camera.update()
-        boss_displacement.scale_to_length(0.1)
-        self.spaceship.accelerate(boss_displacement)
+        boss_displacement.scale_to_length(pg.math.clamp((boss_distance-250)*0.5, 3, 500))
+        # self.spaceship.accelerate(boss_displacement)
+        if self.spaceship.health:
+            self.boss.set_velocity(-boss_displacement)
 
     
     def _draw_scrolling_background(self, surface, lerp_amount=0):

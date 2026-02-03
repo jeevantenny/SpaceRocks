@@ -42,14 +42,16 @@ class ObjectVelocity(GameObject):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._velocity = pg.Vector2(0, 0)
+        self.__max_speed_squared = self._max_speed*self._max_speed
 
 
 
 
     def update(self) -> None:
         super().update()
+        if self._velocity.magnitude_squared() > self.__max_speed_squared:
+            self._velocity.scale_to_length(self._max_speed)
         self.move(self._velocity)
-        self._velocity = vector_min(self._velocity, unit_vector(self._velocity)*self._max_speed)
 
 
 

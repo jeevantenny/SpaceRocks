@@ -2,6 +2,10 @@
     "texture": "game_objects/powerups",
 
     "mappings": {
-        "shield": [0, 0, 16, 16]
+        "shield": [0, 0, 16, 16],
+        "missiles": [32, 0, 16, 16],
+        "dash": [48, 0, 16, 16],
+        "time_stop": [16, 0, 16, 16],
+        "super_laser": [64, 0, 16, 16]
     }
 }

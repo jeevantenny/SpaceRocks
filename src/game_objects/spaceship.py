@@ -301,7 +301,7 @@ class PlayerShip(Spaceship):
 
 
     def kill(self):
-        if self.__invincibility_timer.complete and not self.__powerups.kill_protection(self):
+        if self.health and self.__invincibility_timer.complete and not self.__powerups.kill_protection(self):
             if debug.Cheats.invincible:
                 self.invincibility_frames()
             else:

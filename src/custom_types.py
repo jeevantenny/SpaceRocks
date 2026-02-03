@@ -55,6 +55,7 @@ class Timer:
         self.loop = loop
         self.__exec_after = exec_after
         self.__time_left = 0.0
+        self.__run = False
 
     @property
     def duration(self) -> float:
@@ -80,6 +81,7 @@ class Timer:
 
     def start(self) -> Self:
         self.__time_left = self.__duration
+        self.__run = True
         return self
     
 
@@ -90,13 +92,12 @@ class Timer:
         self.__time_left -= ticks
 
 
-    def end(self) -> None:
+    def stop(self) -> None:
         self.__time_left = 0.0
-        if self.__exec_after is not None:
-            self.__exec_after()
+        self.__run = False
 
     def update(self, speed_multiplier=1.0) -> None:
-        if self.loop or not self.complete:
+        if self.__run:
             self.__time_left -= speed_multiplier
             
             if self.__time_left <= 0.0:
@@ -104,6 +105,7 @@ class Timer:
                     self.__time_left += self.__duration
                 else:
                     self.__time_left = 0.0
+                    self.__run = False
                 if self.__exec_after is not None:
                     self.__exec_after()
     
@@ -232,7 +234,7 @@ class Animation:
 
     def skip_to_end(self) -> None:
         "Skips to last frame of animation."
-        self.__anim_time.end()
+        self.__anim_time.stop()
 
 
 
