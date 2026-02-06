@@ -206,7 +206,7 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 class EnemyShip(Damageable, ObjectAnimation, ObjectHitbox, ObjectCollision):
     progress_save_key=None
     ignore_camera_rotation=True
-    draw_layer=9
+    _layer=9
 
     __move_speed = 4
     __rotation_speed = 8

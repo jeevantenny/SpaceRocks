@@ -51,7 +51,7 @@ def rect_line_collision(rect: pg.typing.RectLike, lines: CollisionLines) -> bool
 
 
 class Projectile(ObjectTexture, ObjectVelocity):
-    draw_layer=8
+    _layer=8
 
     _max_speed = 200
 

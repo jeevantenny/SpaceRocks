@@ -88,7 +88,7 @@ class ObjectVelocity(GameObject):
 class ObjectTexture(GameObject):
     "Gives an object a visible texture."
 
-    draw_layer = 0
+    _layer = 0
 
     def __init__(self, *, texture: pg.Surface, **kwargs):
         super().__init__(**kwargs)
@@ -254,7 +254,7 @@ class ObjectAnimation(ObjectTexture):
 
 class ObjectHitbox(GameObject):
     "Gives objects a hitbox that can be used to perform collision checks."
-    draw_layer = 0
+    _layer = 0
 
     def __init__(self, *, hitbox_size: pg.typing.Point, **kwargs):
         super().__init__(**kwargs)

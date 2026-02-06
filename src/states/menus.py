@@ -24,7 +24,6 @@ def option_to_delete_user_data(state_stack: StateStack, inputs: InputInterpreter
 
     if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and tap_keys[pg.K_d]:
         state_stack.push(DeleteUserDataOption())
-        return
 
 
 
@@ -195,6 +194,7 @@ class Settings(State):
         self.__show_version_num = elements.Toggle(data.get_setting("show_version_number"), "Show version number")
 
         self.__elements = elements.ElementList([
+            elements.Slider((0, 100), 70, 10, "Music"),
             self.__soundfx,
             self.__controller_rumble,
             self.__motion_blur,

@@ -237,7 +237,7 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
         from .components import ObjectTexture
         return sorted(
             self.get_type(ObjectTexture),
-            key=lambda x: x.draw_layer
+            key=lambda x: x.layer
         )
 
 

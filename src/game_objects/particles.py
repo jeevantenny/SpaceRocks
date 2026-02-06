@@ -19,7 +19,7 @@ __all__ = [
 class ShipSmoke(ObjectAnimation, ObjectVelocity):
     "The smoke particle produced by the spaceship."
     save_entity_progress=True
-    draw_layer=6
+    _layer=6
 
     progress_save_key="ship_thruster_smoke"
 
@@ -74,7 +74,7 @@ class ShipSmoke(ObjectAnimation, ObjectVelocity):
 class DisplayText(ObjectTexture):
     "Shows how many points were obtained from destroying an asteroid."
     save_entity_progress=False
-    draw_layer = 5
+    _layer = 5
     ignore_camera_rotation=True
 
     def __init__(self, position: pg.typing.Point, text_surface: pg.Surface, y_offset=0):

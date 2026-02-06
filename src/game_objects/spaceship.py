@@ -27,7 +27,7 @@ from .particles import ShipSmoke, DisplayText
 
 
 class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
-    draw_layer = 10
+    _layer = 10
     _rotation_speed = 30
     _thrust_power = 1
     __asset_key = "spaceship"
@@ -122,7 +122,7 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
     def shoot(self) -> PlayerBullet:
         from .projectiles import PlayerBullet
         direction = self.get_rotation_vector()
-        bullet = PlayerBullet(self.position, direction, self.get_velocity())
+        bullet = PlayerBullet(self.position+direction*4, direction, self.get_velocity())
         self.primary_group.add(bullet)
         if not self.__thrust:
             self.accelerate(-direction*0.5)
