@@ -192,8 +192,9 @@ class GameEngine:
 
         for event in pg.event.get():
             if event.type == VIDEORESIZE and not self.__update_screen_mode:
-                print("yee")
-                self.__set_screen_mode(self.__fullscreen, self.__constrained_window_size())
+                constrained_size = self.__constrained_window_size()
+                if constrained_size != self.window_surface.size:
+                    self.__set_screen_mode(self.__fullscreen, constrained_size)
             else:
                 self.__event_queue.append(event)
         
