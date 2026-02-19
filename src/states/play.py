@@ -318,23 +318,29 @@ class Play(State):
 
 
     def _draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
+        cam_lerp_pos = self.camera.lerp_position(lerp_amount)
+
         # Background B
         if self.__parl_b is not None:
-            width, height = self.__parl_b.size
-            camera_offset = -self.camera.lerp_position(lerp_amount)*0.1
-            camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
-            for x in range(-1, surface.width//width+1):
-                for y in range(-1, surface.height//height+1):
-                    surface.blit(self.__parl_b, (width*x, height*y)+camera_offset)
+            self.__scrolling_texture(surface, self.__parl_b, cam_lerp_pos, 0.1)
 
         # Background A
         if self.__parl_a is not None:
-            width, height = self.__parl_a.size
-            camera_offset = -self.camera.lerp_position(lerp_amount)*0.3
-            camera_offset = pg.Vector2(camera_offset[0]%width, camera_offset[1]%height)
-            for x in range(-1, surface.width//width+1):
-                for y in range(-1, surface.height//height+1):
-                    surface.blit(self.__parl_a, (width*x, height*y)+camera_offset)
+            self.__scrolling_texture(surface, self.__parl_a, cam_lerp_pos, 0.3)
+
+    
+    def __scrolling_texture(self, surface: pg.Surface, background_surface: pg.Surface, camera_pos: pg.Vector2, scroll_amount: float) -> None:
+        center = pg.Vector2(surface.size)*0.5
+        width, height = background_surface.size
+        camera_offset = -camera_pos*scroll_amount
+        camera_offset = pg.Vector2(camera_offset[0]%width - width*0.5, camera_offset[1]%height - width*0.5)
+        scroll_width = int(surface.width//width)
+        scroll_height = int(surface.height//height)
+
+        for x in range(-scroll_width-1, scroll_width+1):
+            for y in range(-scroll_height-1, scroll_height+1):
+                surface.blit(background_surface, center+(width*x, height*y)+camera_offset)
+
 
 
 
