@@ -46,6 +46,20 @@ class GameEngine:
     @property
     def __desktop_size(self) -> None:
         return pg.display.get_desktop_sizes()[0]
+    
+
+    @property
+    def game_canvas(self) -> pg.Surface:
+        if self.window_surface.size != self.__prev_window_size:
+            w_width, w_height = self.__constrained_window_size()
+            ratio = w_width/w_height
+            # height = config.CANVAS_SIDES/(1+ratio)
+            height = (config.CANVAS_AREA/ratio)**(0.5)
+            width = height*ratio
+            self.__game_canvas = pg.Surface((width, height))
+            self.__prev_window_size = self.window_surface.size
+        
+        return self.__game_canvas
 
 
 
@@ -53,10 +67,11 @@ class GameEngine:
         "Called by the initializer to initialize the object."
         self.run = True
 
-        self.screen = None
-        self.game_canvas = None
+        self.window_surface = None
         self.__fullscreen = False
         self.__update_screen_mode = False
+        self.__prev_resizable_window_size = config.WINDOW_START_SIZE
+        self.__prev_window_size: tuple[int, int] | None = None
 
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
         self.__event_queue: list[pg.Event] = []
@@ -78,13 +93,16 @@ class GameEngine:
 
 
 
-    def __set_screen_mode(self, fullscreen: bool) -> None:
+    def __set_screen_mode(self, fullscreen: bool, size: pg.typing.Point | None = None) -> None:
         "Used to switch between windowed and fullscreen mode."
 
         if fullscreen:
-            self.screen = pg.display.set_mode(self.__desktop_size, FULLSCREEN)
+            self.__prev_resizable_window_size = self.window_surface.size
+            self.window_surface = pg.display.set_mode(self.__desktop_size, FULLSCREEN)
         else:
-            self.screen = pg.display.set_mode(config.WINDOW_SIZE)
+            if size is None:
+                size = self.__prev_resizable_window_size
+            self.window_surface = pg.display.set_mode(size, RESIZABLE)
         
         self.__fullscreen = fullscreen
 
@@ -114,7 +132,6 @@ class GameEngine:
         self.__set_screen_mode(False)
         pg.display.set_caption(config.WINDOW_CAPTION)
         pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
-        self.game_canvas = pg.Surface(config.PIXEL_WINDOW_SIZE)
 
         font.init()
         self.debug_font = pg.font.SysFont("consolas", 13)
@@ -159,11 +176,7 @@ class GameEngine:
         "Handles IO and rendering to screen."
         try:
             while self.run:
-                self.__event_queue.extend(pg.event.get())
-                if self.__update_screen_mode:
-                    self.__set_screen_mode(self.__fullscreen)
-                    self.__update_screen_mode = False
-
+                self.process_events()
                 self.draw()
                 self.next_frame()
 
@@ -173,6 +186,19 @@ class GameEngine:
             raise e
 
 
+    def process_events(self) -> None:
+        if self.__update_screen_mode:
+            self.__set_screen_mode(self.__fullscreen)
+
+        for event in pg.event.get():
+            if event.type == VIDEORESIZE and not self.__update_screen_mode:
+                constrained_size = self.__constrained_window_size()
+                if constrained_size != self.window_surface.size:
+                    self.__set_screen_mode(self.__fullscreen, constrained_size)
+            else:
+                self.__event_queue.append(event)
+        
+        self.__update_screen_mode = False
 
 
     def get_userinput(self) -> None:
@@ -238,33 +264,28 @@ class GameEngine:
             
             if not self.__fullscreen:
                 if data.get_setting("scale_blur"):
-                    pg.transform.smoothscale(self.game_canvas, self.screen.size, self.screen)
+                    pg.transform.smoothscale(self.game_canvas, self.window_surface.size, self.window_surface)
                 else:
-                    pg.transform.scale(self.game_canvas, self.screen.size, self.screen)
+                    pg.transform.scale(self.game_canvas, self.window_surface.size, self.window_surface)
             else:
-                self.screen.fill("black")
+                self.window_surface.fill("black")
                 if data.get_setting("scale_blur"):
-                    blit_to_center(pg.transform.smoothscale_by(self.game_canvas, self.__fullscreen_scale(self.__desktop_size)), self.screen)
+                    pg.transform.smoothscale(self.game_canvas, self.window_surface.size, self.window_surface)
                 else:
-                    blit_to_center(pg.transform.scale_by(self.game_canvas, self.__fullscreen_scale(self.__desktop_size)), self.screen)
+                    pg.transform.scale(self.game_canvas, self.window_surface.size, self.window_surface)
                     
         else:
-            self.screen.fill("black")
+            self.window_surface.fill("black")
 
         if debug.DEBUG_MODE:
             blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
             debug_message = self.state_stack.debug_info()
             if debug_message:
                 blit_text = f"{blit_text}\n{debug_message}"
-            self.screen.blit(self.debug_font.render(blit_text, False, "white", "black"))
+            self.window_surface.blit(self.debug_font.render(blit_text, False, "white", "black"))
 
             self.__show_stack_view()
 
-
-
-    @lru_cache(1)
-    def __fullscreen_scale(self, monitor_size: pg.typing.Point) -> float:
-        return min(monitor_size[0]/config.PIXEL_WINDOW_WIDTH, monitor_size[1]/config.PIXEL_WINDOW_HEIGHT)
 
 
     
@@ -277,9 +298,7 @@ class GameEngine:
             current_state = current_state.prev_state
         
         text_surface = self.debug_font.render(text, False, "green", "black")
-        self.screen.blit(text_surface, (0, self.screen.height-text_surface.height))
-
-
+        self.window_surface.blit(text_surface, (0, self.window_surface.height-text_surface.height))
 
 
 
@@ -298,6 +317,22 @@ class GameEngine:
         pg.display.flip()
         self.frame_clock.tick(config.FRAMERATE)
         self.prev_frame = perf_counter()
+
+
+
+    def __constrained_window_size(self) -> tuple[int, int]:
+        width, height = self.window_surface.size
+        ratio = width/height
+        
+        if ratio < config.WINDOW_RATIO_RANGE[0]:
+            height = int(width/config.WINDOW_RATIO_RANGE[0])
+        elif ratio > config.WINDOW_RATIO_RANGE[1]:
+            width = height*config.WINDOW_RATIO_RANGE[1]
+        
+        width = max(width, config.WINDOW_MINIUM_SIZE[0])
+        height = max(height, config.WINDOW_MINIUM_SIZE[1])
+        
+        return width, height
 
 
 

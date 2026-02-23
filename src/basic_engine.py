@@ -36,10 +36,10 @@ class BasicEngine:
 
 
     def start(self) -> None:
-        self.screen = pg.display.set_mode(config.WINDOW_SIZE)
+        self.screen = pg.display.set_mode(config.WINDOW_START_SIZE)
         pg.display.set_caption(config.WINDOW_CAPTION)
         pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
-        self.game_canvas = pg.Surface(config.PIXEL_WINDOW_SIZE)
+        self.game_canvas = pg.Surface(config.DEFAULT_CANVAS_SIZE)
 
         font.init()
         init_state.Initializer(self.state_stack)
