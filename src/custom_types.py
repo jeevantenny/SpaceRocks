@@ -36,13 +36,13 @@ class GameSound:
         self.__sounds = sounds
     
     
-    def play(self, volume=1.0, loops=0) -> pg.Channel | None:
+    def play(self, volume=1.0, loops=0) -> pg.Channel:
         if self.__sounds:
             sound = random.choice(self.__sounds)
             sound.set_volume(volume)
             return sound.play(loops)
         else:
-            return ValueError(f"No sounds available to play for '{self.name}'")
+            raise ValueError(f"No sounds available to play for '{self.name}'")
 
 
 

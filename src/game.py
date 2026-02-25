@@ -3,7 +3,6 @@
 import pygame as pg
 from pygame.locals import *
 import threading
-from functools import lru_cache
 
 import traceback
 from time import perf_counter

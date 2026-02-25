@@ -1,7 +1,7 @@
 "Contains functions that loads all assets required by the game."
 
 import pygame as pg
-from typing import overload
+from typing import Literal, overload
 from functools import lru_cache
 
 import debug
@@ -24,7 +24,7 @@ SOUNDS_DIR = "assets/sounds"
 COLORKEY = (255, 0, 255)
 
 
-__sound_definition = load_json("assets/sound_definitions")
+__sound_definition: dict[str, dict[str, list[str] | str]] = load_json("assets/sound_definitions")
 
 
 @asset_cache

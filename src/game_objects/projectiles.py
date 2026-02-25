@@ -170,8 +170,8 @@ class PlayerBullet(Projectile):
         )
         self._distance_traveled = object_data["distance_traveled"]
 
-        from .obstacles import Damageable
-        self.hit_list = set[Damageable]()
+        from .obstacles import Obstacle
+        self.hit_list = set[Obstacle]()
 
 
     
@@ -186,8 +186,8 @@ class PlayerBullet(Projectile):
 
 
     def _process_object(self, obj):
-        from .obstacles import Damageable, Asteroid
-        if isinstance(obj, Damageable) and obj._health and self._collides_with(obj.rect):
+        from .obstacles import Obstacle, Asteroid
+        if isinstance(obj, Obstacle) and obj._health and self._collides_with(obj.rect):
             if isinstance(obj, Asteroid):
                 obj.damage(1, self._velocity*0.1/obj.size)
             else:

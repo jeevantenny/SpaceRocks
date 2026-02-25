@@ -121,13 +121,9 @@ class IconFont(Font):
         if cache:
             controller = InputInterpreter.get_controller()
             if controller is not None and InputInterpreter.current_input_type() == "controller":                
-                current_controller_name = controller.device_name
-            else:
-                current_controller_name = None
+                return self.__render_cached(text, size, controller.device_name)
 
-            return self.__render_cached(text, size, current_controller_name)
-        else:
-            return self.__render_internal(text, size)
+        return self.__render_internal(text, size)
     
 
     @lru_cache(4)
@@ -136,7 +132,6 @@ class IconFont(Font):
 
 
     def __render_internal(self, text: str, size: int) -> pg.Surface:
-        # print(f"Rendered {text}")
         elements = self.__get_text_elements(text)
         surface_width = sum([e.width+1 for e in elements])+1
         surface_height = max(elements, key=lambda x: x.height).height

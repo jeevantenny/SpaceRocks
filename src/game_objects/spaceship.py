@@ -15,7 +15,7 @@ from src.ui import font
 
 from . import GameObject
 from .components import ObjectAnimation, ObjectHitbox, ObjectCollision
-from .obstacles import Asteroid, EnemyShip
+from .obstacles import EnemyShip, Obstacle, Asteroid
 from .projectiles import PlayerBullet
 from .particles import ShipSmoke, DisplayText
 
@@ -47,7 +47,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
         self.health = True
         self.__thrust = False
-        self.__thruster_audio_chan: pg.Channel | None = None
         self.__turn_direction: Literal[-1, 0, 1] = 0
 
         self._attack_types: list[type[GameObject]] = [Asteroid]
@@ -85,13 +84,7 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
         if self.__thrust:
             self.accelerate(pg.Vector2(0, -self._thrust_power).rotate(self._rotation))
             self.__release_smoke()
-            if self.__thruster_audio_chan is None:
-                self.__start_thrust_sound()
-            else:
-                self.__thruster_audio_chan.set_volume(pg.math.clamp(abs(self._rotation-180)*0.002+0.3, 0, 1))
-
-        elif self.__thruster_audio_chan is not None:
-            self.__stop_thruster_sound()
+            self._queue_sound("entity.ship.boost", pg.math.clamp(abs(self._rotation-180)*0.002+0.3, 0, 1), True)
 
         if self.health:
             if self._angular_vel*self.__turn_direction <= 0:
@@ -122,7 +115,7 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
     def shoot(self) -> PlayerBullet:
         from .projectiles import PlayerBullet
         direction = self.get_rotation_vector()
-        bullet = PlayerBullet(self.position, direction, self.get_velocity())
+        bullet = PlayerBullet(self.position+direction*12, direction, self.get_velocity())
         self.primary_group.add(bullet)
         if not self.__thrust:
             self.accelerate(-direction*0.5)
@@ -138,8 +131,10 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
 
     def on_collide(self, collided_with):
-        if isinstance(collided_with, (Asteroid, EnemyShip)):
+        if isinstance(collided_with, Obstacle) and collided_with.health:
             self.kill()
+            if isinstance(collided_with, EnemyShip):
+                collided_with.kill()
 
     
     def kill(self):
@@ -151,7 +146,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
 
     def force_kill(self):
-        self.__stop_thruster_sound()
         self.health = False
         super().force_kill()
 
@@ -162,18 +156,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
     def _turn(self, direction: Literal[-1, 1]) -> None:
         self.__turn_direction = sign(self.__turn_direction+direction)
-
-
-    def __start_thrust_sound(self) -> None:
-        self.__stop_thruster_sound()
-        self.__thruster_audio_chan = soundfx.play_sound("entity.ship.boost", 0.7, -1)
-
-
-
-    def __stop_thruster_sound(self) -> None:
-        if self.__thruster_audio_chan is not None:
-            self.__thruster_audio_chan.fadeout(100)
-            self.__thruster_audio_chan = None
 
     
 
