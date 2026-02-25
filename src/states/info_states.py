@@ -72,7 +72,7 @@ class NoMoreLevels(State):
             data.delete_progress()
 
             from .init_state import Initializer
-            Initializer(self.state_stack)
+            Initializer.main_title_screen(self.state_stack)
 
 
     def draw(self, surface, lerp_amount=0):
@@ -124,7 +124,7 @@ class UserDataDeleted(State):
         if inputs.check_input("select"):
             self.state_stack.pop()
             from .init_state import Initializer
-            Initializer(self.state_stack)
+            Initializer.main_title_screen(self.state_stack)
         
         self.__info_text = font.font_with_icons.render("Press<select> to go to main menu")
     

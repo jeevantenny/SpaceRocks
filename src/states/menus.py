@@ -137,13 +137,12 @@ class PauseMenu(State):
 
 
     def userinput(self, inputs):
-        if self.title.animations_complete:
+        if inputs.check_input("settings"):
+            Settings().add_to_stack(self.state_stack)
+        elif self.title.animations_complete:
             if inputs.check_input("pause") or inputs.check_input("select") or inputs.check_input("back"):
                 self.title.set_effect("main_exit")
                 self.__exit_menu = True
-
-            elif inputs.check_input("settings"):
-                Settings().add_to_stack(self.state_stack)
 
         
         
@@ -216,6 +215,7 @@ class Settings(State):
 
 
     def update(self):
+        self.prev_state.update()
         self.__elements.update()
     
     def draw(self, surface, lerp_amount=0):

@@ -1,5 +1,5 @@
 # SpaceRocks (A Game inspired by Asteroids)
-**version 0.10.3**  
+**version 0.10.4**  
 *python-3.13.3*
 
 ![SpaceRocks Gameplay](/demo/demo_clip_new.gif)
@@ -15,10 +15,10 @@ original apart from the two fonts, Upheaval and Tiny5. The Open Font License for
 ## Features
 - Infinitely scrolling world in all directions
 - Soundfx volume scale with distance.
+- Game window is resizable and scales to insure the number of pixels on screen stay roughly the same.
 - Press **F11** to toggle fullscreen mode
 - Support for select number of controllers
 - Progress is not lost when application is closed. Player can continue from exactly where they left off.
-- **Ctrl D** to toggle debug mode (for testing)
 - Press **ALT** + **SHIFT** + **D** when in settings to clear user data.
 
 ## Controls
@@ -33,5 +33,5 @@ original apart from the two fonts, Upheaval and Tiny5. The Open Font License for
 - **A** to shoot
 
 
-## Libraries
-`pygame-ce - 2.5.5`
+## External Libraries
+`pygame-ce - 2.5.6`

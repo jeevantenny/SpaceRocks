@@ -19,8 +19,11 @@ __all__ = [
 
 
 
-class Damageable(ObjectHitbox):
-    "Objects that take damage from attacks and lose Health. Once health depletes they will be killed."
+class Obstacle(ObjectHitbox, ObjectCollision):
+    """
+    Objects that pose as obstacles to the player ship by damaging it upon collision. Obstacles have a health
+    value and once this value reaches zero the object is killed.
+    """
     def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):
         super().__init__(**kwargs)
         self._health = health
@@ -48,6 +51,10 @@ class Damageable(ObjectHitbox):
             self.kill()
 
 
+    def do_collision(self):
+        return super().do_collision() and self.health
+
+
     def force_kill(self):
         self._health = 0
         super().force_kill()
@@ -57,7 +64,7 @@ class Damageable(ObjectHitbox):
 
 
 
-class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
+class Asteroid(Obstacle, ObjectAnimation):
     progress_save_key = "asteroid"
 
     __asteroid_data = load_json("data/asteroids")
@@ -203,7 +210,7 @@ class Asteroid(Damageable, ObjectAnimation, ObjectCollision):
 
 
 
-class EnemyShip(Damageable, ObjectAnimation, ObjectHitbox, ObjectCollision):
+class EnemyShip(Obstacle, ObjectAnimation, ObjectHitbox):
     progress_save_key=None
     ignore_camera_rotation=True
     _layer=9
@@ -224,7 +231,7 @@ class EnemyShip(Damageable, ObjectAnimation, ObjectHitbox, ObjectCollision):
             anim_path="saucer",
             controller_path="enemy",
 
-            points=50
+            points=200
         )
 
         self.__player_ship = None
@@ -288,8 +295,7 @@ class EnemyShip(Damageable, ObjectAnimation, ObjectHitbox, ObjectCollision):
 
 
     def on_collide(self, collided_with):
-        from .spaceship import PlayerShip
-        if isinstance(collided_with, (Asteroid, PlayerShip)):
+        if isinstance(collided_with, Asteroid) and collided_with.health:
             self.kill()
 
 
