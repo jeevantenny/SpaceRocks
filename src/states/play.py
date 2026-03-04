@@ -271,7 +271,7 @@ class Play(State):
             self.__hud_timer.update()
             self.__object_spawn_delay.update()
 
-        self.__info_text = font.font_with_icons.render("Pause<pause>")
+        self.__info_text = font.icon_font.render("Pause<pause>")
 
         
 

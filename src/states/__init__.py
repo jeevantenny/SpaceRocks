@@ -10,7 +10,7 @@ from typing import Self, Literal, Any, Deque, Generator
 from src import game_errors
 from src.input_device import InputInterpreter
 from src.custom_types import Timer
-from src.audio import soundfx
+from src.audio.soundfx import HasSoundQueue
 
 
 
@@ -29,7 +29,7 @@ __all__ = [
 
 
 
-class State(soundfx.HasSoundQueue):
+class State(HasSoundQueue):
     "A state that a game is in. Use to separate different menus and gameplay."
 
     enter_duration = 0
@@ -144,7 +144,7 @@ class PassThroughState(State):
 
 
 
-class StateStack(soundfx.HasSoundQueue):
+class StateStack(HasSoundQueue):
     """
     Holds all the states that are currently loaded in. States can be layered on top of
     one another to show different overlapping menus.

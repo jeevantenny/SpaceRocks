@@ -78,9 +78,9 @@ class TitleScreen(State):
         
         # Tell the player what controls to use depending on weather they use keyboard or controller.
         if inputs.current_input_type() == "keyboard_mouse":
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
 
 
@@ -116,7 +116,7 @@ class TitleScreen(State):
                         surface.blit(version_text, (3, surface.height-12))
                         info_offset += 10
 
-                settings_info = font.font_with_icons.render("Settings<settings>")
+                settings_info = font.icon_font.render("Settings<settings>")
                 surface.blit(settings_info, (10, surface.height-info_offset))
 
 
@@ -148,9 +148,9 @@ class PauseMenu(State):
         
         
         if inputs.current_input_type() == "keyboard_mouse":
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
 
 
@@ -168,7 +168,7 @@ class PauseMenu(State):
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
             blit_to_center(self.__info_text, surface, (0, 30))
-            surface.blit(font.font_with_icons.render("Continue<select>     settings<settings>"), (10, surface.height-18))
+            surface.blit(font.icon_font.render("Continue<select>     settings<settings>"), (10, surface.height-18))
 
 
     def debug_info(self):
@@ -223,7 +223,7 @@ class Settings(State):
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
         
-        surface.blit(font.font_with_icons.render("Back<back>"), (10, surface.height-18))
+        surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
         surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
 
 
@@ -362,9 +362,9 @@ class ShowScore(State):
         self.__display_score(surface, "Highscore", self.highscore, -35)
         self.__display_score(surface, "Score", self.score, 35)
 
-        info_text = font.font_with_icons.render("Play Again<select>")
+        info_text = font.icon_font.render("Play Again<select>")
         blit_to_center(info_text, surface, (0, 70))
-        surface.blit(font.font_with_icons.render("Main menu<back>"), (10, surface.height-18))
+        surface.blit(font.icon_font.render("Main menu<back>"), (10, surface.height-18))
 
 
     def __display_score(self, surface: pg.Surface, name: str, score: int, y_offset: int) -> None:

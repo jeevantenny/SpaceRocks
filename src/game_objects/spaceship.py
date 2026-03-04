@@ -8,7 +8,6 @@ import debug
 from src.math_functions import sign
 from src.custom_types import Timer
 from src.input_device import controller_rumble, InputInterpreter
-from src.audio import soundfx
 from src.ui import font
 
 
@@ -84,7 +83,7 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
         if self.__thrust:
             self.accelerate(pg.Vector2(0, -self._thrust_power).rotate(self._rotation))
             self.__release_smoke()
-            self._queue_sound("entity.ship.boost", pg.math.clamp(abs(self._rotation-180)*0.002+0.3, 0, 1), True)
+            self._queue_sound("entity.ship.boost", pg.math.clamp(abs(self._rotation-180)*0.002+0.4, 0, 0.8), True)
 
         if self.health:
             if self._angular_vel*self.__turn_direction <= 0:

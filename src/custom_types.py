@@ -43,6 +43,24 @@ class GameSound:
             return sound.play(loops)
         else:
             raise ValueError(f"No sounds available to play for '{self.name}'")
+        
+
+
+
+class GameMusic:
+    def __init__(self, name: str, main_loop: str, prelude: str | None = None):
+        self.name = name
+        self.__prelude = prelude
+        self.__main_loop = main_loop
+
+    def play_music(self, start=0.0, loop=True) -> None:
+        if self.__prelude is not None and start == 0.0:
+            pg.mixer_music.load(self.__prelude)
+            pg.mixer_music.queue(self.__main_loop, loops=-1)
+            pg.mixer_music.play()
+        else:
+            pg.mixer_music.load(self.__main_loop)
+            pg.mixer_music.play(-1, start)
 
 
 

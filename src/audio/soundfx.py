@@ -7,51 +7,52 @@ from src.file_processing import assets, data
 
 type SoundQueue = list[tuple[str, float, int]]
 type LoopingSounds = dict[tuple[str, int], pg.Channel]
-__looping_sounds: LoopingSounds = {}
+
+
+class SoundFXManager:
+    __looping_sounds: LoopingSounds = {}
+
+    @classmethod
+    def play_sound(cls, name: str, volume=1.0, loops=0) -> pg.Channel | None:
+        if pg.mixer.get_init() is not None:
+            sound = assets.load_sound(name)
+            return sound.play(pg.math.clamp(volume, 0, 1)*data.get_setting("soundfx_volume"), loops)
 
 
 
-def play_sound(name: str, volume=1.0, loops=0) -> pg.Channel | None:
-    if pg.mixer.get_init() is not None:
-        sound = assets.load_sound(name)
-        return sound.play(
-            pg.math.clamp(volume, 0, 1)*data.get_setting("soundfx_volume"),
-            loops
-            )
+    @classmethod
+    def play_sound_queue(cls, queue: SoundQueue) -> None:
+        new_loop_sounds: dict[tuple[str, int], float] = {}
+        for name, volume, object_id in queue:
+            if object_id == 0:
+                cls.play_sound(name, volume)
+            else:
+                new_loop_sounds[(name, object_id)] = volume
+        
+        for loop_id, channel in list(cls.__looping_sounds.items()):
+            # If a currently looping sound should continue in next tick
+            if loop_id in new_loop_sounds:
+                channel.set_volume(new_loop_sounds[loop_id])
+                new_loop_sounds.pop(loop_id)
+            # If currently playing sound should not continue in next tick
+            else:
+                channel.stop()
+                cls.__looping_sounds.pop(loop_id)
+
+        for loop_id, volume in new_loop_sounds.items():
+            # If a looping sound to play on next tick is not currently playing
+            new_channel = cls.play_sound(loop_id[0], volume, -1)
+            if new_channel is not None:
+                cls.__looping_sounds[loop_id] = new_channel
 
 
 
-def play_sound_queue(queue: SoundQueue) -> None:
-    new_loop_sounds: dict[tuple[str, int], float] = {}
-    for name, volume, object_id in queue:
-        if object_id == 0:
-            play_sound(name, volume)
-        else:
-            new_loop_sounds[(name, object_id)] = volume
-    
-    for loop_id, channel in list(__looping_sounds.items()):
-        # If a currently looping sound should continue in next tick
-        if loop_id in new_loop_sounds:
-            channel.set_volume(new_loop_sounds[loop_id])
-            new_loop_sounds.pop(loop_id)
-        # If currently playing sound should not continue in next tick
-        else:
+    @classmethod
+    def stop_looping_sounds(cls) -> None:
+        "Stops all currently playing looping sounds"
+        for channel in cls.__looping_sounds.values():
             channel.stop()
-            __looping_sounds.pop(loop_id)
-
-    for loop_id, volume in new_loop_sounds.items():
-        # If a looping sound to play on next tick is not currently playing
-        new_channel = play_sound(loop_id[0], volume, -1)
-        if new_channel is not None:
-            __looping_sounds[loop_id] = new_channel
-
-
-
-def stop_looping_sounds() -> None:
-    "Stops all currently playing looping sounds"
-    for channel in __looping_sounds.values():
-        channel.stop()
-    __looping_sounds.clear()
+        cls.__looping_sounds.clear()
 
 
 

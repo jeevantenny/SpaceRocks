@@ -227,6 +227,7 @@ __settings_data = __load_settings()
 
 __default_settings = {
     "soundfx_volume": 0.7,
+    "music_volume": 0.7,
     "controller_rumble": True,
     "motion_blur": True,
     "scale_blur": False,

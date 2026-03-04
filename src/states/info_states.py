@@ -40,7 +40,7 @@ class SaveFileCorrupted(State):
         surface.fill("black")
         blit_to_center(font.large_font.render("SAVE FILE CORRUPTED", color_a="#aa0055"), surface, (0, -10))
         blit_to_center(font.small_font.render("The previous save file got corrupted", color_a="#aa0055"), surface, (0, 10))
-        blit_to_center(font.font_with_icons.render("Delete Save File<select>"), surface, (0, 35))
+        blit_to_center(font.icon_font.render("Delete Save File<select>"), surface, (0, 35))
 
 
 
@@ -109,7 +109,7 @@ class DeleteUserDataOption(State):
         blit_to_center(font.large_font.render("DELETE USER DATA?", color_a="#aa0055"), surface, (0, -20))
         blit_to_center(font.small_font.render("Are you sure you want to delete all user data?", color_a="#aa0055"), surface, (0, 5))
         blit_to_center(font.small_font.render("If so press ALT + SHIFT + D", color_a="#aa0055"), surface, (0, 15))
-        blit_to_center(font.font_with_icons.render("Back<back>"), surface, (0, 35))
+        blit_to_center(font.icon_font.render("Back<back>"), surface, (0, 35))
 
 
 
@@ -126,7 +126,7 @@ class UserDataDeleted(State):
             from .init_state import Initializer
             Initializer.main_title_screen(self.state_stack)
         
-        self.__info_text = font.font_with_icons.render("Press<select> to go to main menu")
+        self.__info_text = font.icon_font.render("Press<select> to go to main menu")
     
 
     def draw(self, surface, lerp_amount=0):
