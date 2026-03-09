@@ -12,7 +12,7 @@ from src.ui import blit_to_center, font, effects, elements, hud
 
 from . import State, StateStack
 from .info_states import DeleteUserDataOption
-from .visuals import BackgroundTint, add_background_tint
+from .visuals import add_background_tint
 
 
 
@@ -188,6 +188,9 @@ class Settings(State):
         super().__init__()
         self.__soundfx = elements.Slider((0, 100), int(data.get_setting("soundfx_volume")*100), 10, "Sound FX")
         self.__soundfx.on_slide(lambda x: data.update_settings(soundfx_volume=round(x*0.01, 2)))
+
+        self.__music = elements.Slider((0, 100), int(data.get_setting("music_volume")*100), 10, "Music")
+        self.__music.on_slide(lambda x: data.update_settings(music_volume=round(x*0.01, 2)))
         
         self.__scale_blur = elements.Toggle(data.get_setting("scale_blur"), "Pixel blur")
         self.__scale_blur.on_toggle(lambda x: data.update_settings(scale_blur=x))
@@ -197,7 +200,7 @@ class Settings(State):
         self.__show_version_num = elements.Toggle(data.get_setting("show_version_number"), "Show version number")
 
         self.__elements = elements.ElementList([
-            elements.Slider((0, 100), 70, 10, "Music"),
+            self.__music,
             self.__soundfx,
             self.__controller_rumble,
             self.__motion_blur,
@@ -267,8 +270,8 @@ class Settings(State):
 class GameOverScreen(State):
     def __init__(self, level_name: str, score_data: tuple[int, int, bool]):
         super().__init__()
-        from .play import Play
-        self.prev_state: Play
+        from .play_level import PlayLevel
+        self.prev_state: PlayLevel
 
         self.__timer = 35
 
@@ -328,11 +331,11 @@ class ShowScore(State):
                 self.display_score = self.score
                 self.__timer = 0
             else:
-                from .play import Play
+                from .play_level import PlayLevel
 
                 # Empties the state stack and adds a new Play state.
                 self.state_stack.quit()
-                Play(get_start_level()).add_to_stack(self.state_stack)
+                PlayLevel(get_start_level()).add_to_stack(self.state_stack)
         
         if not self.__timer and inputs.check_input("back"):
             from .init_state import Initializer

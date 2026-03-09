@@ -416,3 +416,47 @@ class ObjectHealth(GameObject):
     
     def heal(self, amount: int) -> None:
         self.health = min(self.health+amount, self.__max_health)
+
+
+
+
+
+class Obstacle(ObjectHitbox, ObjectCollision):
+    """
+    Objects that pose as obstacles to the player ship by damaging it upon collision. Obstacles have a health
+    value and once this value reaches zero the object is killed.
+    """
+    def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):
+        super().__init__(**kwargs)
+        self._health = health
+        self.__points = points
+        self.__point_display_height = point_display_height
+    
+    @property
+    def points(self) -> int:
+        return self.__points
+
+    @property
+    def health(self) -> int:
+        return self._health
+
+    @property
+    def point_display_height(self) -> int:
+        return self.__point_display_height
+
+
+    def damage(self, amount: int) -> None:
+        if not self._health:
+            return
+        self._health -= min(self._health, amount)
+        if not self._health:
+            self.kill()
+
+
+    def do_collision(self):
+        return super().do_collision() and self.health
+
+
+    def force_kill(self):
+        self._health = 0
+        super().force_kill()

@@ -25,14 +25,14 @@ from .play import Play
 
 class PlayBossLevel(Play):
     def __init__(self):
-        super().__init__("boss_level")
-
+        super().__init__()
+        self._setup_level("boss_level")
         self.spaceship.score = 500
 
 
     @classmethod
     def init_from_save(cls, save_data):
-        return super().init_from_save(save_data)
+        raise NotImplementedError
 
 
     def _setup(self):
@@ -47,20 +47,6 @@ class PlayBossLevel(Play):
         # self.camera.set_zoom(1.5)
 
 
-    def userinput(self, inputs):
-        if debug.DEBUG_MODE:
-            if inputs.keyboard_mouse.tap_keys[pg.K_g]:
-                debug.Cheats.show_bounding_boxes = not debug.Cheats.show_bounding_boxes
-
-            if inputs.keyboard_mouse.tap_keys[pg.K_r]:
-                self.spaceship.set_position((0, 0))
-                self.spaceship.clear_velocity()
-
-        self.spaceship.userinput(inputs)
-        if self.spaceship.health and inputs.check_input("pause"):
-            self._pause_game()
-
-
     def update(self):
         self._game_loop()
         self._join_sound_queue(self.entities.clear_sound_queue())
@@ -68,6 +54,11 @@ class PlayBossLevel(Play):
             self.camera.set_angular_vel(0)
         
         self._game_over_timer.update()
+
+
+    def draw(self, surface, lerp_amount=0):
+        super().draw(surface, lerp_amount)
+        self._draw_hud(surface)
 
 
 
@@ -107,17 +98,12 @@ class PlayBossLevel(Play):
             surface.blit(font.icon_font.render("Pause<pause>"), (10, surface.height-18))
 
 
-    def _game_over(self):
-        self.state_stack.quit()
-        PlayBossLevel().add_to_stack(self.state_stack)
-
-
     def _game_loop(self):
         self._update_game_objects()
         if not self.spaceship.health and self._game_over_timer.complete:
             self._game_over_timer.start()
 
-    
 
-    def quit(self) -> None:
-        pass
+    def _game_over(self):
+        self.state_stack.quit()
+        PlayBossLevel().add_to_stack(self.state_stack)

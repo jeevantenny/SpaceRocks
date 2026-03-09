@@ -14,7 +14,7 @@ from src.ui import font
 
 from . import GameObject
 from .components import ObjectAnimation, ObjectHitbox, ObjectCollision
-from .obstacles import EnemyShip, Obstacle, Asteroid
+from .asteroids import Obstacle, Asteroid
 from .projectiles import PlayerBullet
 from .particles import ShipSmoke, DisplayText
 
@@ -47,8 +47,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
         self.health = True
         self.__thrust = False
         self.__turn_direction: Literal[-1, 0, 1] = 0
-
-        self._attack_types: list[type[GameObject]] = [Asteroid]
 
 
 
@@ -132,8 +130,7 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
     def on_collide(self, collided_with):
         if isinstance(collided_with, Obstacle) and collided_with.health:
             self.kill()
-            if isinstance(collided_with, EnemyShip):
-                collided_with.kill()
+            collided_with.damage(1)
 
     
     def kill(self):
@@ -178,8 +175,6 @@ class PlayerShip(Spaceship):
 
     def __init__(self, position):
         super().__init__(position)
-        self._attack_types: list[type[GameObject]] = [Asteroid]
-
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
         self.__invincibility_timer = Timer(1)
@@ -201,7 +196,6 @@ class PlayerShip(Spaceship):
 
     def __init_from_data__(self, object_data):
         super().__init_from_data__(object_data)
-        self._attack_types: list[type[GameObject]] = [Asteroid]
 
         self.score = object_data["score"]
         self.combo = object_data["combo"]

@@ -5,7 +5,7 @@ from src.game_errors import SaveFileError
 from src.file_processing import data
 from src.misc import get_start_level, find_subclass_by_name
 
-from . import State, StateStack, play, menus, info_states, boss_level
+from . import State, StateStack, menus, info_states, boss_level, play_level
 
 from .test_states import *
 
@@ -42,11 +42,11 @@ class Initializer:
 
     @classmethod
     def main_title_screen(self, state_stack: StateStack) -> None:
-        play.Play(get_start_level()).add_to_stack(state_stack)
+        play_level.PlayLevel(get_start_level()).add_to_stack(state_stack)
         menus.TitleScreen().add_to_stack(state_stack)
 
     
     @classmethod
     def continue_from_save(self, state_stack: StateStack, save_data: SaveData) -> None:
-        play.Play.init_from_save(save_data).add_to_stack(state_stack)
+        play_level.PlayLevel.init_from_save(save_data).add_to_stack(state_stack)
         menus.PauseMenu().add_to_stack(state_stack)

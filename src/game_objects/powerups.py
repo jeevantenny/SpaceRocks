@@ -14,7 +14,7 @@ from src.ui import font
 
 from .components import ObjectHitbox, ObjectTexture, ObjectCollision
 from .spaceship import PlayerShip
-from .obstacles import Asteroid
+from .asteroids import Asteroid
 from .projectiles import Laser
 from .particles import DisplayText
 
