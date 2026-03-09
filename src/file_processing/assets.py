@@ -5,7 +5,7 @@ from typing import Literal, overload
 from functools import lru_cache
 
 import debug
-from src.custom_types import GameSound, TextureMap, AnimData, ControllerData
+from src.custom_types import GameSound, GameMusic, TextureMap, AnimData, ControllerData
 
 from . import load_json
 
@@ -24,7 +24,10 @@ SOUNDS_DIR = "assets/sounds"
 COLORKEY = (255, 0, 255)
 
 
-__sound_definition: dict[str, dict[str, list[str] | str]] = load_json("assets/sound_definitions")
+SOUND_DEFINITIONS: dict[str, dict[str, list[str] | str]] = load_json("assets/sound_definitions")
+MUSIC_DEFINITIONS: dict[str, dict[str, str]] = load_json("assets/music_definitions")
+
+
 
 
 @asset_cache
@@ -111,10 +114,10 @@ def load_anim_controller_data(path: str) -> ControllerData:
 def load_sound(name: str) -> GameSound:
     "Loads a sound defined in sound definitions. (OGG file)"
 
-    if name not in __sound_definition:
+    if name not in SOUND_DEFINITIONS:
         raise ValueError(f"Invalid sound name '{name}'")
     
-    sound_data = __sound_definition[name]
+    sound_data = SOUND_DEFINITIONS[name]
     
     sounds = []
     for path in sound_data["sounds"]:
@@ -124,8 +127,14 @@ def load_sound(name: str) -> GameSound:
     return GameSound(name, sounds)
 
 
+@asset_cache
+def load_music_data(name: str) -> GameMusic:
+    "Loads a GameMusic object."
+    data = MUSIC_DEFINITIONS[name]
+    return GameMusic(
+        name,
+        f"{SOUNDS_DIR}/{data["main_loop"]}.ogg",
+        f"{SOUNDS_DIR}/{data["prelude"]}.ogg" if data.get("prelude")
+        else None
+    )
 
-def load_music(path: str):
-    "NOT IMPLEMENTED"
-    raise NotImplementedError
-    

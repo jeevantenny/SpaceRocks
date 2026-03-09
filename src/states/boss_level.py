@@ -104,7 +104,7 @@ class PlayBossLevel(Play):
         indicator_surface = self.__lives_indicator.render(3)
         surface.blit(indicator_surface, ((surface.width-indicator_surface.width)*0.5, surface.height-22))
         if self.spaceship.health and self.is_top_state():
-            surface.blit(font.font_with_icons.render("Pause<pause>"), (10, surface.height-18))
+            surface.blit(font.icon_font.render("Pause<pause>"), (10, surface.height-18))
 
 
     def _game_over(self):

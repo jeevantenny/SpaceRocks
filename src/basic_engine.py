@@ -5,7 +5,7 @@ import config
 from src.input_device import InputInterpreter, KeyboardMouse
 
 from src.file_processing import assets
-from src.audio import soundfx
+from src.audio.soundfx import SoundFXManager
 from src.ui import font
 from src.states import StateStack, init_state
 
@@ -50,7 +50,7 @@ class BasicEngine:
 
                 self.state_stack.userinput(self.input_interpreter)
                 self.state_stack.update()
-                soundfx.play_sound_queue(self.state_stack.clear_sound_queue())
+                SoundFXManager.play_sound_queue(self.state_stack.clear_sound_queue())
 
                 self.state_stack.draw(self.game_canvas)
                 pg.transform.scale(self.game_canvas, self.screen.size, self.screen)

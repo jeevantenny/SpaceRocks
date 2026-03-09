@@ -15,7 +15,7 @@ from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, 
 from src.ui import blit_to_center, font
 from src.states import StateStack, init_state
 from src.file_processing import assets, data
-from src.audio import soundfx
+from src.audio.soundfx import SoundFXManager
 from src.misc import set_console_style, bar_of_dashes
 
 
@@ -246,7 +246,7 @@ class GameEngine:
         if self.input_interpreter.controller is not None:
             self.input_interpreter.controller.update()
 
-        soundfx.play_sound_queue(self.state_stack.clear_sound_queue())
+        SoundFXManager.play_sound_queue(self.state_stack.clear_sound_queue())
 
 
 

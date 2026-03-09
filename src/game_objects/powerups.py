@@ -7,7 +7,7 @@ import debug
 from src.custom_types import Timer
 from src.input_device import InputInterpreter
 from src.file_processing import assets
-from src.audio import soundfx
+from src.audio.soundfx import HasSoundQueue
 from src.input_device import controller_rumble
 
 from src.ui import font
@@ -22,7 +22,7 @@ from .particles import DisplayText
 powerup_list: dict[str, type["PowerUp"]] = {}
 
 
-class PowerUp(soundfx.HasSoundQueue):
+class PowerUp(HasSoundQueue):
     "Gives the player's spaceship additional abilities that they can either be offensive or defensive."
 
     texture_key: str | None = None
@@ -73,7 +73,7 @@ class PowerUp(soundfx.HasSoundQueue):
 
 
 
-class PowerUpGroup(soundfx.HasSoundQueue):
+class PowerUpGroup(HasSoundQueue):
     "Stores a collection of powerups collected by the player."
 
     def __init__(self):

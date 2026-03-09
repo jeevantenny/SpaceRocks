@@ -8,6 +8,12 @@ from . import PassThroughState
 
 
 
+def add_background_tint(surface: pg.Surface, color: pg.typing.ColorLike) -> None:
+    surface.fill(color, special_flags=pg.BLEND_RGB_MULT)
+
+
+
+
 class BackgroundTint(PassThroughState):
     "Tints the state behind it to a certain color."
 
@@ -33,10 +39,11 @@ class BackgroundTint(PassThroughState):
 class ShowText(PassThroughState):
     "Shows text above previous state at the center of the screen."
 
-    def __init__(self, text: str, offset=(0, 0)):
+    def __init__(self, text: str, offset=(0, 0), background_tint_color: pg.typing.ColorLike | None = None):
         super().__init__()
         self.__text = effects.AnimatedText(text, "show_level_name_b", font.large_font)
         self.__offset = offset
+        self.__tint_color = background_tint_color
     
 
     def update(self):
@@ -48,6 +55,8 @@ class ShowText(PassThroughState):
 
     def draw(self, surface, lerp_amount=0):
         super().draw(surface, lerp_amount)
+        if self.__tint_color is not None:
+            add_background_tint(surface, self.__tint_color)
         blit_to_center(self.__text.render(), surface, self.__offset)
         
 

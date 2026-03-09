@@ -49,5 +49,4 @@ class Initializer:
     @classmethod
     def continue_from_save(self, state_stack: StateStack, save_data: SaveData) -> None:
         play.Play.init_from_save(save_data).add_to_stack(state_stack)
-        menus.BackgroundTint("#666666").add_to_stack(state_stack)
         menus.PauseMenu().add_to_stack(state_stack)

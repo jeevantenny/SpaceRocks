@@ -12,7 +12,7 @@ from src.ui import blit_to_center, font, effects, elements, hud
 
 from . import State, StateStack
 from .info_states import DeleteUserDataOption
-from .visuals import BackgroundTint
+from .visuals import BackgroundTint, add_background_tint
 
 
 
@@ -68,8 +68,7 @@ class TitleScreen(State):
                     self.title.set_effect("main_exit")
                 
                 if inputs.check_input("settings"):
-                    BackgroundTint("#4E6382").add_to_stack(self.state_stack)
-                    Settings().add_to_stack(self.state_stack)
+                    Settings("#4E6382").add_to_stack(self.state_stack)
     
         else:
             self.prev_state.spaceship.userinput(inputs)
@@ -77,9 +76,9 @@ class TitleScreen(State):
         
         # Tell the player what controls to use depending on weather they use keyboard or controller.
         if inputs.current_input_type() == "keyboard_mouse":
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
 
 
@@ -115,7 +114,7 @@ class TitleScreen(State):
                         surface.blit(version_text, (3, surface.height-12))
                         info_offset += 10
 
-                settings_info = font.font_with_icons.render("Settings<settings>")
+                settings_info = font.icon_font.render("Settings<settings>")
                 surface.blit(settings_info, (10, surface.height-info_offset))
 
 
@@ -125,20 +124,21 @@ class TitleScreen(State):
 
 class PauseMenu(State):
     "Shows the pause menu with the game title. This freezes the gameplay in the previous state."
-    def __init__(self):
+    def __init__(self, background_tint_color: pg.typing.ColorLike = "#777777"):
         super().__init__()
 
         self.title = effects.AnimatedText(config.WINDOW_CAPTION, "main_entrance_b")
         self.__exit_menu = False
+        self.__tint_color = background_tint_color
 
-        # Assigned default values to avoid raising Attribute Errors due to race conditions.
+        # Assigned default values to avoid raising Attribute Errors.
         self.__info_text = pg.Surface((1, 1))
 
 
 
     def userinput(self, inputs):
         if inputs.check_input("settings"):
-            Settings().add_to_stack(self.state_stack)
+            Settings(self.__tint_color).add_to_stack(self.state_stack)
         elif self.title.animations_complete:
             if inputs.check_input("pause") or inputs.check_input("select") or inputs.check_input("back"):
                 self.title.set_effect("main_exit")
@@ -147,27 +147,31 @@ class PauseMenu(State):
         
         
         if inputs.current_input_type() == "keyboard_mouse":
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
-            self.__info_text = font.font_with_icons.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
+            self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
         
 
 
     def update(self):
         self.title.update()
         if self.__exit_menu and self.title.animations_complete:
+            prev_state = self.prev_state
             self.state_stack.pop()
+            prev_state.update()
     
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, 1)
         if not self.is_top_state():
             return
+
+        add_background_tint(surface, self.__tint_color)
         
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
             blit_to_center(self.__info_text, surface, (0, 30))
-            surface.blit(font.font_with_icons.render("Continue<select>     settings<settings>"), (10, surface.height-18))
+            surface.blit(font.icon_font.render("Continue<select>     settings<settings>"), (10, surface.height-18))
             surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
 
 
@@ -180,7 +184,7 @@ class PauseMenu(State):
 
 
 class Settings(State):
-    def __init__(self):
+    def __init__(self, background_tint_color: pg.typing.ColorLike = "#777777"):
         super().__init__()
         self.__soundfx = elements.Slider((0, 100), int(data.get_setting("soundfx_volume")*100), 10, "Sound FX")
         self.__soundfx.on_slide(lambda x: data.update_settings(soundfx_volume=round(x*0.01, 2)))
@@ -203,6 +207,7 @@ class Settings(State):
         ], wrap_list=True)
 
         self.__background: pg.Surface | None = None
+        self.__tint_color = background_tint_color
 
     def userinput(self, inputs):
         if not debug.Cheats.demo_mode:
@@ -220,11 +225,12 @@ class Settings(State):
     
     def draw(self, surface, lerp_amount=0):
         self.__draw_background(surface)
+        add_background_tint(surface, self.__tint_color)
         # self.prev_state.draw(surface)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
         
-        surface.blit(font.font_with_icons.render("Back<back>"), (10, surface.height-18))
+        surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
         surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
 
 
@@ -288,6 +294,7 @@ class GameOverScreen(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, 1)
+        add_background_tint(surface, "#777777")
         blit_to_center(self.title.render(lerp_amount), surface)
         
             
@@ -346,6 +353,7 @@ class ShowScore(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
+        add_background_tint(surface, "#777777")
 
         if self.__timer:
             self.__draw_a(surface)
@@ -363,9 +371,9 @@ class ShowScore(State):
         self.__display_score(surface, "Highscore", self.highscore, -35)
         self.__display_score(surface, "Score", self.score, 35)
 
-        info_text = font.font_with_icons.render("Play Again<select>")
+        info_text = font.icon_font.render("Play Again<select>")
         blit_to_center(info_text, surface, (0, 70))
-        surface.blit(font.font_with_icons.render("Main menu<back>"), (10, surface.height-18))
+        surface.blit(font.icon_font.render("Main menu<back>"), (10, surface.height-18))
 
 
     def __display_score(self, surface: pg.Surface, name: str, score: int, y_offset: int) -> None:

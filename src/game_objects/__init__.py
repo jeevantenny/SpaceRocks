@@ -6,7 +6,7 @@ from typing import Iterator
 from src.math_functions import format_angle
 from src.states import State, StateStack
 
-from src.audio import soundfx
+from src.audio.soundfx import HasSoundQueue, SoundQueue
 
 
 
@@ -14,7 +14,7 @@ from src.audio import soundfx
 
 
 
-class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
+class GameObject(HasSoundQueue, pg.sprite.Sprite):
     """
     The base class all game objects inherit from.
 
@@ -175,7 +175,7 @@ class GameObject(soundfx.HasSoundQueue, pg.sprite.Sprite):
 
 
 
-class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
+class ObjectGroup[T=GameObject](HasSoundQueue, pg.sprite.AbstractGroup):
     "A way of grouping game objects for calling basic methods on all objects simultaneously."
 
     def __init__(self, full_volume_radius=180, host_state: State | None = None):
@@ -205,7 +205,7 @@ class ObjectGroup[T=GameObject](soundfx.HasSoundQueue, pg.sprite.AbstractGroup):
                 self.__process_entity_sound(obj, sound_focus, obj.clear_sound_queue())
 
 
-    def __process_entity_sound(self, _object: T, sound_focus: pg.typing.Point, queue: soundfx.SoundQueue) -> None:
+    def __process_entity_sound(self, _object: T, sound_focus: pg.typing.Point, queue: SoundQueue) -> None:
         if _object.distance_based_sound:
             volume = self.__get_sound_volume(_object.distance_to(sound_focus))
             if volume and queue:

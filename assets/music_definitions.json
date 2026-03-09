@@ -1,0 +1,14 @@
+{
+    "title_theme": {
+        "prelude": "music/title_prelude",
+        "main_loop": "music/title_main"
+    },
+    "level_1": {
+        "prelude": "music/level_1_prelude",
+        "main_loop": "music/level_1_main"
+    },
+    "test_music": {
+        "prelude": "music/test_folder/house_lo",
+        "main_loop": "music/test_folder/apt"
+    }
+}
