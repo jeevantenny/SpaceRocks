@@ -420,20 +420,18 @@ class Play(State):
 
 
 
-    def __add_background_tint(self) -> None:
-        BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
+    # def __add_background_tint(self) -> None:
+    #     BackgroundTint(self.__level_data.background_tint).add_to_stack(self.state_stack)
 
 
 
     def __pause_game(self) -> None:
         "Adds PauseMenu state to state stack as well as some background tint."
-        self.__add_background_tint()
-        PauseMenu().add_to_stack(self.state_stack)
+        PauseMenu(self.__level_data.background_tint).add_to_stack(self.state_stack)
 
 
 
     def powerup_info(self, powerup: type[PowerUp]) -> None:
-        self.__add_background_tint()
         PowerupInfo(powerup).add_to_stack(self.state_stack)
 
     
@@ -448,7 +446,6 @@ class Play(State):
             if isinstance(obj, components.ObjectTexture):
                 obj.set_angular_vel(0)
 
-        self.__add_background_tint()
         GameOverScreen(self.__level_data.level_name, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
 
 

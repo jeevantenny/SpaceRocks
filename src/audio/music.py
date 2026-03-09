@@ -31,6 +31,8 @@ class MusicManager:
             pg.mixer_music.fadeout(fadeout)
         else:
             pg.mixer_music.stop()
+        
+        cls.__current_music = None
 
 
     @classmethod
