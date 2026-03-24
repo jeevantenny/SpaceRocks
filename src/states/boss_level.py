@@ -24,6 +24,7 @@ from .play import Play
 
 
 class PlayBossLevel(Play):
+    "Plays through the final level of the game (Boss level). NOT FINISHED"
     def __init__(self):
         super().__init__()
         self._setup_level("boss_level")

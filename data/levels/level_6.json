@@ -1,16 +1,16 @@
 {
     "parl_a": "backgrounds/space_background",
     "parl_b": "backgrounds/space_background_big",
-    "background_palette": "background/test_background",
+    "background_palette": "background/yellow",
     "background_tint": "#448866",
 
     "asteroid_density": [30, 80],
-    "asteroid_speed": [1, 1],
-    "asteroid_frequency": 0.05,
+    "asteroid_speed": [8, 12],
+    "asteroid_frequency": 0.03,
 
     "spawn_asteroids": {
-        "green_small": 4,
-        "green_medium": 1
+        "yellow_small": 5,
+        "yellow_medium": 1
     },
 
     "score_range": [50000, 60000],

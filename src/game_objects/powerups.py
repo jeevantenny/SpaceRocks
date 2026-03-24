@@ -163,7 +163,6 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
         )
 
         self.accelerate(velocity)
-        self.set_angular_vel(random.randint(-3, 3))
         self.__powerup_name = powerup_name
         self.__player_ship: PlayerShip | None = None
 
@@ -303,7 +302,7 @@ class Shield(PowerUp):
 
     def kill_protection(self, spaceship):
         for obj in spaceship.overlapping_objects():
-            if isinstance(obj, Asteroid) and obj._health:
+            if isinstance(obj, Asteroid) and obj.has_health():
                 push_amount = obj.position-spaceship.position
                 push_amount.scale_to_length(3)
                 obj.accelerate(push_amount*2)

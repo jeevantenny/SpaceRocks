@@ -134,11 +134,13 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
     
     def kill(self):
+        if self.health:
+            self.__thrust = False
+            self.clear_velocity()
+            self.set_angular_vel(0)
+            self._queue_sound("entity.asteroid.medium_explode")
+
         self.health = False
-        self.__thrust = False
-        self.clear_velocity()
-        self.set_angular_vel(0)
-        self._queue_sound("entity.asteroid.medium_explode")
 
 
     def force_kill(self):
@@ -270,6 +272,10 @@ class PlayerShip(Spaceship):
         controller_rumble("gun_fire")
 
 
+    def do_collision(self):
+        return super().do_collision() and not self.invincible
+
+
     
     def invincibility_frames(self, amount=30) -> None:
         self.__invincibility_timer = Timer(amount).start()
@@ -328,7 +334,7 @@ class PlayerShip(Spaceship):
             return
         
         for obj in bullet.hit_list:
-            if not obj._health:
+            if not obj.has_health():
                 prev_combo = self.combo
                 points = self.take_points(obj.points)
 

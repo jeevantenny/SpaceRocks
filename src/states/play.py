@@ -8,7 +8,7 @@ from src.custom_types import Timer, SaveData
 from src.file_processing import assets, data
 
 from src.game_objects import (
-    GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, projectiles, spaceship
+    GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, projectiles, spaceship, particles
 )
 
 from . import State
@@ -18,14 +18,17 @@ from .visuals import ShowText
 
 
 
-
-
 class Play(State):
+    """
+    Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
+    and player score.
+    """
     __spawn_radius = 200
     __despawn_radius = 500
 
-    def _setup(self) -> None:
+    _player_max_lives = 3
 
+    def _setup(self) -> None:
         "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
         self.__parl_a: pg.Surface | None = None
         self.__parl_b: pg.Surface | None = None
@@ -34,6 +37,8 @@ class Play(State):
     
         self._object_spawn_delay = Timer(15)
         self._game_over_timer = Timer(40, False, self._game_over)
+        self._respawn_timer = Timer(25, False, self._respawn_player)
+        self._player_lives = self._player_max_lives
 
 
     def __init__(self):
@@ -58,6 +63,7 @@ class Play(State):
 
         self.__load_objects_from_save(save_data.entity_data)
         self.camera.set_position(save_data.camera_pos)
+        self._player_lives = save_data.player_lives
 
         return self
     
@@ -134,12 +140,12 @@ class Play(State):
 
             if keyboard.tap_keys[pg.K_k]:
                 if keyboard.hold_keys[pg.KMOD_SHIFT]:
+                    self._player_lives = 1
                     self.spaceship.kill()
                     if self.spaceship.health:
                         self.spaceship.force_kill()
                 else:
                     for asteroid in self.asteroids.sprites():
-                        self.spaceship.score += asteroid.points
                         asteroid.kill(False)
 
             if keyboard.tap_keys[pg.K_c]:
@@ -159,38 +165,25 @@ class Play(State):
 
 
     def update(self):
-        if self.spaceship.health:
-            self._game_loop()
-        elif self._game_over_timer.complete:
-            self._game_over_timer.start()
-            self.camera.clear_velocity()
-
-            for entity in self.entities.sprites():
-                # Bullets are deleted immediately
-                if isinstance(entity, projectiles.Projectile):
-                    entity.force_kill()
-                    continue
-                
-                if isinstance(entity, components.ObjectVelocity):
-                    entity.clear_velocity()
-                if isinstance(entity, asteroids.Asteroid):
-                    entity.set_angular_vel(0)
-        
+        if not self._game_over_timer.complete or not self._respawn_timer.complete:
+            self.entities.update(self.camera.position, (components.Obstacle, powerups.PowerupCollectable))
+            for obj in self.asteroids.sprites() + self.enemies.sprites():
+                if not obj.has_health():
+                    obj.update()
         else:
-            self.entities.update(self.camera.position)
-            if self.is_top_state():
-                self._game_over_timer.update()
+            self._game_loop()
 
         self._join_sound_queue(self.entities.clear_sound_queue())
 
         self._object_spawn_delay.update()
         self._game_over_timer.update()
+        self._respawn_timer.update()
 
 
 
 
     def draw(self, surface, lerp_amount=0):
-        self._draw_base(surface, lerp_amount)
+        self._draw_base(surface)
         if not debug.Cheats.ignore_colorkey:
             self._draw_scrolling_background(surface, lerp_amount)
 
@@ -219,11 +212,26 @@ class Play(State):
         self.camera.update()
 
 
+    def _freeze_gameplay(self) -> None:
+        return not self._respawn_timer.complete or not self._game_over_timer.complete
+
+
     
     def _game_loop(self) -> None:
         self._update_game_objects()
         self._delete_distant_objects()
 
+        if not self.spaceship.health:
+            self._player_lives -= 1
+            self.camera.clear_velocity()
+
+            for smoke in self.entities.get_type(particles.ShipSmoke):
+                smoke.clear_velocity()
+
+            if self._player_lives > 0:
+                self._respawn_timer.start()
+            else:
+                self._game_over_timer.start()
 
 
 
@@ -232,13 +240,32 @@ class Play(State):
         "Adds PauseMenu state to state stack as well as some background tint."
         PauseMenu(self.__background_tint).add_to_stack(self.state_stack)
 
+
+    def _respawn_player(self) -> None:
+        score = self.spaceship.score
+        self.spaceship = spaceship.PlayerShip(self._player_respawn_pos())
+        self.spaceship.score = score
+        self.entities.add(self.spaceship)
+        self.spaceship.invincibility_frames()
+
+        self.powerups.kill_all()
+    
+    def _player_respawn_pos(self) -> pg.Vector2:
+        spaceship_pos = self.spaceship.position.xy
+        if self.spaceship.position == (0, 0):
+            return pg.Vector2(0, -self.__despawn_radius)
+        else:
+            spaceship_pos.scale_to_length(spaceship_pos.magnitude() - self.__despawn_radius)
+            return spaceship_pos
+
     
     def _game_over(self) -> None:
-        ShowText("Game Over").add_to_stack(self.state_stack)
+        self.state_stack.quit()
+        type(self)().add_to_stack(self.state_stack)
 
 
 
-    def _draw_base(self, surface: pg.Surface, lerp_amount=0.0) -> None:
+    def _draw_base(self, surface: pg.Surface) -> None:
         if data.get_setting("motion_blur") and self.is_top_state():
             surface.fill((70, 70, 70), special_flags=pg.BLEND_RGB_SUB)
             surface.fill(self.__base_color, special_flags=pg.BLEND_RGB_ADD)
@@ -297,3 +324,22 @@ class Play(State):
         velocity.scale_to_length(magnitude)
         velocity.rotate_ip(random.randint(-40, 40))
         return velocity
+
+
+
+    def _save_progress(self) -> None:
+        "Saves the current state of the game to a save file."
+        
+        if not self._respawn_timer.complete:
+            respawn_pos = self._player_respawn_pos()
+            self.spaceship.set_position(respawn_pos)
+
+
+        entity_data = [entity.get_data()
+                       for entity in self.entities.sprites()
+                       
+                       if entity.progress_save_key is not None]
+        
+        camera_pos = tuple(self.camera.position)
+        save_data = SaveData(self._level_data.level_name, self.spaceship.score, self._player_lives, camera_pos, entity_data)
+        data.save_progress(save_data)

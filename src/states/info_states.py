@@ -5,6 +5,7 @@ from src.file_processing import data
 from src.game_objects.powerups import PowerUp
 
 from . import State
+from .visuals import add_background_tint
 
 
 
@@ -46,10 +47,11 @@ class SaveFileCorrupted(State):
 
 
 class PowerupInfo(State):
-    def __init__(self, powerup_type: type[PowerUp]):
+    def __init__(self, powerup_type: type[PowerUp], background_tint_color: pg.typing.ColorLike = "#777777"):
         super().__init__()
         self.__powerup_name = powerup_type.get_display_name()
         self.__info_text = powerup_type.get_info_text()
+        self.__tint_color = background_tint_color
 
 
     def userinput(self, inputs):
@@ -59,6 +61,7 @@ class PowerupInfo(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
+        add_background_tint(surface, self.__tint_color)
         blit_to_center(font.large_font.render(self.__powerup_name), surface, (0, -10))
         blit_to_center(font.small_font.render(self.__info_text), surface, (0, 10))
 

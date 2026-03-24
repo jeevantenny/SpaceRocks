@@ -23,7 +23,7 @@ class Asteroid(Obstacle, ObjectAnimation):
     __hitbox_padding = 10 # Used to increase the size of damage_rect relative to default hitbox
 
     # Lower max speed for asteroids ensure that they are never to fast to dodge
-    _max_speed = 10
+    _max_speed = 20
 
 
     def __init__(self,
@@ -64,7 +64,7 @@ class Asteroid(Obstacle, ObjectAnimation):
 
         self.set_rotation(object_data["rotation"])
         self.set_angular_vel(object_data["angular_vel"])
-        self._health = object_data["health"]
+        self.set_health(object_data["health"])
 
         # To address an issue where asteroids will show wrong texture when loaded from
         # save file and when the pause menu is showing.
@@ -120,18 +120,13 @@ class Asteroid(Obstacle, ObjectAnimation):
         if knockback:
             self.accelerate(knockback*self.__knockback_amount)
         super().damage(amount)
-        if self._health:
+        if self.has_health():
             self._queue_sound("entity.asteroid.small_explode")
 
 
 
-    def do_collision(self):
-        return bool(self._health)
-
-
-
     def kill(self, spawn_subrocks=True):
-        self._health = 0
+        self.set_health(0)
         if spawn_subrocks and self.subrock is not None:
             self.__spawn_subrock()
 

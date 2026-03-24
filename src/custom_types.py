@@ -458,5 +458,6 @@ class LevelData(NamedTuple):
 class SaveData(NamedTuple):
     level_name: str
     score: int
+    player_lives: int
     camera_pos: tuple[float, float]
     entity_data: list[dict]
