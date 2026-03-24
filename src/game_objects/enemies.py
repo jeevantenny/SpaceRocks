@@ -75,7 +75,7 @@ class EnemyShip(Enemy):
     def update(self):
         super().update()
 
-        if not self._health:
+        if not self.has_health():
             if self.animations_complete:
                 self.force_kill()
             return
@@ -122,13 +122,13 @@ class EnemyShip(Enemy):
 
 
     def on_collide(self, collided_with):
-        if isinstance(collided_with, Asteroid) and collided_with.health:
+        if isinstance(collided_with, Asteroid) and collided_with.has_health():
             self.kill()
 
 
 
     def kill(self):
-        self._health = 0
+        self.set_health(0)
         self.clear_velocity()
         self.set_angular_vel(0)
         self._queue_sound("entity.asteroid.medium_explode")

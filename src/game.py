@@ -52,7 +52,6 @@ class GameEngine:
         if self.window_surface.size != self.__prev_window_size:
             w_width, w_height = self.__constrained_window_size()
             ratio = w_width/w_height
-            # height = config.CANVAS_SIDES/(1+ratio)
             height = (config.CANVAS_AREA/ratio)**(0.5)
             width = height*ratio
             self.__game_canvas = pg.Surface((width, height))
@@ -75,6 +74,9 @@ class GameEngine:
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
         self.__event_queue: list[pg.Event] = []
 
+        self.game_process_thread = threading.Thread(name="game_process", target=self.game_process_loop)
+        self.__process_lock = threading.Lock()
+
         self.state_stack = StateStack()
 
         game_speed = 1
@@ -96,7 +98,8 @@ class GameEngine:
         "Used to switch between windowed and fullscreen mode."
 
         if fullscreen:
-            self.__prev_resizable_window_size = self.window_surface.size
+            if self.window_surface is not None:
+                self.__prev_resizable_window_size = self.window_surface.size
             self.window_surface = pg.display.set_mode(self.__desktop_size, FULLSCREEN)
         else:
             if size is None:
@@ -128,7 +131,7 @@ class GameEngine:
         if not self.__setup:
             raise RuntimeWarning("Cannot start game because an exception has occurred during setup.")
         
-        self.__set_screen_mode(False)
+        self.__set_screen_mode(self.__fullscreen)
         pg.display.set_caption(config.WINDOW_CAPTION)
         pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
 
@@ -137,7 +140,6 @@ class GameEngine:
 
         init_state.Initializer(self.state_stack)
 
-        self.game_process_thread = threading.Thread(name="game_process", target=self.game_process_loop)
         # Starts game loop that processes game logic
         self.game_process_thread.start()
 
@@ -160,8 +162,12 @@ class GameEngine:
         try:
             while self.run:
                 self.get_userinput()
+                
+                self.__process_lock.acquire(timeout=0.2)
                 self.userinput()
                 self.update()
+                self.__process_lock.release()
+
                 self.next_tick()
 
         except Exception as e:

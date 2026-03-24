@@ -29,18 +29,20 @@ from .play import Play
 
 class PlayLevel(Play):
     """
-    Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
-    and player score.
+    Plays a through a level by passing the level name as the argument. Once the level is complete
+    the player will move on to the next level as defined in the level data of the current level.
     """
     __visible_radius = 230
     __score_limit = 99999
 
+    _player_max_lives = 3
 
     def __init__(self, level_name: str):
         "The main initializer that starts a new game on a specific level. Mainly the first level."
 
         super().__init__()
         self._setup_level(level_name)
+        self.spaceship.score = self._level_data.score_range[0]
         self.spaceship.set_score_limit(self._level_data.score_range[1])
 
 
@@ -105,6 +107,7 @@ class PlayLevel(Play):
         self.__hud_timer = Timer(10).start()
         self.__lvl_transition_timer = Timer(60)
         self.__level_cleared = False
+        self.__lives_indicator = hud.LivesIndicator(self._player_max_lives)
 
 
     
@@ -113,7 +116,7 @@ class PlayLevel(Play):
 
         if debug.DEBUG_MODE:
             if inputs.keyboard_mouse.tap_keys[pg.K_b]:
-                self.spaceship.score += 100
+                self.spaceship.score += 1000
 
             if inputs.keyboard_mouse.tap_keys[pg.K_t]:
                 self.reinit_next_level(self._level_data.next_level)
@@ -131,7 +134,11 @@ class PlayLevel(Play):
 
 
     def draw(self, surface, lerp_amount=0.0):
-        self._draw_base(surface, lerp_amount)
+        self._draw_base(surface)
+
+        if self._freeze_gameplay():
+            lerp_amount = 0.0
+
         if not debug.Cheats.ignore_colorkey:
             self._draw_scrolling_background(surface, lerp_amount)
 
@@ -139,14 +146,14 @@ class PlayLevel(Play):
             self._draw_entities(surface, lerp_amount)# if self.spaceship.health else 1)
 
 
-        if self.spaceship.health: # type: ignore
+        if self.spaceship.health or self._player_lives:
             self._draw_hud(surface)
 
 
 
 
     def debug_info(self) -> str | None:
-        return f"level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"level: {self._level_data.level_name}, lives: {self._player_lives}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self.spaceship.combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
 
@@ -158,15 +165,23 @@ class PlayLevel(Play):
             entrance_offset = 0
         
         y_offset = 6
+
+        # Show highscore if it is not 0
         if self.__prev_highscore:
             self.__show_scores(surface, "Highscore", self.highscore, (10, y_offset-entrance_offset), (self.highscore > self.__display_score or self.__display_score == self.spaceship.score))
             y_offset += 16
         
+        # Show score
         self.__show_scores(surface, "Score", self.__display_score, (10, y_offset-entrance_offset), self.__display_score == self.spaceship.score)
         y_offset += 22
 
+        # Show progress bar from level_2 onwards
         if self._level_data.level_name != "level_1":
             surface.blit(self.__progress_bar.render(level_completion_amount(self.__display_score, self._level_data.score_range)), (10, y_offset-entrance_offset))
+
+        # Show lives indicator
+        lives_render = self.__lives_indicator.render(self._player_lives)
+        surface.blit(lives_render, (surface.width-lives_render.width-10, 10-entrance_offset))
         
 
         if self.is_top_state():
@@ -184,16 +199,16 @@ class PlayLevel(Play):
             if self.spaceship.score >= self._level_data.score_range[1]:
                 self.__level_cleared = True
                 ShowText("Level Cleared").add_to_stack(self.state_stack)
-                self.__delete_offscreen_spawned_entities()
+                # self.__delete_offscreen_spawned_entities()
+                for asteroid in self.asteroids.sprites():
+                    asteroid.kill(False)
         
         else:
             if self.spaceship.get_velocity().magnitude_squared() > 5000:
                 self.reinit_next_level(self._level_data.next_level)
 
 
-        # Removes any asteroids beyond the despawn radius
-        self._update_game_objects()
-        self._delete_distant_objects()
+        super()._game_loop()
 
         # Records wether the highscore has changed.
         if not self.highscore_changed and self.spaceship.score > self.highscore:
@@ -206,9 +221,13 @@ class PlayLevel(Play):
             self._queue_sound("game.point", 0.3)
 
 
+    def _freeze_gameplay(self):
+        return super()._freeze_gameplay() or not self.__lvl_transition_timer.complete
+
+
 
     def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
-        PowerupInfo(powerup).add_to_stack(self.state_stack)
+        PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
 
     
     
@@ -346,22 +365,6 @@ class PlayLevel(Play):
         self.__display_score = min(self.spaceship.score, self.__score_limit)
         self.highscore = max(self.highscore, self.__display_score)
 
-    
-        
-
-
-
-    def __save_progress(self) -> None:
-        "Saves the current state of the game to a save file."
-        entity_data = [entity.get_data()
-                       for entity in self.entities.sprites()
-                       
-                       if entity.progress_save_key is not None]
-        
-        camera_pos = tuple(self.camera.position)
-        save_data = SaveData(self._level_data.level_name, self.spaceship.score, camera_pos, entity_data)
-        data.save_progress(save_data)
-
 
 
 
@@ -372,8 +375,8 @@ class PlayLevel(Play):
             self.__set_score()
             data.save_highscore(self.highscore)
 
-            if self.spaceship.health:
-                self.__save_progress()
+            if self.spaceship.health or self._player_lives:
+                self._save_progress()
             else:
                 data.delete_progress()
 

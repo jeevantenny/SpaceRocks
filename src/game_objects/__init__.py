@@ -1,7 +1,7 @@
 "Game objects represent objects that exist within the game world plus the Camera."
 
 import pygame as pg
-from typing import Iterator
+from typing import Iterable, Iterator
 
 from src.math_functions import format_angle
 from src.states import State, StateStack
@@ -74,7 +74,7 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
     def primary_group(self) -> "ObjectGroup | None":
         "The first group in the list of groups that the game object is part of (if any)."
         if groups:=self.groups():
-            return groups[0] # type: ignore
+            return groups[0]
         
 
     @property
@@ -198,10 +198,10 @@ class ObjectGroup[T=GameObject](HasSoundQueue, pg.sprite.AbstractGroup):
             return self.__host_state.state_stack
 
 
-    def update(self, sound_focus: pg.typing.Point) -> None:
+    def update(self, sound_focus: pg.typing.Point, ignore_types: Iterable[type[GameObject]] = ()) -> None:
         for obj in self.sprites():
-            if obj.primary_group is not None:
-                obj.update() # type: ignore
+            if obj.primary_group is not None and not isinstance(obj, ignore_types):
+                obj.update()
                 self.__process_entity_sound(obj, sound_focus, obj.clear_sound_queue())
 
 
@@ -225,7 +225,7 @@ class ObjectGroup[T=GameObject](HasSoundQueue, pg.sprite.AbstractGroup):
 
 
 
-    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None: # type: ignore
+    def draw(self, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
         "Draws all objects in group to surface with some offset."
 
         for obj in self.get_draw_order():
@@ -246,15 +246,21 @@ class ObjectGroup[T=GameObject](HasSoundQueue, pg.sprite.AbstractGroup):
 
     def move_all(self, displacement: pg.Vector2) -> None:
         for object in self.sprites():
-            object.move(displacement) # type: ignore
+            object.move(displacement)
 
 
 
     def accelerate_all(self, value: pg.Vector2) -> None:
         from .components import ObjectVelocity
-        for object in self.sprites():
-            if object.has_component(ObjectVelocity): # type: ignore
-                object.accelerate(value) # type: ignore
+        for obj in self.get_type(ObjectVelocity):
+            obj.accelerate(value)
+
+    
+    def clear_velocity_all(self) -> None:
+        from .components import ObjectVelocity
+        for obj in self.get_type(ObjectVelocity):
+            obj.clear_velocity()
+
 
 
     def sprites(self) -> list[T]:
@@ -282,7 +288,7 @@ class ObjectGroup[T=GameObject](HasSoundQueue, pg.sprite.AbstractGroup):
     def kill_all(self) -> None:
         "Force kills all objects in this group and any other group those objects belong to."
         for obj in self:
-            obj.force_kill() # type: ignore
+            obj.force_kill()
 
 
     def remove(self, *sprites):

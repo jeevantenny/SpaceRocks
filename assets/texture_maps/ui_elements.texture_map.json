@@ -14,7 +14,7 @@
         "slider_bar": [34, 35, 75, 12],
         "slider_handle": [36, 48, 11, 8],
 
-        "lives_indicator_base": [36, 57, 65, 17],
-        "lives_indicator_icon": [102, 64, 10, 10]
+        "lives_icon": [36, 75, 16, 16],
+        "lives_empty": [53, 75, 16, 16]
     }
 }

@@ -1,5 +1,9 @@
 {
-    "background_palette": "background/default_background",
+    "parl_a": "backgrounds/space_background",
+    "parl_b": "backgrounds/space_background_big",
+    "background_palette": "background/yellow",
+    "background_tint": "#448866",
+
     "asteroid_density": [
         10,
         20

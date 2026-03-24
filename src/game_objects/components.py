@@ -400,35 +400,64 @@ class ObjectCollision(ObjectVelocity):
 
 
 class ObjectHealth(GameObject):
-    def __init__(self, *, max_health: int, **kwargs):
+    def __init__(self, *, health: int, **kwargs):
         super().__init__(**kwargs)
-
-        self.__health, self.__max_health = max_health
+        self.__health = health
+        self.__max_health = health
 
     
     @property
     def health(self) -> int:
         return self.__health
-
     
+    @property
+    def _health(self) -> int:
+        return self.__health
+
+
     def damage(self, amount: int) -> None:
-        self.__health -= min(self.__health, amount)
+        if not self.has_health():
+            return
+        self.set_health(self.__health - amount)
+        if not self.has_health():
+            self.kill()
     
+
     def heal(self, amount: int) -> None:
-        self.health = min(self.health+amount, self.__max_health)
+        self.set_health(self._health + amount)
+    
+    
+    def set_health(self, value) -> None:
+        self.__health = pg.math.clamp(value, 0, self.__max_health)
+
+
+    def has_health(self) -> bool:
+        return self._health > 0
+
+    
+    def kill(self):
+        self.set_health(0)
+        super().kill()
+
+
+    def force_kill(self):
+        self.set_health(0)
+        super().force_kill()
+
+    
 
 
 
 
 
-class Obstacle(ObjectHitbox, ObjectCollision):
+
+class Obstacle(ObjectHitbox, ObjectCollision, ObjectHealth):
     """
     Objects that pose as obstacles to the player ship by damaging it upon collision. Obstacles have a health
     value and once this value reaches zero the object is killed.
     """
-    def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):
+    def __init__(self, *, points=0, point_display_height=0, **kwargs):
         super().__init__(**kwargs)
-        self._health = health
         self.__points = points
         self.__point_display_height = point_display_height
     
@@ -437,26 +466,8 @@ class Obstacle(ObjectHitbox, ObjectCollision):
         return self.__points
 
     @property
-    def health(self) -> int:
-        return self._health
-
-    @property
     def point_display_height(self) -> int:
         return self.__point_display_height
 
-
-    def damage(self, amount: int) -> None:
-        if not self._health:
-            return
-        self._health -= min(self._health, amount)
-        if not self._health:
-            self.kill()
-
-
     def do_collision(self):
         return super().do_collision() and self.health
-
-
-    def force_kill(self):
-        self._health = 0
-        super().force_kill()

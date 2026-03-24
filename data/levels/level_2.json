@@ -1,10 +1,10 @@
 {
     "parl_a": "backgrounds/space_background",
     "parl_b": "backgrounds/space_background_big",
-    "background_palette": "background/default_background",
+    "background_palette": "background/blue",
 
     "asteroid_density": [12, 20],
-    "asteroid_speed": [2, 6],
+    "asteroid_speed": [2, 8],
     "asteroid_frequency": 0.2,
 
     "spawn_asteroids": {

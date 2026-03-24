@@ -1,7 +1,7 @@
 {
     "parl_a": "backgrounds/space_background",
     "parl_b": "backgrounds/space_background_big",
-    "background_palette": "background/default_background",
+    "background_palette": "background/blue",
 
     "asteroid_density": [8, 15],
     "asteroid_speed": [2, 5],

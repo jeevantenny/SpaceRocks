@@ -29,15 +29,26 @@ class ProgressBar:
 class LivesIndicator:
     "Shows how many loves the player has left during boss battle."
 
-    def __init__(self):
+    __texture_size = 16
+    __padding = 5
+
+    def __init__(self, max_lives: int):
         texture_map = assets.load_texture_map("ui_elements")
-        self.__base_texture = texture_map["lives_indicator_base"]
-        self.__icon_texture = texture_map["lives_indicator_icon"]
+        self.__icon_texture = texture_map["lives_icon"]
+        self.__blank_texture = texture_map["lives_empty"]
+        self.__max_lives = max_lives
+
+        self.__output_texture_size = (self.__texture_size*self.__max_lives + self.__padding*(self.__max_lives-1), self.__texture_size)
 
 
     def render(self, lives: int) -> pg.Surface:
-        output = self.__base_texture.copy()
-        for i in range(lives):
-            output.blit(self.__icon_texture, (3 + i*12, 3))
+        output = assets.colorkey_surface(self.__output_texture_size)
+        for i in range(self.__max_lives):
+            if i >= self.__max_lives - lives:
+                texture = self.__icon_texture
+            else:
+                texture = self.__blank_texture
+
+            output.blit(texture, (i*(self.__texture_size+self.__padding), 0))
         
         return output

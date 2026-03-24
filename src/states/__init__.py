@@ -214,7 +214,7 @@ class StateStack(HasSoundQueue):
     def userinput(self, inputs: InputInterpreter) -> None:
         "Processes userinput for top state."
         if self.top_state is not None and (self.__current_mode == "show_state" or self.top_state.take_input_on_transition):
-            self.top_state.userinput(inputs) # type: ignore
+            self.top_state.userinput(inputs)
 
 
 
@@ -236,7 +236,7 @@ class StateStack(HasSoundQueue):
                 self.__current_mode == "show_state"
             
         else:
-            self.top_state.update() # type: ignore
+            self.top_state.update()
         
         self._join_sound_queue(self.top_state.clear_sound_queue())
 
