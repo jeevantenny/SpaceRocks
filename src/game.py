@@ -100,7 +100,7 @@ class GameEngine:
         if fullscreen:
             if self.window_surface is not None:
                 self.__prev_resizable_window_size = self.window_surface.size
-            self.window_surface = pg.display.set_mode(self.__desktop_size, FULLSCREEN)
+            self.window_surface = pg.display.set_mode(self.__desktop_size, FULLSCREEN, display=0)
         else:
             if size is None:
                 size = self.__prev_resizable_window_size
