@@ -130,7 +130,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
     def on_collide(self, collided_with):
         if isinstance(collided_with, Obstacle) and collided_with.health:
             self.kill()
-            collided_with.damage(1)
 
     
     def kill(self):
