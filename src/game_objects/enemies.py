@@ -122,8 +122,7 @@ class EnemyShip(Enemy):
 
 
     def on_collide(self, collided_with):
-        from .spaceship import PlayerShip
-        if isinstance(collided_with, (Asteroid, PlayerShip)) and collided_with.has_health():
+        if isinstance(collided_with, Asteroid) and collided_with.health:
             self.kill()
 
 
