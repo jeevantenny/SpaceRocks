@@ -12,9 +12,8 @@ from src.ui import font
 
 
 
-from . import GameObject
-from .components import ObjectAnimation, ObjectHitbox, ObjectCollision
-from .asteroids import Obstacle, Asteroid
+from .components import ObjectAnimation, ObjectHitbox, ObjectCollision, Obstacle
+from .enemies import Enemy
 from .projectiles import PlayerBullet
 from .particles import ShipSmoke, DisplayText
 
@@ -130,7 +129,8 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
     def on_collide(self, collided_with):
         if isinstance(collided_with, Obstacle) and collided_with.health:
             self.kill()
-            collided_with.damage(1)
+            if isinstance(collided_with, Enemy):
+                collided_with.damage(1)
 
     
     def kill(self):

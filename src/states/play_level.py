@@ -159,6 +159,9 @@ class PlayLevel(Play):
 
 
     def _draw_hud(self, surface: pg.Surface) -> None:
+        if not self.is_top_state() and not self.state_stack[-2] is self:
+            return
+
         if not self.__hud_timer.complete:
             entrance_offset = 80*(self.__hud_timer.countdown*0.1)**2
         else:

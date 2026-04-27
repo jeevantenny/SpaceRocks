@@ -252,10 +252,11 @@ class Play(State):
     
     def _player_respawn_pos(self) -> pg.Vector2:
         spaceship_pos = self.spaceship.position.xy
+        spawn_radius = self.__despawn_radius + 50
         if self.spaceship.position == (0, 0):
-            return pg.Vector2(0, -self.__despawn_radius)
+            return pg.Vector2(0, -spawn_radius)
         else:
-            spaceship_pos.scale_to_length(spaceship_pos.magnitude() - self.__despawn_radius)
+            spaceship_pos.scale_to_length(spaceship_pos.magnitude() - spawn_radius)
             return spaceship_pos
 
     
