@@ -1,6 +1,6 @@
 import pygame as pg
 import random
-from typing import Callable, Iterator
+from typing import Iterator
 
 import debug
 

@@ -4,11 +4,10 @@ import config
 import debug
 
 from src.misc import increment_score, get_start_level
-from src.custom_types import LevelData
 from src.input_device import InputInterpreter
 from src.file_processing import data
 
-from src.ui import blit_to_center, font, effects, elements, hud
+from src.ui import blit_to_center, font, effects, elements
 
 from . import State, StateStack
 from .info_states import DeleteUserDataOption

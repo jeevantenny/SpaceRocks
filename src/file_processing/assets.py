@@ -1,7 +1,7 @@
 "Contains functions that loads all assets required by the game."
 
 import pygame as pg
-from typing import Literal, overload
+from typing import overload
 from functools import lru_cache
 
 import debug

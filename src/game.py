@@ -12,7 +12,7 @@ import debug
 
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
-from src.ui import blit_to_center, font
+from src.ui import font
 from src.states import StateStack, init_state
 from src.file_processing import assets, data
 from src.audio.soundfx import SoundFXManager

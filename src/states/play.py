@@ -8,12 +8,11 @@ from src.custom_types import Timer, SaveData
 from src.file_processing import assets, data
 
 from src.game_objects import (
-    GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, projectiles, spaceship, particles
+    GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, spaceship, particles
 )
 
 from . import State
 from .menus import PauseMenu
-from .visuals import ShowText
 
 
 

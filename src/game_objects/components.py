@@ -6,7 +6,7 @@ from typing import Generator, Any
 import debug
 
 from src.custom_types import Animation, AnimController
-from src.math_functions import unit_vector, vector_min, format_angle
+from src.math_functions import format_angle
 
 from src.file_processing import assets
 

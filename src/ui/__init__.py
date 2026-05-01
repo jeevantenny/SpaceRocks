@@ -1,7 +1,6 @@
 "This package contains things that are useful for drawing things for the user interface."
 
 import pygame as pg
-from typing import Literal
 
 from src.input_device import get_control_icon_name
 from src.file_processing import assets

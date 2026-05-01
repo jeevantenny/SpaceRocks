@@ -1,16 +1,12 @@
 import pygame as pg
-from typing import Iterable
 
 import debug
 
 from src.custom_types import Timer
 from src.file_processing import assets
-from src.math_functions import unit_vector
-from src.ui import font
 
 from . import GameObject
-from .components import ObjectTexture, ObjectVelocity, ObjectHitbox
-from .particles import DisplayText
+from .components import ObjectTexture, ObjectVelocity
 
 
 
