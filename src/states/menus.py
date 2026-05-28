@@ -17,12 +17,13 @@ from .visuals import add_background_tint
 
 
 
-def option_to_delete_user_data(state_stack: StateStack, inputs: InputInterpreter) -> None:
+def option_to_delete_user_data(state_stack: StateStack, inputs: InputInterpreter) -> bool:
     tap_keys = inputs.keyboard_mouse.tap_keys
     hold_keys = inputs.keyboard_mouse.hold_keys
 
     if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and tap_keys[pg.K_d]:
         state_stack.push(DeleteUserDataOption())
+        return True
 
 
 
@@ -212,8 +213,8 @@ class Settings(State):
         self.__tint_color = background_tint_color
 
     def userinput(self, inputs):
-        if not debug.Cheats.demo_mode:
-            option_to_delete_user_data(self.state_stack, inputs)
+        if not debug.Cheats.demo_mode and option_to_delete_user_data(self.state_stack, inputs):
+            return
 
         if inputs.check_input("back"):
             self.state_stack.pop()

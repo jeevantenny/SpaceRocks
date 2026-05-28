@@ -8,10 +8,7 @@ import debug
 
 def get_start_level() -> str:
     "Gets the name of the level to start the game on."
-    level_name = debug.Cheats.test_level
-    if level_name is None:
-        level_name = "level_1"
-    return level_name
+    return debug.Cheats.test_level or "level_1"
 
 
 def increment_score(current_score: int, target_score: int, incr_speed=0.4) -> int:
@@ -45,15 +42,15 @@ def bar_of_dashes() -> None:
 
 
 
-def find_subclass_by_name[T](class_type: type[T], class_name: str) -> type[T] | None:
+def find_subclass_by_name[T](base_class: type[T], class_name: str) -> type[T] | None:
     """
     Finds the first subclass of `class_type` that matches the `class_name`.
     """
-    if class_type.__name__ == class_name:
-        return class_type
+    if base_class.__name__ == class_name:
+        return base_class
 
     found = None
-    for cls in class_type.__subclasses__():
+    for cls in base_class.__subclasses__():
         found = find_subclass_by_name(cls, class_name)
         if found is not None:
             return found
