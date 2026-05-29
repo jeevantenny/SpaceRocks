@@ -61,7 +61,7 @@ class GameEngine:
 
         self.window = None
         self.window_surface = None
-        self.__fullscreen = True
+        self.__fullscreen = False
         self.__do_fullscreen_toggle = False
         self.__prev_window_size: tuple[int, int] | None = None
 
@@ -119,8 +119,12 @@ class GameEngine:
         self.window = pg.Window(config.WINDOW_CAPTION,
                                 config.WINDOW_START_SIZE,
                                 resizable=True)
-        self.window.minimum_size = config.WINDOW_MINIUM_SIZE
         self.window_surface = self.window.get_surface()
+        self.window.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
+        self.window.minimum_size = config.WINDOW_MINIUM_SIZE
+
+        if self.__fullscreen:
+            self.window.set_fullscreen(True)
 
         font.init()
         self.debug_font = pg.font.SysFont("consolas", 13)
