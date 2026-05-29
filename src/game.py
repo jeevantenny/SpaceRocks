@@ -41,12 +41,6 @@ class GameEngine:
         self.__setup_engine()
 
 
-    
-    @property
-    def __desktop_size(self) -> None:
-        return pg.display.get_desktop_sizes()[0]
-    
-
     @property
     def game_canvas(self) -> pg.Surface:
         if self.window_surface.size != self.__prev_window_size:
@@ -65,10 +59,10 @@ class GameEngine:
         "Called by the initializer to initialize the object."
         self.run = True
 
+        self.window = None
         self.window_surface = None
-        self.__fullscreen = False
-        self.__update_screen_mode = False
-        self.__prev_resizable_window_size = config.WINDOW_START_SIZE
+        self.__fullscreen = True
+        self.__do_fullscreen_toggle = False
         self.__prev_window_size: tuple[int, int] | None = None
 
         self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
@@ -93,25 +87,16 @@ class GameEngine:
         self.error: str | None = None
 
 
-
-    def __set_screen_mode(self, fullscreen: bool, size: pg.typing.Point | None = None) -> None:
-        "Used to switch between windowed and fullscreen mode."
-
-        if fullscreen:
-            if self.window_surface is not None:
-                self.__prev_resizable_window_size = self.window_surface.size
-            self.window_surface = pg.display.set_mode(self.__desktop_size, FULLSCREEN, display=0)
+    def toggle_fullscreen(self) -> None:
+        self.__fullscreen = not self.__fullscreen
+        if self.__fullscreen:
+            self.window.set_fullscreen(True)
         else:
-            if size is None:
-                size = self.__prev_resizable_window_size
-            self.window_surface = pg.display.set_mode(size, RESIZABLE)
-        
-        self.__fullscreen = fullscreen
+            self.window.set_windowed()
 
 
 
-
-    def set_controllers(self) -> None:
+    def find_controllers(self) -> None:
         "Looks for connected controllers and selects the first one."
 
         if pg.joystick.get_count():
@@ -129,11 +114,13 @@ class GameEngine:
         "Starts the game."
 
         if not self.__setup:
-            raise RuntimeWarning("Cannot start game because an exception has occurred during setup.")
-        
-        self.__set_screen_mode(self.__fullscreen)
-        pg.display.set_caption(config.WINDOW_CAPTION)
-        pg.display.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
+            raise RuntimeError("Cannot start game because an exception has occurred during setup.")
+
+        self.window = pg.Window(config.WINDOW_CAPTION,
+                                config.WINDOW_START_SIZE,
+                                resizable=True)
+        self.window.minimum_size = config.WINDOW_MINIUM_SIZE
+        self.window_surface = self.window.get_surface()
 
         font.init()
         self.debug_font = pg.font.SysFont("consolas", 13)
@@ -192,18 +179,10 @@ class GameEngine:
 
 
     def process_events(self) -> None:
-        if self.__update_screen_mode:
-            self.__set_screen_mode(self.__fullscreen)
-
-        for event in pg.event.get():
-            if event.type == VIDEORESIZE and not self.__update_screen_mode:
-                constrained_size = self.__constrained_window_size()
-                if constrained_size != self.window_surface.size:
-                    self.__set_screen_mode(self.__fullscreen, constrained_size)
-            else:
-                self.__event_queue.append(event)
-        
-        self.__update_screen_mode = False
+        if self.__do_fullscreen_toggle:
+            self.toggle_fullscreen()
+            self.__do_fullscreen_toggle = False
+        self.__event_queue.extend(pg.event.get())
 
 
     def get_userinput(self) -> None:
@@ -217,7 +196,7 @@ class GameEngine:
                 break
 
             elif event.type == JOYDEVICEADDED or event.type == JOYDEVICEREMOVED:
-                self.set_controllers()
+                self.find_controllers()
             
             self.__event_queue.remove(event)
 
@@ -230,9 +209,7 @@ class GameEngine:
         keyboard = self.input_interpreter.keyboard_mouse
 
         if keyboard.tap_keys[K_F11]:
-            self.__fullscreen = not self.__fullscreen
-            self.__update_screen_mode = True
-
+            self.__do_fullscreen_toggle = True
 
         if debug.DEBUG_MODE and keyboard.hold_keys[KMOD_CTRL]:
             if self.state_stack.top_state is not None and keyboard.tap_keys[K_BACKSPACE]:
@@ -319,7 +296,7 @@ class GameEngine:
 
 
     def next_frame(self) -> None:
-        pg.display.flip()
+        self.window.flip()
         self.frame_clock.tick(config.FRAMERATE)
         self.prev_frame = perf_counter()
 
