@@ -7,7 +7,7 @@ import threading
 import traceback
 from time import perf_counter
 
-import config
+from config import *
 import debug
 
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
@@ -46,7 +46,7 @@ class GameEngine:
         if self.window_surface.size != self.__prev_window_size:
             w_width, w_height = self.__constrained_window_size()
             ratio = w_width/w_height
-            height = (config.CANVAS_AREA/ratio)**(0.5)
+            height = (CANVAS_AREA/ratio)**(0.5)
             width = height*ratio
             self.__game_canvas = pg.Surface((width, height))
             self.__prev_window_size = self.window_surface.size
@@ -74,7 +74,7 @@ class GameEngine:
         self.state_stack = StateStack()
 
         game_speed = 1
-        self.tick_rate = config.TICKRATE*game_speed
+        self.tick_rate = TICKRATE*game_speed
 
         self.tick_clock = pg.Clock()
         self.prev_tick = perf_counter()
@@ -116,12 +116,10 @@ class GameEngine:
         if not self.__setup:
             raise RuntimeError("Cannot start game because an exception has occurred during setup.")
 
-        self.window = pg.Window(config.WINDOW_CAPTION,
-                                config.WINDOW_START_SIZE,
-                                resizable=True)
+        self.window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE, resizable=True)
         self.window_surface = self.window.get_surface()
-        self.window.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
-        self.window.minimum_size = config.WINDOW_MINIUM_SIZE
+        self.window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
+        self.window.minimum_size = WINDOW_MINIUM_SIZE
 
         if self.__fullscreen:
             self.window.set_fullscreen(True)
@@ -301,7 +299,7 @@ class GameEngine:
 
     def next_frame(self) -> None:
         self.window.flip()
-        self.frame_clock.tick(config.FRAMERATE)
+        self.frame_clock.tick(FRAMERATE)
         self.prev_frame = perf_counter()
 
 
@@ -310,13 +308,13 @@ class GameEngine:
         width, height = self.window_surface.size
         ratio = width/height
         
-        if ratio < config.WINDOW_RATIO_RANGE[0]:
-            height = int(width/config.WINDOW_RATIO_RANGE[0])
-        elif ratio > config.WINDOW_RATIO_RANGE[1]:
-            width = height*config.WINDOW_RATIO_RANGE[1]
+        if ratio < WINDOW_RATIO_RANGE[0]:
+            height = int(width/WINDOW_RATIO_RANGE[0])
+        elif ratio > WINDOW_RATIO_RANGE[1]:
+            width = height*WINDOW_RATIO_RANGE[1]
         
-        width = max(width, config.WINDOW_MINIUM_SIZE[0])
-        height = max(height, config.WINDOW_MINIUM_SIZE[1])
+        width = max(width, WINDOW_MINIUM_SIZE[0])
+        height = max(height, WINDOW_MINIUM_SIZE[1])
         
         return width, height
 

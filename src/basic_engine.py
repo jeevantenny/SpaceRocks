@@ -1,7 +1,7 @@
 import pygame as pg
 from pygame.locals import *
 
-import config
+from config import *
 from src.input_device import InputInterpreter, KeyboardMouse
 
 from src.file_processing import assets
@@ -36,11 +36,11 @@ class BasicEngine:
 
 
     def start(self) -> None:
-        self.window = pg.Window(config.WINDOW_CAPTION, config.WINDOW_START_SIZE)
+        self.window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE)
         self.window_surface = self.window.get_surface()
-        self.window.set_icon(assets.load_texture(config.WINDOW_ICON_PATH))
-        self.window.minimum_size = config.WINDOW_MINIUM_SIZE
-        self.game_canvas = pg.Surface(config.DEFAULT_CANVAS_SIZE)
+        self.window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
+        self.window.minimum_size = WINDOW_MINIUM_SIZE
+        self.game_canvas = pg.Surface(DEFAULT_CANVAS_SIZE)
 
         font.init()
         init_state.Initializer(self.state_stack)
@@ -56,7 +56,7 @@ class BasicEngine:
                 self.state_stack.draw(self.game_canvas)
                 pg.transform.scale(self.game_canvas, self.window_surface.size, self.window_surface)
                 self.window.flip()
-                self.clock.tick(config.TICKRATE)
+                self.clock.tick(TICKRATE)
         except KeyboardInterrupt:
             self.error = KeyboardInterrupt.__name__
         
@@ -77,4 +77,3 @@ class BasicEngine:
                 return
         
         self.input_interpreter.keyboard_mouse.get_userinput(events)
-
