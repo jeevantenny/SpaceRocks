@@ -7,6 +7,10 @@ from src.file_processing import assets, data
 
 
 class AssetsTest(unittest.TestCase):
+    """
+    Test the assets module in file_processing.
+    """
+
     texture_path = "game_objects/medium_rock"
     pallette_swap = "asteroid/green_rocks"
     
@@ -26,8 +30,9 @@ class AssetsTest(unittest.TestCase):
 
 
     def assertTextureFormat(self, texture: pg.Surface):
-        self.assertIsInstance(texture, pg.Surface)
-        self.assertEqual(texture.get_colorkey()[0:3], assets.COLORKEY)
+        self.assertIsInstance(texture, pg.Surface, "texture must be of type pygame.Surface")
+        self.assertEqual(texture.get_colorkey()[0:3], assets.COLORKEY,
+                         f"texture must have the correct colorkey {assets.COLORKEY}")
 
 
 
@@ -53,11 +58,11 @@ class AssetsTest(unittest.TestCase):
     def test_colorkey_surface(self):
         size = (200, 200)
         surface = assets.colorkey_surface(size)
+        self.assertTextureFormat(surface)
         self.assertEqual(surface.size, size)
-        self.assertEqual(surface.get_colorkey()[0:3], assets.COLORKEY)
         # Check that surface is filled with the colorkey color
         pixel_color = surface.get_at((50, 50))[0:3]
-        self.assertEqual(pixel_color, assets.COLORKEY)
+        self.assertEqual(pixel_color, assets.COLORKEY, "colorkey surface must be filled with colorkey")
 
 
 
@@ -67,8 +72,8 @@ class AssetsTest(unittest.TestCase):
         self.assertIsInstance(texture_map, dict)
         self.assertGreater(len(texture_map), 0)
         # Check that all entries are surfaces
-        for name, surface in texture_map.items():
-            self.assertIsInstance(surface, pg.Surface)
+        for texture in texture_map.values():
+            self.assertTextureFormat(texture)
 
     def test_load_texture_map_caching(self):
         texture_map1 = assets.load_texture_map("spaceship")
