@@ -38,7 +38,7 @@ class MusicManager:
     @classmethod
     def get_track_name(cls) -> str | None:
         if cls.__current_music is not None:
-            return cls.__current_music.name
+            return cls.__current_music.get_name()
 
         
     @classmethod

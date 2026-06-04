@@ -34,7 +34,9 @@ class GameSound:
     def __init__(self, name: str, sounds: list[pg.Sound]):
         self.name = name
         self.__sounds = sounds
-    
+
+    def get_variations(self) -> int:
+        return len(self.__sounds)    
     
     def play(self, volume=1.0, loops=0) -> pg.Channel:
         if self.__sounds:
@@ -49,9 +51,18 @@ class GameSound:
 
 class GameMusic:
     def __init__(self, name: str, main_loop: str, prelude: str | None = None):
-        self.name = name
+        self.__name = name
         self.__prelude = prelude
         self.__main_loop = main_loop
+
+    def get_name(self) -> str:
+        return self.__name
+    
+    def get_prelude(self) -> str | None:
+        return self.__prelude
+    
+    def get_main_loop(self) -> str:
+        return self.__main_loop
 
     def play_music(self, start=0.0, loop=True) -> None:
         if self.__prelude is not None and start == 0.0:
