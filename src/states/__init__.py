@@ -152,15 +152,13 @@ class StateStack(HasSoundQueue):
     
     def __init__(self, states: list[State] | None = None):
         super().__init__()
-        self.__container: Deque[State]
-        if states is not None:
-            self.__container = Deque(states)
-        else:
-            self.__container = Deque()
-
-        
+        self.__container: Deque[State] = Deque()
         self.__current_mode: Literal["show_state", "enter_transition", "exit_transition"] = "show_state"
         self.__transition_timer = Timer(0.0)
+        
+        if states is not None:
+            for state in states:
+                self.push(state)
 
     
     
@@ -190,10 +188,12 @@ class StateStack(HasSoundQueue):
 
     def pop(self, transition=True, quit_state=True) -> State:
         "Removes and returns the top state."
-
-        self.__transition_timer.stop()
         
+        self.__transition_timer.stop()
         state = self.top_state
+        if state is None:
+            raise IndexError("Pop from empty stack")
+
         if transition and state.exit_duration > 0.0:
             self.__transition_timer = Timer(state.exit_duration, exec_after=lambda: self.pop(False, quit_state)).start()
         
