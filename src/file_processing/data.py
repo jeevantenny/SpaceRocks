@@ -95,7 +95,6 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
 
     # Loads temporary highscore in demo mode
     if debug.Cheats.demo_mode:
-        global __demo_highscore
         return __demo_highscore
     
     try:
@@ -176,7 +175,6 @@ def __load_settings() -> dict:
 
 def get_setting(name: str) -> bool|float:
     "Gets the value of a user setting."
-    global __settings_data, __default_settings
     try:
         return __settings_data.get(name, __default_settings[name])
     except KeyError:
@@ -185,8 +183,6 @@ def get_setting(name: str) -> bool|float:
 
 def update_settings(**settings_data) -> None:
     "Updates user settings. Only settings that change need to be present in `settings_data`."
-    global __settings_data, __default_settings
-    
     for name, value in settings_data.items():
         if name in __default_settings:
             __settings_data[name] = value
@@ -198,7 +194,6 @@ def update_settings(**settings_data) -> None:
 def save_settings() -> None:
     "Saves the current user settings to the settings.json file."
     if not debug.Cheats.demo_mode:
-        global __settings_data, __default_settings
         save_json(__settings_data, SETTINGS_DATA_PATH)
 
 
