@@ -31,9 +31,10 @@ jobs:
         pip install -r requirements.txt
 
     - name: Test with unittest
+      env:
+        SDL_VIDEODRIVER: "dummy"
+        SDL_AUDIODRIVER: "disk"
       run: |
-        export SDL_VIDEODRIVER=dummy
-        export SDL_AUDIODRIVER=disk
         python -m unittest discover -s ./test -p "*_test.py" -v
 
     - name: Compile with PyInstaller
