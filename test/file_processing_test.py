@@ -3,6 +3,12 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 from src.file_processing import assets, data
+from src.custom_types import LevelData
+
+from src.game_errors import LevelDataError
+
+import debug
+from debug import Cheats
 
 
 
@@ -168,3 +174,167 @@ class AssetsTest(unittest.TestCase):
         result = assets.palette_swap(test_surface, self.pallette_swap)
         
         mock_load_json.assert_called_once_with("assets/palette_swaps/asteroid/green_rocks")
+
+
+
+
+
+
+
+
+
+
+
+class DataTest(unittest.TestCase):
+    test_level1 = {
+        "asteroid_density": [10, 15],
+        "asteroid_speed": [1, 6],
+
+        "score_range": [0, 10000],
+        "next_level": "level_2"
+    }
+
+    test_level2 = {
+        "base_color": "#123456",
+        "parl_a": "background_1",
+        "parl_b": "background_2",
+        "background_palette": "palette_1",
+        "background_tint": "#4E6382",
+
+        "asteroid_density": [20, 30],
+        "asteroid_speed": [1, 6],
+        "asteroid_frequency": 0.5,
+        "spawn_asteroids": {"small_rock": 70, "medium_rock": 30},
+
+        "enemy_frequency": 0.2,
+        "enemy_count": 5,
+        "spawn_enemies": {"basic_enemy": 100, "big_chungus": 80},
+
+        "powerup_frequency": 0.67,
+        "spawn_powerups": {"health": 100, "speed_boost": 50},
+
+        "score_range": [10000, 20000],
+        "next_level": "level_3"
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        pg.init()
+        pg.Window(hidden=True).get_surface()
+
+    @classmethod
+    def tearDownClass(cls):
+        pg.quit()
+
+    @patch("src.file_processing.data.load_json")
+    def test_load_level_with_default_values(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = self.test_level1
+        level = data.load_level("test_level")
+        
+        mock_load_json.assert_called_once_with("data/levels/test_level")
+        self.assertIsInstance(level, LevelData)
+
+        self.assertEqual(level.level_name, "test_level")
+        self.assertEqual(level.base_color, "#000000")
+        self.assertEqual(level.parl_a, None)
+        self.assertEqual(level.parl_b, None)
+        self.assertEqual(level.background_palette, None)
+        self.assertEqual(level.background_tint, "#4E6382")
+
+        self.assertEqual(level.asteroid_density, (10, 15))
+        self.assertEqual(level.asteroid_speed, (1, 6))
+        self.assertEqual(level.asteroid_frequency, 0.0)
+        self.assertEqual(level.asteroid_spawn_weights, ([], []))
+
+        self.assertEqual(level.enemy_frequency, 0.0)
+        self.assertEqual(level.enemy_count, 0)
+        self.assertEqual(level.enemy_spawn_weights, ([], []))
+
+        self.assertEqual(level.powerup_frequency, 0.0)
+        self.assertEqual(level.powerup_spawn_weights, ([], []))
+
+        self.assertEqual(level.score_range, (0, 10000))
+        self.assertEqual(level.next_level, "level_2")
+
+    @patch("src.file_processing.data.load_json")
+    def test_load_level(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = self.test_level2
+        level = data.load_level("test_level")
+        
+        mock_load_json.assert_called_once_with("data/levels/test_level")
+        self.assertIsInstance(level, LevelData)
+
+        self.assertEqual(level.level_name, "test_level")
+        self.assertEqual(level.base_color, "#123456")
+        self.assertEqual(level.parl_a, "background_1")
+        self.assertEqual(level.parl_b, "background_2")
+        self.assertEqual(level.background_palette, "palette_1")
+        self.assertEqual(level.background_tint, "#4E6382")
+
+        self.assertEqual(level.asteroid_density, (20, 30))
+        self.assertEqual(level.asteroid_speed, (1, 6))
+        self.assertEqual(level.asteroid_frequency, 0.5)
+        self.assertEqual(level.asteroid_spawn_weights, (["small_rock", "medium_rock"], [70, 30]))
+
+        self.assertEqual(level.enemy_frequency, 0.2)
+        self.assertEqual(level.enemy_count, 5)
+        self.assertEqual(level.enemy_spawn_weights, (["basic_enemy", "big_chungus"], [100, 80]))
+
+        self.assertEqual(level.powerup_frequency, 0.67)
+        self.assertEqual(level.powerup_spawn_weights, (["health", "speed_boost"], [100, 50]))
+
+        self.assertEqual(level.score_range, (10000, 20000))
+        self.assertEqual(level.next_level, "level_3")
+
+    @patch('src.file_processing.data.load_json')
+    def test_load_level_invalid_name(self, mock_load_json: MagicMock):
+        mock_load_json.side_effect = FileNotFoundError()
+        with self.assertRaises(ValueError):
+            data.load_level("level_not_found")
+
+    @patch('src.file_processing.data.load_json')
+    def test_load_level_missing_property(self, mock_load_json: MagicMock):
+        # Missing required property "score_range"
+        mock_load_json.return_value = {
+            "asteroid_density": [10, 15],
+            "asteroid_speed": [1, 6],
+            "next_level": "level_2"
+        }
+        with self.assertRaises(LevelDataError) as context:
+            data.load_level("test_level")
+        
+        self.assertEqual(context.exception.level_name, "test_level")
+        self.assertEqual(context.exception.missing_property, "score_range")
+
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    @patch('src.file_processing.data.load_json')
+    def test_load_high_score(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = {"highscore": 12345}
+        high_score = data.load_highscore()
+        mock_load_json.assert_called_once_with("user_data/highscore")
+        self.assertEqual(high_score, 12345)
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    @patch('src.file_processing.data.load_json')
+    def test_load_high_score_overflow(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = {"highscore": 10000000}
+        high_score = data.load_highscore()
+        mock_load_json.assert_called_once_with("user_data/highscore")
+        self.assertEqual(high_score, data.SCORE_LIMIT)
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    @patch('src.file_processing.data.load_json')
+    def test_load_high_score_underflow(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = {"highscore": -100}
+        high_score = data.load_highscore()
+        mock_load_json.assert_called_once_with("user_data/highscore")
+        self.assertEqual(high_score, 0)
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    @patch('src.file_processing.data.load_json')
+    def test_load_high_invalid_score(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = {"highscore": "not_a_number"}
+        high_score = data.load_highscore()
+        mock_load_json.assert_called_once_with("user_data/highscore")
+        self.assertEqual(high_score, 0)
