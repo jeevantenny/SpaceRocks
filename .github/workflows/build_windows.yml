@@ -17,7 +17,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python 3.10
+    - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
         python-version: "3.13"
@@ -30,6 +30,8 @@ jobs:
 
     - name: Test with unittest
       run: |
+        export SDL_VIDEODRIVER=dummy
+        export SDL_AUDIODRIVER=disk
         python -m unittest discover -s ./test -p "*_test.py" -v
 
     - name: Compile with PyInstaller
