@@ -116,7 +116,7 @@ def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
 
 
 
-def load_progress() -> SaveData | None:
+def load_progress(path=SAVE_DATA_PATH) -> SaveData | None:
     "Loads the player's from save data as a SaveData object. Returns None if there us no progress saved."
 
     #Does not load progress in demo mode
@@ -124,7 +124,7 @@ def load_progress() -> SaveData | None:
         return None
 
     try:
-        with open(SAVE_DATA_PATH, "rb") as fp:
+        with open(path, "rb") as fp:
             try:
                 save_data = pickle.load(fp)
             except EOFError:
@@ -146,6 +146,9 @@ def load_progress() -> SaveData | None:
 def save_progress(save_data: SaveData) -> None:
     "Saved the player's current progress to be resumed later."
 
+    if not isinstance(save_data, SaveData):
+        raise SaveFileError("Data must be of type SaveData to store progress")
+
     # Does not save progress in demo mode
     if not debug.Cheats.demo_mode:
         with open(SAVE_DATA_PATH, "wb") as fp:
@@ -153,12 +156,12 @@ def save_progress(save_data: SaveData) -> None:
 
 
 
-def delete_progress() -> None:
+def delete_progress(path=SAVE_DATA_PATH) -> None:
     "Deleted save data for player's progress."
 
     # Does not delete progress in demo mode.
     if not debug.Cheats.demo_mode:
-        with open(SAVE_DATA_PATH, "wb") as _: pass
+        with open(path, "wb") as _: pass
 
 
 

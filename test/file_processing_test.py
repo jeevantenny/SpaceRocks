@@ -1,11 +1,11 @@
 import pygame as pg
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 
 from src.file_processing import assets, data
-from src.custom_types import LevelData
+from src.custom_types import LevelData, SaveData
 
-from src.game_errors import LevelDataError
+from src import game_errors
 
 import debug
 from debug import Cheats
@@ -217,6 +217,15 @@ class DataTest(unittest.TestCase):
         "next_level": "level_3"
     }
 
+    mock_settings = {
+        "soundfx_volume": 0.7,
+        "controller_rumble": True,
+        "show_version_number": False,
+        "motion_blur": True,
+        "scale_blur": False,
+        "music_volume": 0.7
+    }
+
     @classmethod
     def setUpClass(cls):
         pg.init()
@@ -225,6 +234,11 @@ class DataTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         pg.quit()
+
+
+    def get_test_save_data(self) -> bytes:
+        with open("test/resources/test_progress.bin", "rb") as fp:
+            return fp.read()
 
     @patch("src.file_processing.data.load_json")
     def test_load_level_with_default_values(self, mock_load_json: MagicMock):
@@ -300,7 +314,7 @@ class DataTest(unittest.TestCase):
             "asteroid_speed": [1, 6],
             "next_level": "level_2"
         }
-        with self.assertRaises(LevelDataError) as context:
+        with self.assertRaises(game_errors.LevelDataError) as context:
             data.load_level("test_level")
         
         self.assertEqual(context.exception.level_name, "test_level")
@@ -338,3 +352,125 @@ class DataTest(unittest.TestCase):
         high_score = data.load_highscore()
         mock_load_json.assert_called_once_with("user_data/highscore")
         self.assertEqual(high_score, 0)
+
+
+
+
+
+    @patch('src.file_processing.data.save_json')
+    def test_save_highscore(self, mock_save_json: MagicMock):
+        mock_save_json.return_value = None
+        data.save_highscore(12345)
+        mock_save_json.assert_called_once_with({"highscore": 12345}, "user_data/highscore")
+
+    @patch('src.file_processing.data.save_json')
+    def test_save_highscore_score_overflow(self, mock_save_json: MagicMock):
+        mock_save_json.return_value = None
+        data.save_highscore(10000000)
+        mock_save_json.assert_called_once_with({"highscore": data.SCORE_LIMIT}, "user_data/highscore")
+
+    @patch('src.file_processing.data.save_json')
+    def test_save_highscore_score_underflow(self, mock_save_json: MagicMock):
+        mock_save_json.return_value = None
+        data.save_highscore(-100)
+        mock_save_json.assert_called_once_with({"highscore": 0}, "user_data/highscore")
+
+
+
+
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    def test_load_progress(self):
+        opener = mock_open(read_data=self.get_test_save_data())
+        with patch("builtins.open", opener) as mock_file:
+            save_data = data.load_progress()
+
+        mock_file: MagicMock
+        mock_file.assert_called_once_with(data.SAVE_DATA_PATH, "rb")
+        self.assertIsInstance(save_data, SaveData)
+    
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    def test_load_progress_no_file(self):
+        save_data = data.load_progress("no_file")
+        self.assertIsNone(save_data)
+    
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    def test_load_progress_empty_file(self):
+        with patch("builtins.open", mock_open(read_data=b"")) as mock_file:
+            save_data = data.load_progress("empty_file")
+        
+        mock_file: MagicMock
+        mock_file.assert_called_once_with("empty_file", "rb")
+        self.assertIsNone(save_data)
+    
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    def test_load_progress_corrupted_file(self):
+        with patch("builtins.open", mock_open(read_data=b"corrupted")) as mock_file:
+            with self.assertRaises(game_errors.SaveFileError):
+                data.load_progress("corrupted_file")
+        
+        mock_file: MagicMock
+        mock_file.assert_called_once_with("corrupted_file", "rb")
+
+
+
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    def test_save_progress(self):
+        save_data = SaveData("test_level", 30, 3, (0, 0), {})
+        with patch("builtins.open", mock_open()) as mock_file:
+            data.save_progress(save_data)
+        
+        mock_file: MagicMock
+        mock_file.assert_called_once_with(data.SAVE_DATA_PATH, "wb")
+
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    def test_save_data_invalid_object(self):
+        invalid_data = dict()
+        with patch("builtins.open", mock_open()) as mock_file:
+            with self.assertRaises(game_errors.SaveFileError):
+                data.save_progress(invalid_data)
+        
+        mock_file: MagicMock
+        mock_file.assert_not_called()
+
+    
+
+
+
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    def test_delete_progress(self):
+        opener = mock_open(read_data=self.get_test_save_data())
+        with patch("builtins.open", opener) as mock_file:
+            data.delete_progress()
+        
+        mock_file: MagicMock
+        mock_file.assert_called_once_with(data.SAVE_DATA_PATH, "wb")
+        
+    
+
+    
+
+
+
+
+
+
+    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+    @patch("src.file_processing.data.delete_progress")
+    @patch("src.file_processing.data.save_highscore")
+    @patch("src.file_processing.data.reset_settings")
+    def test_delete_user_data(self,
+                              mock_delete_progress: MagicMock,
+                              mock_save_highscore: MagicMock,
+                              mock_reset_settings: MagicMock
+                              ):
+        data.delete_user_data()
+        mock_delete_progress.assert_called_once()
+        mock_save_highscore.assert_called_once_with(0)
+        mock_reset_settings.assert_called_once()
+        
