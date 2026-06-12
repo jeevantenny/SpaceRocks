@@ -11,7 +11,7 @@ from src.file_processing import data
 from src.ui import blit_to_center, font, effects, elements, hud
 
 from . import State, StateStack
-from .info_states import DeleteUserDataOption
+from .info_states import InfoState, DeleteUserDataOption
 from .visuals import add_background_tint
 
 
@@ -134,6 +134,9 @@ class PauseMenu(State):
         # Assigned default values to avoid raising Attribute Errors.
         self.__info_text = pg.Surface((1, 1))
 
+        from .play import Play
+        self.prev_state: Play
+
 
 
     def userinput(self, inputs):
@@ -143,6 +146,18 @@ class PauseMenu(State):
             if inputs.check_input("pause") or inputs.check_input("select") or inputs.check_input("back"):
                 self.title.set_effect("main_exit")
                 self.__exit_menu = True
+
+            elif inputs.check_input("quit"):
+                if self.prev_state.is_saving_progress:
+                    InfoState(
+                        "Quit to Main Menu",
+                        "Are you sure you want to quit?",
+                        confirm_action=self.quit_to_main_menu,
+                        can_escape=True
+                    ).add_to_stack(self.state_stack)
+                else:
+                    self.quit_to_main_menu()
+                
 
         
         
@@ -171,12 +186,20 @@ class PauseMenu(State):
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
             blit_to_center(self.__info_text, surface, (0, 30))
-            surface.blit(font.icon_font.render("Continue<select>     settings<settings>"), (10, surface.height-18))
+            surface.blit(font.icon_font.render("Continue<select>     Settings<settings>     Quit<quit>"), (10, surface.height-18))
             surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
 
 
     def debug_info(self):
         return self.prev_state.debug_info()
+    
+
+    def quit_to_main_menu(self):
+        from .init_state import Initializer
+        self.prev_state.can_save_progress(False)
+        self.state_stack.quit()
+        Initializer.main_title_screen(self.state_stack)
+
     
 
 
