@@ -57,3 +57,10 @@ def timeit(func: Callable):
         return output
     
     return wrapper
+
+
+def disable_cheats():
+    "Disables all cheats. Useful for testing."
+    for attr in dir(Cheats):
+        if not attr.startswith("__") and isinstance(getattr(Cheats, attr), bool):
+            setattr(Cheats, attr, False)

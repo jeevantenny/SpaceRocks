@@ -18,5 +18,9 @@ class SaveFileError(Exception):
 
 class LevelDataError(Exception):
     "Level data json file is missing required property."
-    def __init__(self, level_name: str, property_name: str):
-        super().__init__(f"'{level_name}' is missing required property '{property_name}'.")
+    level_name: str
+    missing_property: str
+    def __init__(self, level_name: str, missing_property: str):
+        self.level_name = level_name
+        self.missing_property = missing_property
+        super().__init__(f"'{level_name}' is missing required property '{missing_property}'.")
