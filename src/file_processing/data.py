@@ -23,6 +23,20 @@ SAVE_DATA_PATH = "user_data/progress.bin"
 
 SCORE_LIMIT = 99999
 
+DEFAULT_SETTINGS = {
+    "soundfx_volume": 0.7,
+    "music_volume": 0.7,
+    "controller_rumble": True,
+    "motion_blur": True,
+    "scale_blur": False,
+
+    "show_version_number": True
+}
+
+
+__demo_highscore = 0
+__settings_data: dict[str, bool|float] = {}
+
 
 if not (os.path.exists("user_data") or debug.Cheats.demo_mode):
     os.makedirs("user_data")
@@ -165,32 +179,33 @@ def delete_progress(path=SAVE_DATA_PATH) -> None:
 
 
 
-def __load_settings() -> dict:
+def load_settings(path=SETTINGS_DATA_PATH) -> None:
     "Loads user settings as a dictionary"
+    global __settings_data
     if debug.Cheats.demo_mode:
-        return {}
+        __settings_data = {}
     try:
-        return load_json(SETTINGS_DATA_PATH)
+        __settings_data = load_json(path)
     except (FileNotFoundError, JSONDecodeError):
-        return {}
+        __settings_data = {}
 
 
 
 def get_setting(name: str) -> bool|float:
     "Gets the value of a user setting."
     try:
-        return __settings_data.get(name, __default_settings[name])
+        return __settings_data.get(name, DEFAULT_SETTINGS[name])
     except KeyError:
-        raise ValueError(f"Invalid setting name '{name}'")
+        raise KeyError(f"Invalid setting name '{name}'")
 
 
 def update_settings(**settings_data) -> None:
     "Updates user settings. Only settings that change need to be present in `settings_data`."
     for name, value in settings_data.items():
-        if name in __default_settings:
+        if name in DEFAULT_SETTINGS:
             __settings_data[name] = value
         else:
-            raise ValueError(f"Invalid argument '{name}'")
+            raise KeyError(f"Invalid setting '{name}'")
         
 
 
@@ -217,18 +232,3 @@ def delete_user_data() -> None:
     delete_progress()
     save_highscore(0)
     reset_settings()
-
-
-
-__demo_highscore = 0
-__settings_data = __load_settings()
-
-__default_settings = {
-    "soundfx_volume": 0.7,
-    "music_volume": 0.7,
-    "controller_rumble": True,
-    "motion_blur": True,
-    "scale_blur": False,
-
-    "show_version_number": True
-}

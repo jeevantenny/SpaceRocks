@@ -125,6 +125,7 @@ class GameEngine:
             self.window.set_fullscreen(True)
 
         font.init()
+        data.load_settings()
         self.debug_font = pg.font.SysFont("consolas", 13)
 
         init_state.Initializer(self.state_stack)

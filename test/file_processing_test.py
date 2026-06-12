@@ -1,6 +1,7 @@
 import pygame as pg
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock, mock_open, ANY
+from json import JSONDecodeError
 
 from src.file_processing import assets, data
 from src.custom_types import LevelData, SaveData
@@ -184,7 +185,7 @@ class AssetsTest(unittest.TestCase):
 
 
 
-
+@unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
 class DataTest(unittest.TestCase):
     test_level1 = {
         "asteroid_density": [10, 15],
@@ -218,12 +219,12 @@ class DataTest(unittest.TestCase):
     }
 
     mock_settings = {
-        "soundfx_volume": 0.7,
-        "controller_rumble": True,
+        "music_volume": 0.2,
+        "soundfx_volume": 0.2,
+        "controller_rumble": False,
         "show_version_number": False,
-        "motion_blur": True,
-        "scale_blur": False,
-        "music_volume": 0.7
+        "motion_blur": False,
+        "scale_blur": False
     }
 
     @classmethod
@@ -235,10 +236,34 @@ class DataTest(unittest.TestCase):
     def tearDownClass(cls):
         pg.quit()
 
+    
+    def setUp(self):
+        # Reset all settings to default
+        data.load_settings("")
+
 
     def get_test_save_data(self) -> bytes:
         with open("test/resources/test_progress.bin", "rb") as fp:
             return fp.read()
+        
+
+    def get_invalid_save_data(self) -> bytes:
+        with open("test/resources/invalid_progress.bin", "rb") as fp:
+            return fp.read()
+
+        
+
+    def assertCurrentSettings(self, expected: dict):
+        self.assertEqual(data.get_setting("soundfx_volume"), expected["soundfx_volume"])
+        self.assertEqual(data.get_setting("music_volume"), expected["music_volume"])
+        self.assertEqual(data.get_setting("controller_rumble"), expected["controller_rumble"])
+        self.assertEqual(data.get_setting("motion_blur"), expected["motion_blur"])
+        self.assertEqual(data.get_setting("scale_blur"), expected["scale_blur"])
+        self.assertEqual(data.get_setting("show_version_number"), expected["show_version_number"])
+
+
+
+
 
     @patch("src.file_processing.data.load_json")
     def test_load_level_with_default_values(self, mock_load_json: MagicMock):
@@ -321,7 +346,6 @@ class DataTest(unittest.TestCase):
         self.assertEqual(context.exception.missing_property, "score_range")
 
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     @patch('src.file_processing.data.load_json')
     def test_load_high_score(self, mock_load_json: MagicMock):
         mock_load_json.return_value = {"highscore": 12345}
@@ -329,7 +353,6 @@ class DataTest(unittest.TestCase):
         mock_load_json.assert_called_once_with("user_data/highscore")
         self.assertEqual(high_score, 12345)
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     @patch('src.file_processing.data.load_json')
     def test_load_high_score_overflow(self, mock_load_json: MagicMock):
         mock_load_json.return_value = {"highscore": 10000000}
@@ -337,7 +360,6 @@ class DataTest(unittest.TestCase):
         mock_load_json.assert_called_once_with("user_data/highscore")
         self.assertEqual(high_score, data.SCORE_LIMIT)
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     @patch('src.file_processing.data.load_json')
     def test_load_high_score_underflow(self, mock_load_json: MagicMock):
         mock_load_json.return_value = {"highscore": -100}
@@ -345,7 +367,6 @@ class DataTest(unittest.TestCase):
         mock_load_json.assert_called_once_with("user_data/highscore")
         self.assertEqual(high_score, 0)
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     @patch('src.file_processing.data.load_json')
     def test_load_high_invalid_score(self, mock_load_json: MagicMock):
         mock_load_json.return_value = {"highscore": "not_a_number"}
@@ -379,7 +400,6 @@ class DataTest(unittest.TestCase):
 
 
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     def test_load_progress(self):
         opener = mock_open(read_data=self.get_test_save_data())
         with patch("builtins.open", opener) as mock_file:
@@ -390,12 +410,10 @@ class DataTest(unittest.TestCase):
         self.assertIsInstance(save_data, SaveData)
     
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     def test_load_progress_no_file(self):
         save_data = data.load_progress("no_file")
         self.assertIsNone(save_data)
     
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     def test_load_progress_empty_file(self):
         with patch("builtins.open", mock_open(read_data=b"")) as mock_file:
             save_data = data.load_progress("empty_file")
@@ -405,7 +423,6 @@ class DataTest(unittest.TestCase):
         self.assertIsNone(save_data)
     
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     def test_load_progress_corrupted_file(self):
         with patch("builtins.open", mock_open(read_data=b"corrupted")) as mock_file:
             with self.assertRaises(game_errors.SaveFileError):
@@ -415,9 +432,18 @@ class DataTest(unittest.TestCase):
         mock_file.assert_called_once_with("corrupted_file", "rb")
 
 
+    def test_load_progress_invalid_type(self):
+        opener = mock_open(read_data=self.get_invalid_save_data())
+        with patch("builtins.open", opener) as mock_file:
+            with self.assertRaises(game_errors.SaveFileError):
+                data.load_progress("invalid_type_file")
+        
+        mock_file: MagicMock
+        mock_file.assert_called_once_with("invalid_type_file", "rb")
 
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
+
+
     def test_save_progress(self):
         save_data = SaveData("test_level", 30, 3, (0, 0), {})
         with patch("builtins.open", mock_open()) as mock_file:
@@ -427,7 +453,6 @@ class DataTest(unittest.TestCase):
         mock_file.assert_called_once_with(data.SAVE_DATA_PATH, "wb")
 
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     def test_save_data_invalid_object(self):
         invalid_data = dict()
         with patch("builtins.open", mock_open()) as mock_file:
@@ -442,7 +467,6 @@ class DataTest(unittest.TestCase):
 
 
 
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     def test_delete_progress(self):
         opener = mock_open(read_data=self.get_test_save_data())
         with patch("builtins.open", opener) as mock_file:
@@ -450,17 +474,154 @@ class DataTest(unittest.TestCase):
         
         mock_file: MagicMock
         mock_file.assert_called_once_with(data.SAVE_DATA_PATH, "wb")
+
+
+
+
+
+
+    def test_get_settings_float(self):
+        self.assertEqual(data.get_setting("soundfx_volume"), 0.7)
         
+    def test_get_settings_bool(self):
+        self.assertEqual(data.get_setting("controller_rumble"), True)
+
+    def test_get_settings_invalid_name(self):
+        with self.assertRaises(KeyError):
+            data.get_setting("non_existent")
+
+
+
+    def test_update_settings(self):
+        data.update_settings(soundfx_volume=0.9)
+        self.assertEqual(data.get_setting("soundfx_volume"), 0.9)
+
+    def test_update_settings_multiple(self):
+        data.update_settings(soundfx_volume=0.9, controller_rumble=False, music_volume=0.4)
+        self.assertEqual(data.get_setting("soundfx_volume"), 0.9)
+        self.assertEqual(data.get_setting("controller_rumble"), False)
+        self.assertEqual(data.get_setting("music_volume"), 0.4)
+    
+    def test_update_settings_invalid_settings_name(self):
+        with self.assertRaises(KeyError):
+            data.update_settings(non_existent=0.8)
+
     
 
+
+    @patch('src.file_processing.data.load_json')
+    def test_load_settings(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = self.mock_settings
+        data.load_settings()
+
+        mock_load_json.assert_called_once_with(data.SETTINGS_DATA_PATH)
+        self.assertCurrentSettings(self.mock_settings)
+
+
+
+    @patch('src.file_processing.data.load_json')
+    def test_load_settings_default(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = {}
+        data.load_settings()
+
+        mock_load_json.assert_called_once_with(data.SETTINGS_DATA_PATH)
+        self.assertCurrentSettings(data.DEFAULT_SETTINGS)
+
+
+
+    @patch('src.file_processing.data.load_json')
+    def test_load_settings_partially_default(self, mock_load_json: MagicMock):
+        mock_load_json.return_value = {
+            "soundfx_volume": 0.2,
+            "controller_rumble": False,
+        }
+        data.load_settings()
+        expected_settings = data.DEFAULT_SETTINGS.copy()
+        expected_settings.update({
+            "soundfx_volume": 0.2,
+            "controller_rumble": False,
+        })
+
+        mock_load_json.assert_called_once_with(data.SETTINGS_DATA_PATH)
+        self.assertCurrentSettings(expected_settings)
+
+
+
+    @patch('src.file_processing.data.load_json')
+    def test_load_settings_file_not_found(self, mock_load_json: MagicMock):
+        mock_load_json.side_effect = FileNotFoundError()
+        data.load_settings()
+
+        mock_load_json.assert_called_once_with(data.SETTINGS_DATA_PATH)
+        self.assertCurrentSettings(data.DEFAULT_SETTINGS)
+
+
+
+    @patch('src.file_processing.data.load_json')
+    def test_load_settings_invalid_json(self, mock_load_json: MagicMock):
+        mock_load_json.side_effect = JSONDecodeError("error message", "doc", 0)
+        data.load_settings()
+
+        mock_load_json.assert_called_once_with(data.SETTINGS_DATA_PATH)
+        self.assertCurrentSettings(data.DEFAULT_SETTINGS)
+
+
+
+
+    @patch("src.file_processing.data.save_json")
+    def test_reset_settings(self, mock_save_json: MagicMock):
+        # Change some settings
+        changes = {
+            "soundfx_volume": 0.9,
+            "controller_rumble": False,
+            "music_volume": 0.4
+        }
+        data.update_settings(**changes)
+        mock_save_json.return_value = None
+        data.save_settings()
+        mock_save_json.assert_called_once_with(ANY, "user_data/settings")
+
+        # Call Reset Function
+        data.reset_settings()
+
+        self.assertCurrentSettings(data.DEFAULT_SETTINGS)
+
+
+
+
+
+    @patch("src.file_processing.data.load_json")
+    @patch("src.file_processing.data.save_json")
+    def test_save_settings(self, mock_save_json: MagicMock, mock_load_json: MagicMock):
+        # Change some settings
+        changes = {
+            "soundfx_volume": 0.9,
+            "controller_rumble": False,
+            "music_volume": 0.4
+        }
+        data.update_settings(**changes)
+        mock_save_json.return_value = None
+        data.save_settings()
+        mock_save_json.assert_called_once_with(ANY, "user_data/settings")
+
+        # Clear current changes
+        data.reset_settings()
+
+        # Reload saved changes from file (mock load_json to return first argument from save_json call)
+        mock_load_json.return_value = mock_save_json.call_args.args[0]
+        data.load_settings("")
+
+        # Check that the reloaded settings match the changes initially made
+        expected_settings = data.DEFAULT_SETTINGS.copy()
+        expected_settings.update(changes)
+
+        self.assertCurrentSettings(expected_settings)
+
     
 
 
 
 
-
-
-    @unittest.skipIf(Cheats.demo_mode, "Demo mode was enabled when running test")
     @patch("src.file_processing.data.delete_progress")
     @patch("src.file_processing.data.save_highscore")
     @patch("src.file_processing.data.reset_settings")
