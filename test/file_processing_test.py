@@ -16,18 +16,22 @@ from debug import Cheats
 
 class BaseTest(unittest.TestCase):
 
-    @patch("json.load")
-    def test_load_json(self, mock_builtin_load: MagicMock):
-        mock_builtin_load.return_value = {"arg1": 80, "arg2": 90}
-        output = data.load_json("json_file_name")
+
+    def test_load_json(self):
+        with patch("builtins.open", mock_open(read_data='{"arg1": 80, "arg2": 90}')) as mock_file:
+            output = data.load_json("json_file_name")
+
+        mock_file: MagicMock
+        mock_file.assert_called_once_with("json_file_name.json", "r")
         self.assertEqual(output, {"arg1": 80, "arg2": 90})
-        mock_builtin_load.assert_called_once()
         
-    @patch("json.dump")
-    def test_save_json(self, mock_builtin_dump: MagicMock):
-        mock_builtin_dump.return_value = None
-        data.save_json({"arg1": 80, "arg2": 90}, "json_file_name")
-        mock_builtin_dump.assert_called_once_with({"arg1": 80, "arg2": 90}, ANY, indent=4)
+    
+    def test_save_json(self):
+        with patch("builtins.open", mock_open(read_data="")) as mock_file:
+            data.save_json({"arg1": 80, "arg2": 90}, "json_file_name")
+            
+        mock_file: MagicMock
+        mock_file.assert_called_once_with("json_file_name.json", "w")
 
 
 
