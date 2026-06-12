@@ -44,9 +44,7 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
 
     def __init_from_data__(self, object_data: dict) -> None:
         "Alternate way to create game objects using data from save file."
-
-        if not self.progress_save_key:
-            raise NotImplementedError(f"{type(self).__name__} should not be reconstructed from data.")
+        raise NotImplementedError(f"{type(self).__name__} should not be reconstructed from data.")
 
 
 
