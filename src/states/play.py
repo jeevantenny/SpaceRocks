@@ -167,7 +167,7 @@ class Play(State):
 
         self.spaceship.userinput(inputs)
 
-        if self.spaceship.health and inputs.check_input("pause"):
+        if self._player_lives and inputs.check_input("pause"):
             self._pause_game()
 
 

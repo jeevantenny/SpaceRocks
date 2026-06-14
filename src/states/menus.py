@@ -186,7 +186,7 @@ class PauseMenu(State):
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
             blit_to_center(self.__info_text, surface, (0, 30))
-            surface.blit(font.icon_font.render("Continue<select>     Settings<settings>     Quit<quit>"), (10, surface.height-18))
+            surface.blit(font.icon_font.render("Continue<select>     Quit<quit>     Settings<settings>"), (10, surface.height-18))
             surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
 
 
@@ -360,7 +360,7 @@ class ShowScore(State):
                 self.state_stack.quit()
                 PlayLevel(get_start_level()).add_to_stack(self.state_stack)
         
-        if not self.__timer and inputs.check_input("back"):
+        if not self.__timer and inputs.check_input("quit"):
             from .init_state import Initializer
             self.state_stack.quit()
             Initializer.main_title_screen(self.state_stack)
@@ -399,7 +399,7 @@ class ShowScore(State):
 
         info_text = font.icon_font.render("Play Again<select>")
         blit_to_center(info_text, surface, (0, 70))
-        surface.blit(font.icon_font.render("Main menu<back>"), (10, surface.height-18))
+        surface.blit(font.icon_font.render("Main menu<quit>"), (10, surface.height-18))
 
 
     def __display_score(self, surface: pg.Surface, name: str, score: int, y_offset: int) -> None:
@@ -408,4 +408,4 @@ class ShowScore(State):
 
         # print(f"{score:05}", score)
         number_surface = font.large_font.render(f"{score:05}", 2)
-        surface.blit(number_surface, (surface.width*0.5 - 61, surface.height*0.5 - 19 + y_offset))
+        blit_to_center(number_surface, surface, (0, y_offset+1))
