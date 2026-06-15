@@ -70,6 +70,7 @@ class Play(State):
 
         self.__load_objects_from_save(save_data.entity_data)
         self.camera.set_position(save_data.camera_pos)
+        self._score = save_data.score
         self._player_lives = save_data.player_lives
 
         return self
@@ -203,7 +204,8 @@ class Play(State):
         return f"entity count: {self.entities.count()}, combo: {self.spaceship.combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
-
+    def add_points(self, points: int) -> None:
+        self._score = min(self.__score_limit, self._score+points)
 
 
     def player_destroy_obstacle(self, obstacle: components.Obstacle):
@@ -219,9 +221,11 @@ class Play(State):
             text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
         else:
             text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
+        
+        self.add_points(points)
+        self._point_combo = min(self._point_combo*1.1, self.__max_combo)
 
         self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
-        self._point_combo = min(self._point_combo*1.1, self.__max_combo)
     
 
     def reset_point_combo(self) -> None:
@@ -276,9 +280,7 @@ class Play(State):
 
 
     def _respawn_player(self) -> None:
-        score = self.spaceship.score
         self.spaceship = spaceship.PlayerShip(self._player_respawn_pos())
-        self.spaceship.score = score
         self.entities.add(self.spaceship)
         self.spaceship.invincibility_frames()
 
@@ -375,6 +377,11 @@ class Play(State):
                        
                        if entity.progress_save_key is not None]
         
-        camera_pos = tuple(self.camera.position)
-        save_data = SaveData(self._level_data.level_name, self.spaceship.score, self._player_lives, camera_pos, entity_data)
+        save_data = SaveData(self._level_data.level_name,
+                             self._score,
+                             self._point_combo,
+                             self._player_lives,
+                             tuple(self.camera.position),
+                             entity_data)
+
         data.save_progress(save_data)

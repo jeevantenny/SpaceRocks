@@ -172,23 +172,11 @@ class PlayerShip(Spaceship):
     distance_based_sound=False
     progress_save_key="player_spaceship"
 
-    __max_combo=10
-    __max_combo_points=500
-
     def __init__(self, position):
         super().__init__(position)
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
         self.__invincibility_timer = Timer(1)
-
-        self.__bullets_fired: set[PlayerBullet] = set()
-        self.__score_limit: int | None = None
-
-        self.score = 0
-        self.combo = 1.0
-        
-        # self.__powerups.add("SuperLaser")
-        # self.__powerups.add("Shield")
 
     
     @property
@@ -198,9 +186,6 @@ class PlayerShip(Spaceship):
 
     def __init_from_data__(self, object_data):
         super().__init_from_data__(object_data)
-
-        self.score = object_data["score"]
-        self.combo = object_data["combo"]
 
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
@@ -213,15 +198,8 @@ class PlayerShip(Spaceship):
 
     def get_data(self):
         data = super().get_data()
-        data.update({"score": self.score,
-                     "combo": self.combo,
-                     "powerups": [powerup.get_name() for powerup in self.__powerups]})
+        data.update({"powerups": [powerup.get_name() for powerup in self.__powerups]})
         return data
-    
-
-    def set_score_limit(self, limit: int) -> None:
-        self.__score_limit = limit
-        self.score = min(self.score, limit)
 
 
 
@@ -248,11 +226,6 @@ class PlayerShip(Spaceship):
         self._join_sound_queue(self.__powerups.clear_sound_queue())
 
         self.__invincibility_timer.update()
-
-        for bullet in self.__bullets_fired.copy():
-            if not bullet.alive():
-                self.__bullets_fired.remove(bullet)
-                self.__process_from_bullet(bullet)
                 
 
 
@@ -266,10 +239,9 @@ class PlayerShip(Spaceship):
         controller_rumble("ship_thrusters", 0.25, True)
 
 
-    def shoot(self):
-        bullet = super().shoot()
-        self.__bullets_fired.add(bullet)
+    def shoot(self) -> PlayerBullet:
         controller_rumble("gun_fire")
+        return super().shoot()
 
 
     def do_collision(self):
@@ -301,48 +273,3 @@ class PlayerShip(Spaceship):
 
     def remove_powerup(self, powerup) -> None:
         self.__powerups.remove(powerup)
-    
-
-    def take_points(self, points: int) -> int:
-        """
-        Takes points and adds to the PlayerShips's score based on the current combo. Returns how
-        many points were added to the score.
-        """
-
-        if debug.Cheats.no_point_combo:
-            return points
-
-        combo_points = math.ceil(points * self.combo)
-        if combo_points > self.__max_combo_points:
-            add_points = max(points, self.__max_combo_points)
-        else:
-            add_points = combo_points
-
-        if self.__score_limit is not None:
-            add_points = min(add_points, self.__score_limit-self.score)
-
-        self.score += add_points
-        self.combo = min(self.combo*1.1, self.__max_combo)
-
-        return add_points
-
-
-    def __process_from_bullet(self, bullet: PlayerBullet) -> None:
-        if self.score == self.__score_limit:
-            return
-
-        if not bullet.hit_list:
-            self.combo = 1.0
-            return
-        
-        for obj in bullet.hit_list:
-            if not obj.has_health():
-                prev_combo = self.combo
-                points = self.take_points(obj.points)
-
-                if prev_combo > 1:
-                    text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
-                else:
-                    text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
-
-                self.primary_group.add(DisplayText(obj.position, text_surface, obj.point_display_height))
