@@ -309,6 +309,9 @@ class PlayerShip(Spaceship):
         many points were added to the score.
         """
 
+        if debug.Cheats.no_point_combo:
+            return points
+
         combo_points = math.ceil(points * self.combo)
         if combo_points > self.__max_combo_points:
             add_points = max(points, self.__max_combo_points)
@@ -319,8 +322,7 @@ class PlayerShip(Spaceship):
             add_points = min(add_points, self.__score_limit-self.score)
 
         self.score += add_points
-        if not debug.Cheats.no_point_combo:
-            self.combo = min(self.combo*1.1, self.__max_combo)
+        self.combo = min(self.combo*1.1, self.__max_combo)
 
         return add_points
 

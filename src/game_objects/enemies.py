@@ -43,7 +43,7 @@ class Enemy(Obstacle, ObjectAnimation, ObjectHitbox):
 
 
 class EnemyShip(Enemy):
-    progress_save_key=None
+    progress_save_key="enemy_ship"
     ignore_camera_rotation=True
     _layer=9
 
@@ -72,6 +72,11 @@ class EnemyShip(Enemy):
 
         self.set_angular_vel(self.__rotation_speed)
 
+
+    def __init_from_data__(self, object_data):
+        self.__init__(object_data["position"])
+
+
     def update(self):
         super().update()
 
@@ -87,7 +92,7 @@ class EnemyShip(Enemy):
             if (isinstance(obj, Asteroid)
                 and obj.health
                 and self.__shoot_interval.time_elapsed > 6
-                and self.distance_to(obj) < self.__asteroid_shoot_range):
+                and self.within_distance(obj, self.__asteroid_shoot_range)):
                 self.__shoot(obj.position-self.position)
         
 

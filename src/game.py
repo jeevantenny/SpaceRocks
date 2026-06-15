@@ -263,15 +263,19 @@ class GameEngine:
             self.window_surface.fill("black")
 
         if debug.DEBUG_MODE:
-            blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
-            debug_message = self.state_stack.debug_info()
-            if debug_message:
-                blit_text = f"{blit_text}\n{debug_message}"
-            self.window_surface.blit(self.debug_font.render(blit_text, False, "white", "black"))
-
+            self.__show_debug_text()
             self.__show_stack_view()
 
 
+    def __show_debug_text(self) -> None:
+        blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
+        debug_message = self.state_stack.debug_info()
+        if debug_message:
+            blit_text += f"\n{debug_message}"
+
+        text_surface = self.debug_font.render(blit_text, False, "white")
+        self.window_surface.fill((100, 100, 100), (0, 0, *text_surface.size), BLEND_RGB_SUB)
+        self.window_surface.blit(text_surface)
 
     
     def __show_stack_view(self) -> None:
@@ -282,7 +286,8 @@ class GameEngine:
             text += f"\n{current_state.name}"
             current_state = current_state.prev_state
         
-        text_surface = self.debug_font.render(text, False, "green", "black")
+        text_surface = self.debug_font.render(text, False, "green")
+        self.window_surface.fill((100, 100, 100), (0, self.window_surface.height-text_surface.height, *text_surface.size), BLEND_RGB_SUB)
         self.window_surface.blit(text_surface, (0, self.window_surface.height-text_surface.height))
 
 

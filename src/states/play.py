@@ -1,4 +1,5 @@
 import pygame as pg
+import math
 import random
 from typing import Self
 
@@ -10,6 +11,8 @@ from src.file_processing import assets, data
 from src.game_objects import (
     GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, projectiles, spaceship, particles
 )
+
+from src.ui import font
 
 from . import State
 from .menus import PauseMenu
@@ -23,10 +26,11 @@ class Play(State):
     Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
     and player score.
     """
-    __spawn_radius = 200
-    __despawn_radius = 500
-
+    _spawn_radius = 200
+    _despawn_radius = 500
     _player_max_lives = 3
+
+    __max_combo = 10
 
     def _setup(self) -> None:
         "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
@@ -34,11 +38,14 @@ class Play(State):
         self.__parl_b: pg.Surface | None = None
         self.__base_color: pg.typing.ColorLike = "#000000"
         self.__background_tint: pg.typing.ColorLike = "#777777"
+        self.__score_limit = None
     
         self._object_spawn_delay = Timer(15)
         self._game_over_timer = Timer(40, False, self._game_over)
         self._respawn_timer = Timer(25, False, self._respawn_player)
         self._player_lives = self._player_max_lives
+        self._score = 0
+        self._point_combo = 1.0
 
 
     def __init__(self):
@@ -99,6 +106,7 @@ class Play(State):
 
         self.__base_color = self._level_data.base_color
         self.__background_tint = self._level_data.background_tint
+        self.__score_limit = self._level_data.score_range[1]
 
 
 
@@ -198,11 +206,37 @@ class Play(State):
 
 
 
+    def player_destroy_obstacle(self, obstacle: components.Obstacle):
+        if self._score >= 10000 or obstacle.has_health():
+            return
+        
+        if debug.Cheats.no_point_combo:
+            points = obstacle.points
+        else:
+            points = math.ceil(obstacle.points * self._point_combo)
+    
+        if self._point_combo > 1:
+            text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
+        else:
+            text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
+
+        self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
+        self._point_combo = min(self._point_combo*1.1, self.__max_combo)
+    
+
+    def reset_point_combo(self) -> None:
+        self._point_combo = 1.0
+
+
+
+
+
+
     
     def _delete_distant_objects(self) -> None:
         "Deletes objects that are beyond the despawn radius of the spaceship."
         for obj in self.spawned_entities.sprites():
-            if obj.distance_to(self.spaceship) > self.__despawn_radius:
+            if not obj.within_distance(self.spaceship, self._despawn_radius):
                 obj.force_kill()
 
 
@@ -252,7 +286,7 @@ class Play(State):
     
     def _player_respawn_pos(self) -> pg.Vector2:
         spaceship_pos = self.spaceship.position.xy
-        spawn_radius = self.__despawn_radius + 50
+        spawn_radius = self._despawn_radius + 50
         if self.spaceship.position == (0, 0):
             return pg.Vector2(0, -spawn_radius)
         else:
@@ -315,7 +349,7 @@ class Play(State):
 
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
-        distance_from_center = self.__spawn_radius+self.spaceship.get_speed()*0.3
+        distance_from_center = self._spawn_radius+self.spaceship.get_speed()*0.3
         return self.camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
     
 

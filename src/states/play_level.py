@@ -64,6 +64,7 @@ class PlayLevel(Play):
         self.spaceship.set_position((0, 0))
         self.spaceship.set_velocity(self.spaceship.get_rotation_vector()*10)
         self.spaceship.set_score_limit(self._level_data.score_range[1])
+        self._player_lives = self._player_max_lives
 
         self.camera.set_position((0, 0))
         self.camera.reset_motion()
@@ -352,8 +353,8 @@ class PlayLevel(Play):
     
 
     def __asteroid_density(self) -> int:
-        "The sum of the points of all asteroids loaded in."
-        return sum(asteroid.size for asteroid in self.asteroids if asteroid.distance_to(self.spaceship) < self.__visible_radius)
+        "The sum of the sizes of all asteroids loaded in."
+        return sum(asteroid.size for asteroid in self.asteroids if asteroid.within_distance(self.spaceship, self._spawn_radius))
 
 
     def __delete_offscreen_spawned_entities(self) -> None:
