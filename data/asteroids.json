@@ -4,7 +4,7 @@
         "collision_radius": 8,
         "hitbox_size": 12,
         "health": 1,
-        "points": 15,
+        "points": 10,
         "size_value": 1
     },
     "blue_medium": {
@@ -12,7 +12,7 @@
         "collision_radius": 16,
         "hitbox_size": 30,
         "health": 2,
-        "points": 30,
+        "points": 20,
         "size_value": 2,
         "subrock": "blue_small"
     },
@@ -23,7 +23,7 @@
         "collision_radius": 8,
         "hitbox_size": 12,
         "health": 1,
-        "points": 15,
+        "points": 10,
         "size_value": 1
     },
     "green_medium": {
@@ -32,7 +32,7 @@
         "collision_radius": 16,
         "hitbox_size": 30,
         "health": 2,
-        "points": 30,
+        "points": 20,
         "size_value": 2,
         "subrock": "green_small"
     },

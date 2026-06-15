@@ -3,7 +3,7 @@
     "parl_b": "backgrounds/space_background_big",
     "background_palette": "background/blue",
 
-    "asteroid_density": [12, 20],
+    "asteroid_density": [10, 20],
     "asteroid_speed": [2, 8],
     "asteroid_frequency": 0.2,
 

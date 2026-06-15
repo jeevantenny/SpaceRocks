@@ -33,6 +33,8 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
             super().__init__()
         
         self.position = pg.Vector2(position)
+        from src.states.play import Play
+        self.host_state: Play
 
 
     def __init_subclass__(cls):
