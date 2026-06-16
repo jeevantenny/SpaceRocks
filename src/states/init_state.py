@@ -35,7 +35,8 @@ class Initializer:
                     "SAVE FILE CORRUPTED",
                     "The previous save file got corrupted",
                     "Delete Save File<select>",
-                    text_color_a="#aa0055"
+                    text_color_a="#aa0055",
+                    confirm_action=data.delete_progress
                     ).add_to_stack(state_stack)
         
         else:
