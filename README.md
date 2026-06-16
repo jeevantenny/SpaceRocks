@@ -1,37 +1,47 @@
-# SpaceRocks (A Game inspired by Asteroids)
-**version 0.10.5**  
-*python-3.13.3*
+# SpaceRocks
+**Version:** 0.10.5 | **Environment:** Python 3.13.3 | **Engine:** Pygame-CE 2.5.6
 
-![SpaceRocks Gameplay](/demo/demo_clip_new.gif)
+![SpaceRocks Gameplay](/readme_assets/demo_clip_new.gif)
 
-I made this game to test out a new framework I made for any games I would want to make in the future using pygame.
-It takes a inspiration from Atari's Asteroids Arcade Game. You control a spaceship that can move forward, turn and
-shoot. Shoot asteroids to gain points.
+SpaceRocks is an arcade-style space shooter inspired by Atari's classic *Asteroids*, styled using a retro NES color palette and original pixel art assets. 
 
-The games uses the NES color palette to try and mimic the feel of an NES title. All assets used in the game are
-original apart from the two fonts, Upheaval and Tiny5. The Open Font License for the Tiny5 font can be found
-[here](/assets/fonts/OFL.txt).
+The primary objective of this project was to design and implement a decoupled, reusable **2D Game Engine Framework** built on top of Pygame-CE to handle scene management, asset loading, and system configurations for future development.
 
-## Features
-- Infinitely scrolling world in all directions
-- Soundfx volume scale with distance.
-- Game window is resizable and scales to insure the number of pixels on screen stay roughly the same.
-- Press **F11** to toggle fullscreen mode
-- Support for select number of controllers
-- Progress is not lost when application is closed. Player can continue from exactly where they left off.
-- Press **ALT** + **SHIFT** + **D** when in settings to clear user data.
+## ![](/readme_assets/heading_icon.png) Architectural & Technical Features
 
-## Controls
+- **Custom Engine Framework:** Implemented an event-driven state machine architecture to cleanly separate game states (Main Menu, Gameplay, Pause Menus, Settings).
+
+- **Framerate Independance:** Developed a way to keep framerate and tickrate completely independant of each other using two threads. Display and event handling run on main thread while game logic and file processing run in secondary thread. Making sure game runs at the same speed across various fps is now easier (compared to using delta-time)
+
+- **Dynamic Resolution Scaling:** Developed a robust window management system that maintains a constant surface area in terms of pixels no matter the size and aspect ratio. Supports fullscreen via toggling **F11** .
+
+- **State Persistence & Serialization:** Implemented background user-data tracking that automatically serializes game state to local disk storage, allowing the player to seamlessly continue their session after restarting the game.
+
+- **Distance-Attenuated Audio Engine:** Programmed a dynamic sound effects subsystem that scales audio volume and panning dynamically based on vector distances relative to the player's position.
+
+- **Cross-Platform Input Mapping:** Supports simultaneous polling for both keyboard layouts and standard game controller hardware mappings.
+
+## ![](/readme_assets/heading_icon.png) Controls
+
 ### Keyboard
-- **W** to move forward
-- **A**-**D** to turn
-- **SPACE** to shoot
+* `W` : Move Forwards
+* `A` / `D` : Turn Left / Right
+* `SPACE` : Primary Weapon Fire
 
 ### Controller
-- **Right Trigger**/**Bumper** to move forward
-- **Left Stick**/**D-pad** to turn
-- **A** to shoot
+* `RT` / `RB` : Move Forwards
+* `Left Stick` / `D-Pad` : Turn Left / Right
+* `A Button` : Primary Weapon Fire
 
+### System Shortcuts
+* `F11` : Toggle Fullscreen Mode
+* `ALT` + `SHIFT` + `D` : Trigger User Data Factory Reset (Settings Menu Only)
 
-## External Libraries
-`pygame-ce - 2.5.6`
+## ![](/readme_assets/heading_icon.png) Engineering Challenges & Learnings
+
+### 1. Cross-Platform Window Handling & Event Loops
+* **The Problem:** Encountered variations in window focus, scaling behaviors, and event handling loops when testing across different host operating systems. 
+* **The Solution:** Isolated window mutation hooks inside a centralized Display Manager subsystem, leveraging Pygame-CE's window management APIs to normalize system-level resizing boundaries and avoid unexpected thread locks during scaling events.
+
+### 2. Assets & Compliance
+All graphical and audio assets are original works custom-built for this runtime baseline, with the exception of the open-source typography integrations (`Upheaval` and `Tiny5`). The Open Font License documentation for the `Tiny5` font can be found [here](/assets/fonts/OFL.txt).
