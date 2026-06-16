@@ -378,7 +378,7 @@ class PlayLevel(Play):
             self.__set_score()
             data.save_highscore(self.highscore)
 
-            if self.spaceship.health or self._player_lives:
+            if self.is_saving_progress:
                 self._save_progress()
             else:
                 data.delete_progress()

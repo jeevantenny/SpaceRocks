@@ -40,6 +40,7 @@ class Cheats():
     ignore_colorkey = False
 
     test_state = None
+    test_state_args = ()
     test_level = None
 
     demo_mode = False
@@ -64,3 +65,7 @@ def disable_cheats():
     for attr in dir(Cheats):
         if not attr.startswith("__") and isinstance(getattr(Cheats, attr), bool):
             setattr(Cheats, attr, False)
+    
+    Cheats.test_state = None
+    Cheats.test_state_args = ()
+    Cheats.test_level = None
