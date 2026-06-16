@@ -209,7 +209,7 @@ class Play(State):
 
 
     def player_destroy_obstacle(self, obstacle: components.Obstacle):
-        if self._score >= 10000 or obstacle.has_health():
+        if self._score >= self.__score_limit or obstacle.has_health():
             return
         
         if debug.Cheats.no_point_combo:
@@ -223,7 +223,8 @@ class Play(State):
             text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
         
         self.add_points(points)
-        self._point_combo = min(self._point_combo*1.1, self.__max_combo)
+        if not debug.Cheats.no_point_combo:
+            self._point_combo = min(self._point_combo*1.1, self.__max_combo)
 
         self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
     

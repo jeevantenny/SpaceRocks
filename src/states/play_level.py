@@ -32,9 +32,6 @@ class PlayLevel(Play):
     Plays a through a level by passing the level name as the argument. Once the level is complete
     the player will move on to the next level as defined in the level data of the current level.
     """
-    __score_limit = 99999
-
-    _player_max_lives = 3
 
     def __init__(self, level_name: str):
         "The main initializer that starts a new game on a specific level. Mainly the first level."
@@ -75,7 +72,6 @@ class PlayLevel(Play):
         self.__hud_timer.restart()
         self._object_spawn_delay.restart()
 
-        self.__display_score = self._score
         self.__level_cleared = False
 
         ShowText(level_name.replace("_", " ").upper()).add_to_stack(self.state_stack)
@@ -117,7 +113,7 @@ class PlayLevel(Play):
 
         if debug.DEBUG_MODE:
             if inputs.keyboard_mouse.tap_keys[pg.K_b]:
-                self._score += 1000
+                self.add_points(100)
 
             if inputs.keyboard_mouse.tap_keys[pg.K_t]:
                 self.reinit_next_level(self._level_data.next_level)
@@ -154,7 +150,8 @@ class PlayLevel(Play):
 
 
     def debug_info(self) -> str | None:
-        return f"level: {self._level_data.level_name}, lives: {self._player_lives}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, combo: {self._point_combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"""level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})
+score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives}"""
 
 
 
@@ -370,7 +367,7 @@ class PlayLevel(Play):
 
     def __set_score(self) -> None:
         "Updates the score to match the value stored in the spaceship object. Changes highscore if score is larger."
-        self.__display_score = min(self._score, self.__score_limit)
+        self.__display_score = self._score
         self.highscore = max(self.highscore, self.__display_score)
 
 
