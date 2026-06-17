@@ -1,8 +1,7 @@
 # SpaceRocks
 **Version:** 0.10.5 | **Environment:** Python 3.13 | **Engine:** Pygame-CE 2.5.6
 
-<video autoplay muted src="./readme_assets/demo_clip1.mp4" width=800>
-</video>
+![Gameplay](./readme_assets/demo_clip_new.gif)
 
 SpaceRocks is an arcade-style space shooter inspired by Atari's classic *Asteroids*, styled using a retro NES color palette and original pixel art assets. 
 
