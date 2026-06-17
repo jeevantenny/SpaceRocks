@@ -1,7 +1,8 @@
 # SpaceRocks
-**Version:** 0.10.5 | **Environment:** Python 3.13.3 | **Engine:** Pygame-CE 2.5.6
+**Version:** 0.10.5 | **Environment:** Python 3.13 | **Engine:** Pygame-CE 2.5.6
 
-![SpaceRocks Gameplay](/readme_assets/demo_clip_new.gif)
+<video autoplay muted src="./readme_assets/demo_clip1.mp4" width=800>
+</video>
 
 SpaceRocks is an arcade-style space shooter inspired by Atari's classic *Asteroids*, styled using a retro NES color palette and original pixel art assets. 
 
@@ -37,11 +38,5 @@ The primary objective of this project was to design and implement a decoupled, r
 * `F11` : Toggle Fullscreen Mode
 * `ALT` + `SHIFT` + `D` : Trigger User Data Factory Reset (Settings Menu Only)
 
-## ![](/readme_assets/heading_icon.png) Engineering Challenges & Learnings
-
-### 1. Cross-Platform Window Handling & Event Loops
-* **The Problem:** Encountered variations in window focus, scaling behaviors, and event handling loops when testing across different host operating systems. 
-* **The Solution:** Isolated window mutation hooks inside a centralized Display Manager subsystem, leveraging Pygame-CE's window management APIs to normalize system-level resizing boundaries and avoid unexpected thread locks during scaling events.
-
-### 2. Assets & Compliance
-All graphical and audio assets are original works custom-built for this runtime baseline, with the exception of the open-source typography integrations (`Upheaval` and `Tiny5`). The Open Font License documentation for the `Tiny5` font can be found [here](/assets/fonts/OFL.txt).
+## ![](/readme_assets/heading_icon.png) Assets & Compliance
+All graphical and audio assets are original, with the exception of the open-source typography integrations (`Upheaval` and `Tiny5`). The Open Font License documentation for the `Tiny5` font can be found [here](/assets/fonts/OFL.txt).
