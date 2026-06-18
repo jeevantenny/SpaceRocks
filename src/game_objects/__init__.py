@@ -23,6 +23,7 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
     progress_save_key: str | None = None
     distance_based_sound=True
     ignore_camera_rotation=False
+    can_despawn=True
 
     __object_type_list: dict[str, type["GameObject"]] = {}
 

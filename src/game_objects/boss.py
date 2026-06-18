@@ -4,7 +4,7 @@ import random
 from src.custom_types import Timer
 from src.file_processing import assets
 
-from .components import ObjectTexture, ObjectHitbox, ObjectCollision
+from .components import ObjectTexture, Obstacle
 from .spaceship import PlayerShip
 from .projectiles import EnemyBullet
 
@@ -13,13 +13,17 @@ from .projectiles import EnemyBullet
 
 
 
-class BossShip(ObjectTexture, ObjectHitbox, ObjectCollision):
+class BossShip(Obstacle, ObjectTexture):
     ignore_camera_rotation=True
+    can_despawn=False
+
     _max_speed = 500
+
     def __init__(self, position: pg.typing.Point):
         texture = assets.colorkey_surface((256, 256))
         pg.draw.circle(texture, "#338888", (128, 128), 128)
         super().__init__(
+            health=99999999,
             position=position,
             texture=texture,
             radius=128,

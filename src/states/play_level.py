@@ -18,7 +18,6 @@ from src.ui import font, hud
 
 from .menus import GameOverScreen
 from .visuals import ShowText
-from .info_states import PowerupInfo
 from .play import Play
 
 
@@ -229,11 +228,6 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
     def _freeze_gameplay(self):
         return super()._freeze_gameplay() or not self.__lvl_transition_timer.complete
-
-
-
-    def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
-        PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
 
     
     

@@ -171,6 +171,7 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 class PlayerShip(Spaceship):
     distance_based_sound=False
     progress_save_key="player_spaceship"
+    can_despawn=False
 
     def __init__(self, position):
         super().__init__(position)

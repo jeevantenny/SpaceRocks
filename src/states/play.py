@@ -13,10 +13,11 @@ from src.game_objects import (
 )
 
 from src.ui import font
+from src.game_errors import SaveFileError
 
 from . import State
 from .menus import PauseMenu
-from .visuals import ShowText
+from .info_states import PowerupInfo
 
 
 
@@ -28,6 +29,7 @@ class Play(State):
     """
     _spawn_radius = 200
     _despawn_radius = 500
+    _player_respawn_radius = 250
     _player_max_lives = 3
 
     __max_combo = 10
@@ -60,7 +62,7 @@ class Play(State):
 
     @property
     def is_saving_progress(self) -> bool:
-        return self.__save_progress and self.spaceship.score and self._player_lives
+        return self.__save_progress and self._score and self._player_lives > 0
 
 
     @classmethod
@@ -127,6 +129,7 @@ class Play(State):
         must have been called beforehand.
         """
         object_dict = {}
+        self.spaceship = None
 
         for entity_data in entity_data:
             entity = GameObject.init_from_data(entity_data)
@@ -139,6 +142,10 @@ class Play(State):
                 self.spaceship = entity
 
             object_dict[entity_data["id"]] = entity
+        
+        if self.spaceship is None:
+            self.can_save_progress(False)
+            raise SaveFileError("Could not get player ship from save data")
         
         for entity in self.entities.sprites():
             entity.post_init_from_data(object_dict)
@@ -189,7 +196,7 @@ class Play(State):
             for obj in self.asteroids.sprites() + self.enemies.sprites():
                 if not obj.has_health():
                     obj.update()
-        else:
+        elif self._player_lives:
             self._game_loop()
 
         self._join_sound_queue(self.entities.clear_sound_queue())
@@ -211,7 +218,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, combo: {self.spaceship.combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
 
 
     def add_points(self, points: int) -> None:
@@ -241,6 +248,10 @@ class Play(State):
 
     def reset_point_combo(self) -> None:
         self._point_combo = 1.0
+        
+
+    def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
+        PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
 
 
 
@@ -251,7 +262,7 @@ class Play(State):
     def _delete_distant_objects(self) -> None:
         "Deletes objects that are beyond the despawn radius of the spaceship."
         for obj in self.spawned_entities.sprites():
-            if not obj.within_distance(self.spaceship, self._despawn_radius):
+            if obj.can_despawn and not obj.within_distance(self.spaceship, self._despawn_radius):
                 obj.force_kill()
 
 
@@ -261,7 +272,7 @@ class Play(State):
         self.camera.update()
 
 
-    def _freeze_gameplay(self) -> None:
+    def _freeze_gameplay(self) -> bool:
         return not self._respawn_timer.complete or not self._game_over_timer.complete
 
 
@@ -270,7 +281,12 @@ class Play(State):
         self._update_game_objects()
         self._delete_distant_objects()
 
-        if not self.spaceship.health:
+
+        if (not self.spaceship.health
+            and self._player_lives > 0
+            and self._respawn_timer.complete
+            and self._game_over_timer.complete):
+
             self._player_lives -= 1
             self.camera.clear_velocity()
 
@@ -300,7 +316,7 @@ class Play(State):
     
     def _player_respawn_pos(self) -> pg.Vector2:
         spaceship_pos = self.spaceship.position.xy
-        spawn_radius = self._despawn_radius + 50
+        spawn_radius = self._player_respawn_radius
         if self.spaceship.position == (0, 0):
             return pg.Vector2(0, -spawn_radius)
         else:
