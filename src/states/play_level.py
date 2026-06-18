@@ -62,6 +62,7 @@ class PlayLevel(Play):
         self.spaceship.set_velocity(self.spaceship.get_rotation_vector()*10)
         self._score = self._level_data.score_range[0]
         self._player_lives = self._player_max_lives
+        self.reset_point_combo()
 
         # Reset Camera
         self.camera.set_position((0, 0))
@@ -157,7 +158,7 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
 
     def _draw_hud(self, surface: pg.Surface) -> None:
-        if not self.is_top_state() and not self.state_stack[-2] is self:
+        if not self.is_top_state() and not self.state_stack.top_state.prev_state is self:
             return
 
         if not self.__hud_timer.complete:

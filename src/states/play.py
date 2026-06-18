@@ -286,6 +286,7 @@ class Play(State):
         self.spaceship.invincibility_frames()
 
         self.powerups.kill_all()
+        self.reset_point_combo()
     
     def _player_respawn_pos(self) -> pg.Vector2:
         spaceship_pos = self.spaceship.position.xy
