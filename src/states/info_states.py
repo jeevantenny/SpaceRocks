@@ -1,4 +1,5 @@
 import pygame as pg
+from typing import Callable
 
 from src.ui import font, blit_to_center
 from src.file_processing import data
@@ -11,37 +12,55 @@ from .visuals import add_background_tint
 
 
 
-class DemoState(State):
-    def userinput(self, inputs):
-        if inputs.keyboard_mouse.tap_keys.get(pg.K_RETURN):
-            self.state_stack.pop()
 
+class InfoState(State):
+    def __init__(self,
+                 title: str, subtitle: str, prompt = "Continue<select>",
+                 background_color="#000000",
+                 text_color_a="#dd6644", text_color_b="#550011",
+                 confirm_action: Callable[[], None] = None,
+                 can_escape=False):
+        super().__init__()
+        self.title = title
+        self.__subtitle = subtitle
+        self.__prompt = prompt
+        self.__background_color = background_color
+        self.__text_colors = text_color_a, text_color_b
+        self.__confirm_action = confirm_action
+        self.__can_escape = can_escape
+    
+    def userinput(self, inputs):
+        if inputs.check_input("select"):
+            self.state_stack.pop()
+            if self.__confirm_action is not None:
+                self.__confirm_action()
+        
+        elif self.__can_escape and inputs.check_input("back"):
+            self.state_stack.pop()
 
 
     def debug_info(self):
-        return "Press Enter to start"
-    
-
-    def draw(self, surface, lerp_amount=0):
-        surface.fill("black")
-        blit_to_center(font.large_font.render("DEMO MODE"), surface)
-        blit_to_center(font.small_font.render("Press enter to start"), surface, (0, 30))
-
-
-
-
-
-class SaveFileCorrupted(State):
-    def userinput(self, inputs):
-        if inputs.check_input("select"):
-            data.delete_progress()
-            self.state_stack.pop()
+        return self.__prompt
     
     def draw(self, surface, lerp_amount=0):
-        surface.fill("black")
-        blit_to_center(font.large_font.render("SAVE FILE CORRUPTED", color_a="#aa0055"), surface, (0, -10))
-        blit_to_center(font.small_font.render("The previous save file got corrupted", color_a="#aa0055"), surface, (0, 10))
-        blit_to_center(font.icon_font.render("Delete Save File<select>"), surface, (0, 35))
+        surface.fill(self.__background_color)
+        if self.__subtitle:
+            offset = -10
+        else:
+            offset = -5
+
+        blit_to_center(font.large_font.render(self.title, 1, *self.__text_colors), surface, (0, offset))
+        offset += 20
+        if self.__subtitle:
+            blit_to_center(font.small_font.render(self.__subtitle, 1, *self.__text_colors), surface, (0, offset))
+            offset += 30
+        else:
+            offset += 15
+        
+        blit_to_center(font.icon_font.render(self.__prompt), surface, (0, offset))
+
+        if self.__can_escape:
+            surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
 
 
 
@@ -68,29 +87,6 @@ class PowerupInfo(State):
 
 
 
-class NoMoreLevels(State):
-    def userinput(self, inputs):
-        if inputs.keyboard_mouse.tap_keys.get(pg.K_RETURN):
-            self.state_stack.quit()
-            data.delete_progress()
-
-            from .init_state import Initializer
-            Initializer.main_title_screen(self.state_stack)
-
-
-    def draw(self, surface, lerp_amount=0):
-        surface.fill("black")
-        blit_to_center(font.large_font.render("THAT WAS THE LAST LEVEL"), surface)
-        blit_to_center(font.small_font.render("More levels will be developed -- Press enter to go to main menu"), surface, (0, 30))
-        blit_to_center(font.small_font.render("Thanks for playing :)"), surface, (0, 40))
-
-
-    def debug_info(self):
-        return "Thanks for checking out debug mode!"
-
-
-
-
 class DeleteUserDataOption(State):
 
     def userinput(self, inputs):
@@ -103,7 +99,16 @@ class DeleteUserDataOption(State):
         if hold_keys[pg.KMOD_ALT] and hold_keys[pg.KMOD_SHIFT] and tap_keys[pg.K_d]:
             data.delete_user_data()
             self.state_stack.force_quit()
-            self.state_stack.push(UserDataDeleted())
+
+            from .init_state import Initializer
+
+            InfoState(
+                "USER DATA DELETED",
+                "",
+                "Main Menu<select>",
+                text_color_a="#aa0055",
+                confirm_action=lambda: Initializer.main_title_screen(self.state_stack)
+                ).add_to_stack(self.state_stack)
 
 
     
@@ -113,26 +118,3 @@ class DeleteUserDataOption(State):
         blit_to_center(font.small_font.render("Are you sure you want to delete all user data?", color_a="#aa0055"), surface, (0, 5))
         blit_to_center(font.small_font.render("If so press ALT + SHIFT + D", color_a="#aa0055"), surface, (0, 15))
         blit_to_center(font.icon_font.render("Back<back>"), surface, (0, 35))
-
-
-
-
-
-class UserDataDeleted(State):
-    def __init__(self):
-        super().__init__()
-        self.__info_text = pg.Surface((1, 1))
-
-    def userinput(self, inputs):
-        if inputs.check_input("select"):
-            self.state_stack.pop()
-            from .init_state import Initializer
-            Initializer.main_title_screen(self.state_stack)
-        
-        self.__info_text = font.icon_font.render("Press<select> to go to main menu")
-    
-
-    def draw(self, surface, lerp_amount=0):
-        surface.fill("black")
-        blit_to_center(font.large_font.render("USER DATA DELETED", color_a="#aa0055"), surface)
-        blit_to_center(self.__info_text, surface, (0, 30))

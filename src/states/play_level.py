@@ -381,7 +381,7 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
             self.__set_score()
             data.save_highscore(self.highscore)
 
-            if self.spaceship.health or self._player_lives:
+            if self.is_saving_progress:
                 self._save_progress()
             else:
                 data.delete_progress()

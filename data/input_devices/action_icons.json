@@ -6,6 +6,7 @@
         "right": "K_d",
         "pause": "K_esc",
         "settings": "K_q",
+        "quit": "K_x",
 
         "ship_forward": "K_w",
         "shoot": "K_space"
@@ -21,6 +22,7 @@
             "right": "K_d",
             "pause": "sw_plus",
             "settings": "sw_y",
+            "quit": "sw_x",
 
             "ship_forward": "sw_r_bumper",
             "shoot": "sw_a"
@@ -31,6 +33,7 @@
             "back": "sw_al_down",
             "pause": "sw_minus",
             "settings": "sw_al_left",
+            "quit": "sw_al_up",
             "shoot": "sw_al_right"
         },
         "Nintendo Switch Joy-Con (R)": {

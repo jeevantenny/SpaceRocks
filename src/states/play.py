@@ -39,6 +39,7 @@ class Play(State):
         self.__base_color: pg.typing.ColorLike = "#000000"
         self.__background_tint: pg.typing.ColorLike = "#777777"
         self.__score_limit = None
+        self.__save_progress = True
     
         self._object_spawn_delay = Timer(15)
         self._game_over_timer = Timer(40, False, self._game_over)
@@ -55,6 +56,11 @@ class Play(State):
 
         self.spaceship = spaceship.PlayerShip((0, 0))
         self.entities.add(self.spaceship)
+    
+
+    @property
+    def is_saving_progress(self) -> bool:
+        return self.__save_progress and self.spaceship.score and self._player_lives
 
 
     @classmethod
@@ -74,6 +80,10 @@ class Play(State):
         self._player_lives = save_data.player_lives
 
         return self
+    
+
+    def can_save_progress(self, save_progress: bool) -> None:
+        self.__save_progress = save_progress
     
 
     def _setup_game_objects(self) -> None:
@@ -166,7 +176,7 @@ class Play(State):
 
         self.spaceship.userinput(inputs)
 
-        if self.spaceship.health and inputs.check_input("pause"):
+        if self._player_lives and inputs.check_input("pause"):
             self._pause_game()
 
 

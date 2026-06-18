@@ -241,6 +241,18 @@
             "value": "y"
         }
     ],
+    "quit": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "x",
+            "type": "tap"
+        },
+        {
+            "input_device": "controller",
+            "type": "tap_button",
+            "value": "x"
+        }
+    ],
 
 
 

@@ -18,7 +18,7 @@ class Initializer:
     def __init__(self, state_stack: StateStack):
         state_stack.quit()
         if debug.Cheats.test_state is not None:
-            find_subclass_by_name(State, debug.Cheats.test_state)().add_to_stack(state_stack)
+            find_subclass_by_name(State, debug.Cheats.test_state)(*debug.Cheats.test_state_args).add_to_stack(state_stack)
             return
 
         try:
@@ -31,13 +31,22 @@ class Initializer:
         if save_data is None:
             self.main_title_screen(state_stack)
             if save_error:
-                info_states.SaveFileCorrupted().add_to_stack(state_stack)
+                info_states.InfoState(
+                    "SAVE FILE CORRUPTED",
+                    "The previous save file got corrupted",
+                    "Delete Save File<select>",
+                    text_color_a="#aa0055",
+                    confirm_action=data.delete_progress
+                    ).add_to_stack(state_stack)
         
         else:
             self.continue_from_save(state_stack, save_data)
 
         if debug.Cheats.demo_mode:
-            info_states.DemoState().add_to_stack(state_stack)
+            info_states.InfoState(
+                "DEMO MODE",
+                "User data is not saved or loaded from previous save"
+                ).add_to_stack(state_stack)
     
 
     @classmethod

@@ -1,11 +1,19 @@
 name: Build Windows
-# Test 
 
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "assets/**"
+      - "data/**"
+
   pull_request:
     branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "assets/**"
+      - "data/**"
 
 permissions:
   contents: read
