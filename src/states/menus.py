@@ -197,6 +197,7 @@ class Settings(State):
 
         self.__controller_rumble = elements.Toggle(data.get_setting("controller_rumble"), "Controller Rumble")
         self.__motion_blur = elements.Toggle(data.get_setting("motion_blur"), "Motion blur")
+        self.__open_fullscreen = elements.Toggle(data.get_setting("open_fullscreen"), "Start game in fullscreen")
         self.__show_version_num = elements.Toggle(data.get_setting("show_version_number"), "Show version number")
 
         self.__elements = elements.ElementList([
@@ -205,7 +206,8 @@ class Settings(State):
             self.__controller_rumble,
             self.__motion_blur,
             self.__scale_blur,
-            elements.UIPadding(15),
+            elements.UIPadding(8),
+            self.__open_fullscreen,
             self.__show_version_num
         ], wrap_list=True)
 
@@ -255,9 +257,10 @@ class Settings(State):
         data.update_settings(
             soundfx_volume=round(self.__soundfx.value*0.01, 2),
             controller_rumble=self.__controller_rumble.on,
-            show_version_number=self.__show_version_num.on,
             motion_blur=self.__motion_blur.on,
-            scale_blur=self.__scale_blur.on
+            scale_blur=self.__scale_blur.on,
+            open_fullscreen=self.__open_fullscreen.on,
+            show_version_number=self.__show_version_num.on
         )
 
         data.save_settings()

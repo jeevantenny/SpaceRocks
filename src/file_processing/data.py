@@ -29,6 +29,7 @@ DEFAULT_SETTINGS = {
     "controller_rumble": True,
     "motion_blur": True,
     "scale_blur": False,
+    "open_fullscreen": False,
 
     "show_version_number": True
 }

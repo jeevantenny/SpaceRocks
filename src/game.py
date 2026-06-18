@@ -57,7 +57,7 @@ class GameEngine:
 
     def __setup_engine(self) -> None:
         "Called by the initializer to initialize the object."
-        self.run = True
+        self.run = False
 
         self.window = None
         self.window_surface = None
@@ -115,19 +115,20 @@ class GameEngine:
 
         if not self.__setup:
             raise RuntimeError("Cannot start game because an exception has occurred during setup.")
+        
+        self.run = True
+        data.load_settings()
+        self.__fullscreen = data.get_setting("open_fullscreen")
 
-        self.window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE, resizable=True)
+        # Setup Game Window
+        self.window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE, resizable=True, fullscreen_desktop=self.__fullscreen)
         self.window_surface = self.window.get_surface()
         self.window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
         self.window.minimum_size = WINDOW_MINIUM_SIZE
 
-        if self.__fullscreen:
-            self.window.set_fullscreen(True)
-
+        # Initialize states
         font.init()
-        data.load_settings()
         self.debug_font = pg.font.SysFont("consolas", 13)
-
         init_state.Initializer(self.state_stack)
 
         # Starts game loop that processes game logic
