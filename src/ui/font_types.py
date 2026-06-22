@@ -29,7 +29,7 @@ class Font:
             return self.__render_internal(text, size, color_a, color_b)
 
 
-    @lru_cache(8)
+    @lru_cache(32)
     def __render_cached(self, text, size, color_a, color_b) -> pg.Surface:
         return self.__render_internal(text, size, color_a, color_b)
 
