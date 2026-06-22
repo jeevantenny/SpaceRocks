@@ -32,7 +32,7 @@ class Play(State):
     _player_respawn_radius = 250
     _player_max_lives = 3
 
-    __max_combo = 10
+    __max_combo = 30
 
     def _setup(self) -> None:
         "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
