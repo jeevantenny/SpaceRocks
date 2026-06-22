@@ -146,7 +146,9 @@ class PlayLevel(Play):
             self._draw_entities(surface, lerp_amount)# if self.spaceship.health else 1)
 
 
-        if self.spaceship.health or self._player_lives:
+        if ((self.spaceship.health or self._player_lives)
+            and (self.is_top_state() or len(self.state_stack) == 3)):
+
             self._draw_hud(surface)
 
 
@@ -159,9 +161,6 @@ class PlayLevel(Play):
 
 
     def _draw_hud(self, surface: pg.Surface) -> None:
-        if not self.is_top_state() and not self.state_stack[-2] is self:
-            return
-
         if not self.__hud_timer.complete:
             entrance_offset = 80*(self.__hud_timer.countdown*0.1)**2
         else:
@@ -236,7 +235,12 @@ class PlayLevel(Play):
     
     def _game_over(self) -> None:
         "Updates the score and shows the game over screen."
-        self.__set_score()
+        if debug.Cheats.instant_restart:
+            self.state_stack.quit()
+            from src.states.init_state import Initializer
+            Initializer.main_gameplay(self.state_stack)
+            return
+
         for obj in self.entities.sprites():
             if isinstance(obj, components.ObjectVelocity):
                 obj.set_velocity((0, 0))
@@ -244,6 +248,7 @@ class PlayLevel(Play):
             if isinstance(obj, components.ObjectTexture):
                 obj.set_angular_vel(0)
 
+        self.__set_score()
         GameOverScreen(self._level_data.level_name, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
 
 

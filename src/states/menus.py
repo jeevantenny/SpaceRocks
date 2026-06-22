@@ -12,7 +12,7 @@ from src.ui import blit_to_center, font, effects, elements, hud
 
 from . import State, StateStack
 from .info_states import InfoState, DeleteUserDataOption
-from .visuals import add_background_tint
+from .visuals import BackgroundTint, add_background_tint
 
 
 
@@ -44,6 +44,9 @@ class TitleScreen(State):
         # race condition from the drawing thread.
         self.__info_text = pg.Surface((1, 1))
 
+        from .play import Play
+        self.prev_state: Play
+
 
 
 
@@ -68,7 +71,8 @@ class TitleScreen(State):
                     self.title.set_effect("main_exit")
                 
                 if inputs.check_input("settings"):
-                    Settings("#4E6382").add_to_stack(self.state_stack)
+                    self.state_stack.push(BackgroundTint("#4E6382"))
+                    self.state_stack.push(Settings())
     
         else:
             self.prev_state.spaceship.userinput(inputs)
@@ -124,39 +128,32 @@ class TitleScreen(State):
 
 class PauseMenu(State):
     "Shows the pause menu with the game title. This freezes the gameplay in the previous state."
-    def __init__(self, background_tint_color: pg.typing.ColorLike = "#777777"):
+    def __init__(self):
         super().__init__()
 
         self.title = effects.AnimatedText(config.WINDOW_CAPTION, "main_entrance_b")
         self.__exit_menu = False
-        self.__tint_color = background_tint_color
 
         # Assigned default values to avoid raising Attribute Errors.
         self.__info_text = pg.Surface((1, 1))
-
-        from .play import Play
-        self.prev_state: Play
 
 
 
     def userinput(self, inputs):
         if inputs.check_input("settings"):
-            Settings(self.__tint_color).add_to_stack(self.state_stack)
+            self.state_stack.push(Settings())
         elif self.title.animations_complete:
             if inputs.check_input("pause") or inputs.check_input("select") or inputs.check_input("back"):
                 self.title.set_effect("main_exit")
                 self.__exit_menu = True
 
             elif inputs.check_input("quit"):
-                if self.prev_state.is_saving_progress:
-                    InfoState(
-                        "Quit to Main Menu",
-                        "Are you sure you want to quit?",
-                        confirm_action=self.quit_to_main_menu,
-                        can_escape=True
-                    ).add_to_stack(self.state_stack)
-                else:
-                    self.quit_to_main_menu()
+                InfoState(
+                    "Quit to Main Menu",
+                    "Are you sure you want to quit?",
+                    confirm_action=self.quit_to_main_menu,
+                    can_escape=True
+                ).add_to_stack(self.state_stack)
                 
 
         
@@ -180,8 +177,6 @@ class PauseMenu(State):
         self.prev_state.draw(surface, 1)
         if not self.is_top_state():
             return
-
-        add_background_tint(surface, self.__tint_color)
         
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
@@ -196,8 +191,8 @@ class PauseMenu(State):
 
     def quit_to_main_menu(self):
         from .init_state import Initializer
-        self.prev_state.can_save_progress(False)
         self.state_stack.quit()
+        data.delete_progress()
         Initializer.main_title_screen(self.state_stack)
 
     
@@ -207,7 +202,7 @@ class PauseMenu(State):
 
 
 class Settings(State):
-    def __init__(self, background_tint_color: pg.typing.ColorLike = "#777777"):
+    def __init__(self):
         super().__init__()
         settings_elements = [
             elements.Slider("Sound FX", (0, 100), int(data.get_setting("soundfx_volume")*100), 10,
@@ -228,9 +223,8 @@ class Settings(State):
         ]
 
         self.__elements = elements.ElementList(settings_elements, wrap_list=True)
-
         self.__background: pg.Surface | None = None
-        self.__tint_color = background_tint_color
+
 
     def userinput(self, inputs):
         if not debug.Cheats.demo_mode:
@@ -251,7 +245,6 @@ class Settings(State):
     
     def draw(self, surface, lerp_amount=0):
         self.__draw_background(surface)
-        add_background_tint(surface, self.__tint_color)
         # self.prev_state.draw(surface)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
@@ -293,7 +286,7 @@ class DebugMenu(State):
             elements.Toggle("no_obstacles", debug.Cheats.no_obstacles, lambda x: setattr(debug.Cheats, "no_obstacles", x)),
             elements.Toggle("no_point_combo", debug.Cheats.no_point_combo, lambda x: setattr(debug.Cheats, "no_point_combo", x)),
             elements.Toggle("show_bounding_boxes", debug.Cheats.show_bounding_boxes, lambda x: setattr(debug.Cheats, "show_bounding_boxes", x)),
-            elements.Toggle("instance_respawn", debug.Cheats.instance_respawn, lambda x: setattr(debug.Cheats, "instance_respawn", x)),
+            elements.Toggle("instant_restart", debug.Cheats.instant_restart, lambda x: setattr(debug.Cheats, "instant_restart", x)),
             elements.Toggle("no_lerp", debug.Cheats.no_lerp, lambda x: setattr(debug.Cheats, "no_lerp", x)),
         ], wrap_list=True)
 
@@ -342,7 +335,7 @@ class GameOverScreen(State):
         self.title.update()
         if self.__timer == 0:
             self.state_stack.pop()
-            ShowScore(self.__level_name, self.__score_data).add_to_stack(self.state_stack)
+            self.state_stack.push(ShowScore(self.__level_name, self.__score_data))
         else:
             self.__timer -= 1
 
@@ -387,7 +380,7 @@ class ShowScore(State):
 
                 # Empties the state stack and adds a new Play state.
                 self.state_stack.quit()
-                PlayLevel(get_start_level()).add_to_stack(self.state_stack)
+                self.state_stack.push(PlayLevel(get_start_level()))
         
         if not self.__timer and inputs.check_input("quit"):
             from .init_state import Initializer
