@@ -15,7 +15,7 @@ class Cheats():
     **no_obstacles** - prevents spawning of obstacles like asteroid or enemies  
     **no_point_combo** - player will gain no additional points from consecutive hits on asteroids  
     **show_bounding_boxes** - shows bounding boxes for entities  
-    **instant_respawn** - UNIMPLEMENTED  
+    **instant_restart** - UNIMPLEMENTED  
     **no_lerp** - Turns of frame interpolation
     **ignore_colorkey** - turns of colorkey transparency, this also turns off background parallax
     
@@ -35,7 +35,7 @@ class Cheats():
     no_obstacles = False
     no_point_combo = False
     show_bounding_boxes = False
-    instance_respawn = False
+    instant_restart = False
     no_lerp = False
     ignore_colorkey = False
 

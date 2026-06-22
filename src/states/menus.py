@@ -235,6 +235,9 @@ class Settings(State):
     def userinput(self, inputs):
         if not debug.Cheats.demo_mode:
             option_to_delete_user_data(self.state_stack, inputs)
+        
+        if debug.DEBUG_MODE and inputs.check_input("settings"):
+            self.state_stack.push(DebugMenu())
 
         if inputs.check_input("back"):
             self.state_stack.pop()
@@ -270,9 +273,46 @@ class Settings(State):
             surface.blit(self.__background)
 
 
-
     def quit(self):
         data.save_settings()
+
+
+
+
+
+
+
+
+
+class DebugMenu(State):
+    def __init__(self):
+        super().__init__()
+
+        self.__elements = elements.ElementList([
+            elements.Toggle("invincible", debug.Cheats.invincible, lambda x: setattr(debug.Cheats, "invincible", x)),
+            elements.Toggle("no_obstacles", debug.Cheats.no_obstacles, lambda x: setattr(debug.Cheats, "no_obstacles", x)),
+            elements.Toggle("no_point_combo", debug.Cheats.no_point_combo, lambda x: setattr(debug.Cheats, "no_point_combo", x)),
+            elements.Toggle("show_bounding_boxes", debug.Cheats.show_bounding_boxes, lambda x: setattr(debug.Cheats, "show_bounding_boxes", x)),
+            elements.Toggle("instance_respawn", debug.Cheats.instance_respawn, lambda x: setattr(debug.Cheats, "instance_respawn", x)),
+            elements.Toggle("no_lerp", debug.Cheats.no_lerp, lambda x: setattr(debug.Cheats, "no_lerp", x)),
+        ], wrap_list=True)
+
+
+    def userinput(self, inputs):
+        if inputs.check_input("back"):
+            self.state_stack.pop()
+            return
+
+        self.__elements.userinput(inputs)
+    
+    def update(self):
+        self.__elements.update()
+    
+    def draw(self, surface, lerp_amount=0):
+        surface.fill("black")
+        surface.blit(font.large_font.render("Debug Menu"), (20, 20))
+        self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
+        surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
 
 
 
