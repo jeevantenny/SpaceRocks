@@ -209,28 +209,25 @@ class PauseMenu(State):
 class Settings(State):
     def __init__(self, background_tint_color: pg.typing.ColorLike = "#777777"):
         super().__init__()
-        self.__soundfx = elements.Slider((0, 100), int(data.get_setting("soundfx_volume")*100), 10, "Sound FX")
-        self.__soundfx.on_slide(lambda x: data.update_settings(soundfx_volume=round(x*0.01, 2)))
+        settings_elements = [
+            elements.Slider("Sound FX", (0, 100), int(data.get_setting("soundfx_volume")*100), 10,
+                            lambda x: data.update_settings(soundfx_volume=round(x*0.01, 2))),
+            elements.Slider("Music", (0, 100), int(data.get_setting("music_volume")*100), 10,
+                            lambda x: data.update_settings(music_volume=round(x*0.01, 2))),
+            elements.Toggle("Controller Rumble", data.get_setting("controller_rumble"),
+                            lambda x: data.update_settings(controller_rumble=x)),
+            elements.Toggle("Motion blur", data.get_setting("motion_blur"),
+                            lambda x: data.update_settings(motion_blur=x)),
+            elements.Toggle("Pixel blur", data.get_setting("scale_blur"),
+                            lambda x: data.update_settings(scale_blur=x)),
 
-        self.__music = elements.Slider((0, 100), int(data.get_setting("music_volume")*100), 10, "Music")
-        self.__music.on_slide(lambda x: data.update_settings(music_volume=round(x*0.01, 2)))
-        
-        self.__scale_blur = elements.Toggle(data.get_setting("scale_blur"), "Pixel blur")
-        self.__scale_blur.on_toggle(lambda x: data.update_settings(scale_blur=x))
+            elements.UIPadding(8),
 
-        self.__controller_rumble = elements.Toggle(data.get_setting("controller_rumble"), "Controller Rumble")
-        self.__motion_blur = elements.Toggle(data.get_setting("motion_blur"), "Motion blur")
-        self.__show_version_num = elements.Toggle(data.get_setting("show_version_number"), "Show version number")
+            elements.Toggle("Show version number", data.get_setting("show_version_number"),
+                            lambda x: data.update_settings(show_version_number=x)),
+        ]
 
-        self.__elements = elements.ElementList([
-            self.__music,
-            self.__soundfx,
-            self.__controller_rumble,
-            self.__motion_blur,
-            self.__scale_blur,
-            elements.UIPadding(15),
-            self.__show_version_num
-        ], wrap_list=True)
+        self.__elements = elements.ElementList(settings_elements, wrap_list=True)
 
         self.__background: pg.Surface | None = None
         self.__tint_color = background_tint_color
@@ -275,14 +272,6 @@ class Settings(State):
 
 
     def quit(self):
-        data.update_settings(
-            soundfx_volume=round(self.__soundfx.value*0.01, 2),
-            controller_rumble=self.__controller_rumble.on,
-            show_version_number=self.__show_version_num.on,
-            motion_blur=self.__motion_blur.on,
-            scale_blur=self.__scale_blur.on
-        )
-
         data.save_settings()
 
 
