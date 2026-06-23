@@ -13,7 +13,7 @@ from src.game_objects import (
 
 from . import State
 from .menus import PauseMenu
-from .visuals import ShowText
+from .visuals import BackgroundTint
 
 
 
@@ -248,7 +248,8 @@ class Play(State):
 
     def _pause_game(self) -> None:
         "Adds PauseMenu state to state stack as well as some background tint."
-        PauseMenu(self.__background_tint).add_to_stack(self.state_stack)
+        BackgroundTint(self.__background_tint).add_to_stack(self.state_stack)
+        PauseMenu().add_to_stack(self.state_stack)
 
 
     def _respawn_player(self) -> None:

@@ -11,6 +11,7 @@ from src import game_errors
 from src.input_device import InputInterpreter
 from src.custom_types import Timer
 from src.audio.soundfx import HasSoundQueue
+from src.misc import find_subclass_by_name
 
 
 
@@ -171,7 +172,7 @@ class StateStack(HasSoundQueue):
     
 
     def push(self, state: State, transition=True) -> None:
-        "Adds a new state to the top of the stack."
+        "Add a new state to the top of the stack."
 
         self.__transition_timer.stop()
 
@@ -187,7 +188,7 @@ class StateStack(HasSoundQueue):
 
 
     def pop(self, transition=True, quit_state=True) -> State:
-        "Removes and returns the top state."
+        "Remove and return the top state."
         
         self.__transition_timer.stop()
         state = self.top_state
@@ -206,8 +207,25 @@ class StateStack(HasSoundQueue):
         
 
     def index(self, item: State) -> int:
-        "Returns the index of the current state."
+        "Return the index of the current state."
         return self.__container.index(item)
+    
+
+
+    def find_by_type[T](self, state_type: type[T]) -> T | None:
+        """Find the first state in the stack that is of the specified type"""
+        for state in self:
+            if isinstance(state, state_type):
+                return state
+        else:
+            return None
+    
+
+    def find_by_name(self, name: str) -> State | None:
+        """Find the first state in the stack with the specified name (name of State type)"""
+        state_type = find_subclass_by_name(State, name)
+        return state_type and self.find_by_type(state_type)
+
     
 
 
