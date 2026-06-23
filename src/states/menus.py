@@ -148,12 +148,17 @@ class PauseMenu(State):
                 self.__exit_menu = True
 
             elif inputs.check_input("quit"):
-                InfoState(
-                    "Quit to Main Menu",
-                    "Are you sure you want to quit?",
-                    confirm_action=self.quit_to_main_menu,
-                    can_escape=True
-                ).add_to_stack(self.state_stack)
+                # Show confirmation menu if player has made some progress in game
+                play_state = self.state_stack.find_by_name("Play")
+                if play_state is not None and play_state.is_saving_progress:
+                    InfoState(
+                        "Quit to Main Menu",
+                        "Are you sure you want to quit?",
+                        confirm_action=self.__quit_to_main_menu,
+                        can_escape=True
+                    ).add_to_stack(self.state_stack)
+                else:
+                    self.__quit_to_main_menu()
                 
 
         
@@ -189,10 +194,13 @@ class PauseMenu(State):
         return self.prev_state.debug_info()
     
 
-    def quit_to_main_menu(self):
-        from .init_state import Initializer
+    def __quit_to_main_menu(self):
+        play_state = self.state_stack.find_by_name("Play")
+        if play_state is not None:
+            play_state.can_save_progress(False)
+
         self.state_stack.quit()
-        data.delete_progress()
+        from .init_state import Initializer
         Initializer.main_title_screen(self.state_stack)
 
     
