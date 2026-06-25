@@ -15,7 +15,7 @@ from src.ui import font
 from .components import ObjectHitbox, ObjectTexture, ObjectCollision
 from .spaceship import PlayerShip
 from .asteroids import Asteroid
-from .projectiles import Laser
+from .projectiles import PlayerBullet, Laser
 from .particles import DisplayText
 
 
@@ -48,6 +48,10 @@ class PowerUp(HasSoundQueue):
     @classmethod
     def get_info_text(cls) -> str:
         return cls._info_text
+    
+
+    def get_data(self) -> tuple:
+        return ()
 
 
     def userinput(self, inputs: InputInterpreter) -> None:
@@ -104,12 +108,16 @@ class PowerUpGroup(HasSoundQueue):
                 return True
         return False
 
-    def add(self, powerup_name: str) -> None:
+    def add(self, powerup: PowerUp) -> None:
+        self.__container.add(powerup)
+
+    def add_by_name(self, powerup_name: str) -> None:
         try:
-            self.__container.add(PowerUp.powerup_list[powerup_name]())
+            self.add(PowerUp.powerup_list[powerup_name]())
         except KeyError:
             raise ValueError(F"Invalid powerup '{powerup_name}'")
         
+
     def remove(self, powerup: PowerUp) -> None:
         self.__container.remove(powerup)
 
@@ -211,6 +219,42 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
 
 
 
+class Shield(PowerUp):
+    texture_key = "shield"
+    def __init__(self):
+        super().__init__()
+        self.__used = False
+
+
+
+    def update(self, spaceship):
+        super().update(spaceship)
+        if self.__used:
+            spaceship.remove_powerup(self)
+    
+
+    def kill_protection(self, spaceship):
+        for obj in spaceship.overlapping_objects():
+            if isinstance(obj, Asteroid) and obj.has_health():
+                push_amount = obj.position-spaceship.position
+                push_amount.scale_to_length(3)
+                obj.accelerate(push_amount*2)
+                spaceship.accelerate(-push_amount)
+
+        self.__used = True
+        spaceship.invincibility_frames()
+        
+        controller_rumble("small_pulse", 0.8)
+        self._queue_sound("entity.asteroid.small_explode", 0.5)
+        return True
+
+
+
+
+
+
+
+
 class SuperLaser(PowerUp):
     __charge_time = 16
     __cooldown = 100
@@ -273,35 +317,42 @@ class SuperLaser(PowerUp):
 
 
 
-
-
-
-
-class Shield(PowerUp):
-    texture_key = "shield"
-    def __init__(self):
+class TripleShot(PowerUp):
+    texture_key="triple_shot"
+    def __init__(self, rounds=30):
         super().__init__()
-        self.__used = False
+        self.__rounds = rounds
+        self.__shoot = False
 
-
-
-    def update(self, spaceship):
-        super().update(spaceship)
-        if self.__used:
-            spaceship.remove_powerup(self)
+    
+    def get_data(self):
+        return (self.__rounds,)
     
 
-    def kill_protection(self, spaceship):
-        for obj in spaceship.overlapping_objects():
-            if isinstance(obj, Asteroid) and obj.has_health():
-                push_amount = obj.position-spaceship.position
-                push_amount.scale_to_length(3)
-                obj.accelerate(push_amount*2)
-                spaceship.accelerate(-push_amount)
+    def userinput(self, inputs):
+        if inputs.check_input("shoot"):
+            self.__shoot = True
+    
 
-        self.__used = True
-        spaceship.invincibility_frames()
-        
-        controller_rumble("small_pulse", 0.8)
-        self._queue_sound("entity.asteroid.small_explode", 0.5)
-        return True
+    def update(self, spaceship):
+        if self.__shoot:
+            bullet_rotation_a = spaceship.get_rotation_vector()
+            self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(10))
+            self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(-10))
+
+            self.__shoot = False
+            self.__rounds -= 1
+            if self.__rounds <= 0:
+                spaceship.remove_powerup(self)
+    
+
+    def __spawn_bullet(self, spaceship: PlayerShip, direction: pg.Vector2) -> None:
+        spaceship.primary_group.add(PlayerBullet(
+            spaceship.position+direction*40,
+            direction,
+            spaceship.get_velocity()
+        ))
+    
+
+    def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
+        pg.draw.circle(surface, "green", spaceship.position+offset, 20, 1)

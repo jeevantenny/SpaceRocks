@@ -188,10 +188,11 @@ class PlayerShip(Spaceship):
     def __init_from_data__(self, object_data):
         super().__init_from_data__(object_data)
 
-        from .powerups import PowerUpGroup
+        from .powerups import PowerUpGroup, PowerUp
         self.__powerups = PowerUpGroup()
-        for powerup_name in object_data.get("powerups", []):
-            self.__powerups.add(powerup_name)
+        for name, data in object_data.get("powerups", []):
+            powerup = PowerUp.powerup_list[name](*data)
+            self.__powerups.add(powerup)
 
         self._do_transition()
         self._skip_animation_to_end()
@@ -199,7 +200,7 @@ class PlayerShip(Spaceship):
 
     def get_data(self):
         data = super().get_data()
-        data.update({"powerups": [powerup.get_name() for powerup in self.__powerups]})
+        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups]})
         return data
 
 
@@ -269,7 +270,7 @@ class PlayerShip(Spaceship):
 
     def acquire_powerup(self, powerup_name: str) -> None:
         if not self.has_powerup(powerup_name):
-            self.__powerups.add(powerup_name)
+            self.__powerups.add_by_name(powerup_name)
 
 
     def remove_powerup(self, powerup) -> None:
