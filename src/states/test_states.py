@@ -1,5 +1,7 @@
 import pygame as pg
 
+from debug import Cheats
+
 from src.ui import elements, font, blit_to_center
 from src.audio.music import MusicManager
 from src.file_processing import data
@@ -15,12 +17,12 @@ class TestElementList(State):
 
         self.__elements = elements.ElementList(
             [
-                elements.Toggle(False, "Test Toggle")
-                for _ in range(6)
+                elements.Toggle(f"Test Toggle {i}", False)
+                for i in range(11)
             ]
             + [
-                elements.Slider((0, 100), 0, 10, "test Slider")
-                for _ in range(6)
+                elements.Slider(f"Test Slider {i}", (0, 100), 0, 10)
+                for i in range(0)
             ],
         wrap_list=True)
 
@@ -32,7 +34,9 @@ class TestElementList(State):
     
     def draw(self, surface, lerp_amount=0):
         surface.fill("#333333")
-        self.__elements.draw(surface)
+        subsurface = surface.subsurface(10, 10, surface.width-20, surface.height-20)
+        subsurface.fill("black")
+        self.__elements.draw(subsurface)
 
 
 
@@ -40,7 +44,7 @@ class TestMusic(State):
     def __init__(self):
         super().__init__()
         MusicManager.play("test_music")
-        self.__volume_slider = elements.Slider((0, 1), data.get_setting("music_volume"), 0.1)
+        self.__volume_slider = elements.Slider("Music Volume", (0, 1), data.get_setting("music_volume"), 0.1)
         self.__volume_slider.on_slide(lambda x: (data.update_settings(music_volume=x), MusicManager.update_music_volume()))
 
     def userinput(self, inputs):

@@ -12,7 +12,7 @@ from src.ui import blit_to_center, font, effects, elements, hud
 
 from . import State, StateStack
 from .info_states import InfoState, DeleteUserDataOption
-from .visuals import add_background_tint
+from .visuals import BackgroundTint, add_background_tint
 
 
 
@@ -44,6 +44,9 @@ class TitleScreen(State):
         # race condition from the drawing thread.
         self.__info_text = pg.Surface((1, 1))
 
+        from .play import Play
+        self.prev_state: Play
+
 
 
 
@@ -68,7 +71,8 @@ class TitleScreen(State):
                     self.title.set_effect("main_exit")
                 
                 if inputs.check_input("settings"):
-                    Settings("#4E6382").add_to_stack(self.state_stack)
+                    self.state_stack.push(BackgroundTint("#4E6382"))
+                    self.state_stack.push(Settings())
     
         else:
             self.prev_state.spaceship.userinput(inputs)
@@ -124,39 +128,37 @@ class TitleScreen(State):
 
 class PauseMenu(State):
     "Shows the pause menu with the game title. This freezes the gameplay in the previous state."
-    def __init__(self, background_tint_color: pg.typing.ColorLike = "#777777"):
+    def __init__(self):
         super().__init__()
 
         self.title = effects.AnimatedText(config.WINDOW_CAPTION, "main_entrance_b")
         self.__exit_menu = False
-        self.__tint_color = background_tint_color
 
         # Assigned default values to avoid raising Attribute Errors.
         self.__info_text = pg.Surface((1, 1))
-
-        from .play import Play
-        self.prev_state: Play
 
 
 
     def userinput(self, inputs):
         if inputs.check_input("settings"):
-            Settings(self.__tint_color).add_to_stack(self.state_stack)
+            self.state_stack.push(Settings())
         elif self.title.animations_complete:
             if inputs.check_input("pause") or inputs.check_input("select") or inputs.check_input("back"):
                 self.title.set_effect("main_exit")
                 self.__exit_menu = True
 
             elif inputs.check_input("quit"):
-                if self.prev_state.is_saving_progress:
+                # Show confirmation menu if player has made some progress in game
+                play_state = self.state_stack.find_by_name("Play")
+                if play_state is not None and play_state.is_saving_progress:
                     InfoState(
                         "Quit to Main Menu",
                         "Are you sure you want to quit?",
-                        confirm_action=self.quit_to_main_menu,
+                        confirm_action=self.__quit_to_main_menu,
                         can_escape=True
                     ).add_to_stack(self.state_stack)
                 else:
-                    self.quit_to_main_menu()
+                    self.__quit_to_main_menu()
                 
 
         
@@ -180,8 +182,6 @@ class PauseMenu(State):
         self.prev_state.draw(surface, 1)
         if not self.is_top_state():
             return
-
-        add_background_tint(surface, self.__tint_color)
         
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
@@ -194,10 +194,13 @@ class PauseMenu(State):
         return self.prev_state.debug_info()
     
 
-    def quit_to_main_menu(self):
-        from .init_state import Initializer
-        self.prev_state.can_save_progress(False)
+    def __quit_to_main_menu(self):
+        play_state = self.state_stack.find_by_name("Play")
+        if play_state is not None:
+            play_state.can_save_progress(False)
+
         self.state_stack.quit()
+        from .init_state import Initializer
         Initializer.main_title_screen(self.state_stack)
 
     
@@ -207,39 +210,38 @@ class PauseMenu(State):
 
 
 class Settings(State):
-    def __init__(self, background_tint_color: pg.typing.ColorLike = "#777777"):
+    def __init__(self):
         super().__init__()
-        self.__soundfx = elements.Slider((0, 100), int(data.get_setting("soundfx_volume")*100), 10, "Sound FX")
-        self.__soundfx.on_slide(lambda x: data.update_settings(soundfx_volume=round(x*0.01, 2)))
+        settings_elements = [
+            elements.Slider("Sound FX", (0, 100), int(data.get_setting("soundfx_volume")*100), 10,
+                            lambda x: data.update_settings(soundfx_volume=round(x*0.01, 2))),
+            elements.Slider("Music", (0, 100), int(data.get_setting("music_volume")*100), 10,
+                            lambda x: data.update_settings(music_volume=round(x*0.01, 2))),
+            elements.Toggle("Controller Rumble", data.get_setting("controller_rumble"),
+                            lambda x: data.update_settings(controller_rumble=x)),
+            elements.Toggle("Motion blur", data.get_setting("motion_blur"),
+                            lambda x: data.update_settings(motion_blur=x)),
+            elements.Toggle("Pixel blur", data.get_setting("scale_blur"),
+                            lambda x: data.update_settings(scale_blur=x)),
 
-        self.__music = elements.Slider((0, 100), int(data.get_setting("music_volume")*100), 10, "Music")
-        self.__music.on_slide(lambda x: data.update_settings(music_volume=round(x*0.01, 2)))
-        
-        self.__scale_blur = elements.Toggle(data.get_setting("scale_blur"), "Pixel blur")
-        self.__scale_blur.on_toggle(lambda x: data.update_settings(scale_blur=x))
-
-        self.__controller_rumble = elements.Toggle(data.get_setting("controller_rumble"), "Controller Rumble")
-        self.__motion_blur = elements.Toggle(data.get_setting("motion_blur"), "Motion blur")
-        self.__open_fullscreen = elements.Toggle(data.get_setting("open_fullscreen"), "Start game in fullscreen")
-        self.__show_version_num = elements.Toggle(data.get_setting("show_version_number"), "Show version number")
-
-        self.__elements = elements.ElementList([
-            self.__music,
-            self.__soundfx,
-            self.__controller_rumble,
-            self.__motion_blur,
-            self.__scale_blur,
             elements.UIPadding(8),
-            self.__open_fullscreen,
-            self.__show_version_num
-        ], wrap_list=True)
 
+            elements.Toggle("Start game in fullscreen", data.get_setting("open_fullscreen"),
+                            lambda x: data.update_settings(open_fullscreen=x)),
+            elements.Toggle("Show version number", data.get_setting("show_version_number"),
+                            lambda x: data.update_settings(show_version_number=x)),
+        ]
+
+        self.__elements = elements.ElementList(settings_elements, wrap_list=True)
         self.__background: pg.Surface | None = None
-        self.__tint_color = background_tint_color
+
 
     def userinput(self, inputs):
         if not debug.Cheats.demo_mode:
             option_to_delete_user_data(self.state_stack, inputs)
+        
+        if debug.DEBUG_MODE and inputs.check_input("settings"):
+            self.state_stack.push(DebugMenu())
 
         if inputs.check_input("back"):
             self.state_stack.pop()
@@ -253,7 +255,6 @@ class Settings(State):
     
     def draw(self, surface, lerp_amount=0):
         self.__draw_background(surface)
-        add_background_tint(surface, self.__tint_color)
         # self.prev_state.draw(surface)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
@@ -275,18 +276,46 @@ class Settings(State):
             surface.blit(self.__background)
 
 
-
     def quit(self):
-        data.update_settings(
-            soundfx_volume=round(self.__soundfx.value*0.01, 2),
-            controller_rumble=self.__controller_rumble.on,
-            motion_blur=self.__motion_blur.on,
-            scale_blur=self.__scale_blur.on,
-            open_fullscreen=self.__open_fullscreen.on,
-            show_version_number=self.__show_version_num.on
-        )
-
         data.save_settings()
+
+
+
+
+
+
+
+
+
+class DebugMenu(State):
+    def __init__(self):
+        super().__init__()
+
+        self.__elements = elements.ElementList([
+            elements.Toggle("invincible", debug.Cheats.invincible, lambda x: setattr(debug.Cheats, "invincible", x)),
+            elements.Toggle("no_obstacles", debug.Cheats.no_obstacles, lambda x: setattr(debug.Cheats, "no_obstacles", x)),
+            elements.Toggle("no_point_combo", debug.Cheats.no_point_combo, lambda x: setattr(debug.Cheats, "no_point_combo", x)),
+            elements.Toggle("show_bounding_boxes", debug.Cheats.show_bounding_boxes, lambda x: setattr(debug.Cheats, "show_bounding_boxes", x)),
+            elements.Toggle("instant_restart", debug.Cheats.instant_restart, lambda x: setattr(debug.Cheats, "instant_restart", x)),
+            elements.Toggle("no_lerp", debug.Cheats.no_lerp, lambda x: setattr(debug.Cheats, "no_lerp", x)),
+        ], wrap_list=True)
+
+
+    def userinput(self, inputs):
+        if inputs.check_input("back"):
+            self.state_stack.pop()
+            return
+
+        self.__elements.userinput(inputs)
+    
+    def update(self):
+        self.__elements.update()
+    
+    def draw(self, surface, lerp_amount=0):
+        surface.fill("black")
+        surface.blit(font.large_font.render("Debug Menu"), (20, 20))
+        self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
+        surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
 
 
 
@@ -316,7 +345,7 @@ class GameOverScreen(State):
         self.title.update()
         if self.__timer == 0:
             self.state_stack.pop()
-            ShowScore(self.__level_name, self.__score_data).add_to_stack(self.state_stack)
+            self.state_stack.push(ShowScore(self.__level_name, self.__score_data))
         else:
             self.__timer -= 1
 
@@ -361,7 +390,7 @@ class ShowScore(State):
 
                 # Empties the state stack and adds a new Play state.
                 self.state_stack.quit()
-                PlayLevel(get_start_level()).add_to_stack(self.state_stack)
+                self.state_stack.push(PlayLevel(get_start_level()))
         
         if not self.__timer and inputs.check_input("quit"):
             from .init_state import Initializer

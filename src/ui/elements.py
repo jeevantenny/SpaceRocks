@@ -115,8 +115,18 @@ class UIPadding(UIElement):
 
 class Slider(UIElement):
     __size = (75, 12)
-    def __init__(self, slider_range: tuple[int, int], value: int, step=1, name: str | None = None):
+    def __init__(self,
+                 label: str,
+                 slider_range: tuple[int, int],
+                 value: int,
+                 step=1,
+                 on_slide: Callable[[float], None] | None = None):
+        
+        super().__init__(label)
         self.__min, self.__max = slider_range
+        self.__step = step
+        self.__inverse_of_range = 1/(self.__max-self.__min)
+
         if self.__max <= self.__min:
             raise ValueError("First value in range must be less than second value")
 
@@ -124,15 +134,7 @@ class Slider(UIElement):
             self.__value = value
         else:
             raise ValueError(f"Starting value must be within slider_range {slider_range}, not {value}")
-        
-        self.__inverse_of_range = 1/(self.__max-self.__min)
 
-
-        self.__step = step
-        if name is None:
-            self._label = "Slider"
-        else:
-            self._label = name
 
         texture_map = assets.load_texture_map("ui_elements")
         self.__base_texture = texture_map["slider_base"]
@@ -140,6 +142,7 @@ class Slider(UIElement):
         self.__handle_texture = texture_map["slider_handle"]
 
         self.__on_slide: Callable[[float], None] | None = None
+        self.on_slide(on_slide)
 
 
     @property
@@ -186,7 +189,7 @@ class Slider(UIElement):
 class Toggle(UIElement):
     __size = (31, 13)
 
-    def __init__(self, on=False, label: str | None = None):
+    def __init__(self, label: str, on=False, on_toggle: Callable[[bool], None] | None = None):
         super().__init__(label)
         self.__on = on
         self.__texture_map = assets.load_texture_map("ui_elements")
@@ -198,7 +201,7 @@ class Toggle(UIElement):
         self.__controller.skip_to_end()
 
         self.__on_toggle: Callable[[bool], None] | None = None
-
+        self.on_toggle(on_toggle)
 
     @property
     def size(self) -> pg.typing.Point:
