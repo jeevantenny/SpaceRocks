@@ -6,7 +6,10 @@ from src.ui import elements, font, blit_to_center
 from src.audio.music import MusicManager
 from src.file_processing import data
 
+from src.game_objects.powerups import Dodge
+
 from . import State
+from .info_states import PowerupInfo
 
 
 
@@ -66,3 +69,10 @@ class TestMusic(State):
         blit_to_center(font.small_font.render(f"Track name: {MusicManager.get_track_name()}"), surface, (0, -12))
         blit_to_center(font.icon_font.render("Pause/Resume<shoot>"), surface)
         blit_to_center(self.__volume_slider.render(), surface, (0, 20))
+
+
+
+class TestPowerupInfo(State):
+    def userinput(self, inputs):
+        if inputs.check_input("select"):
+            self.state_stack.push(PowerupInfo(Dodge))

@@ -70,6 +70,7 @@ class PowerupInfo(State):
         super().__init__()
         self.__powerup_name = powerup_type.get_display_name()
         self.__info_text = powerup_type.get_info_text()
+        self.__usage_instr = powerup_type.get_usage_instr()
         self.__tint_color = background_tint_color
 
 
@@ -81,8 +82,11 @@ class PowerupInfo(State):
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
         add_background_tint(surface, self.__tint_color)
-        blit_to_center(font.large_font.render(self.__powerup_name), surface, (0, -10))
-        blit_to_center(font.small_font.render(self.__info_text), surface, (0, 10))
+        blit_to_center(font.large_font.render(self.__powerup_name), surface, (0, -20))
+        blit_to_center(font.small_font.render(self.__info_text), surface, (0, 0))
+        if self.__usage_instr is not None:
+            blit_to_center(font.icon_font.render(self.__usage_instr), surface, (0, 20))
+        blit_to_center(font.icon_font.render("OK<select>"), surface, (0, 50))
 
 
 

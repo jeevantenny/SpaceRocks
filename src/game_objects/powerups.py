@@ -28,7 +28,9 @@ class PowerUp(HasSoundQueue):
     texture_key: str | None = None
     powerup_list: dict[str, type["PowerUp"]] = {}
 
-    _info_text = "No information"
+    _display_name = None
+    _powerup_info = "No information"
+    _usage_instr = None
 
     def __init_subclass__(cls):
         cls.powerup_list[cls.__name__] = cls
@@ -43,11 +45,15 @@ class PowerUp(HasSoundQueue):
         The name of the powerups shown to the player using the `_display_name` field.
         If not defined then it returns the name of the class.
         """
-        return getattr(cls, "_display_name", cls.__name__)
+        return cls._display_name or cls.__name__
 
     @classmethod
     def get_info_text(cls) -> str:
-        return cls._info_text
+        return cls._powerup_info
+
+    @classmethod
+    def get_usage_instr(cls) -> str | None:
+        return cls._usage_instr
     
 
     def get_data(self) -> tuple:
@@ -259,7 +265,9 @@ class SuperLaser(PowerUp):
     __charge_time = 16
     __cooldown = 100
 
+    _display_name = "Super Laser"
     texture_key = "super_laser"
+    _usage_instr = "Hold<shoot> to charge laser, then release"
 
     def __init__(self):
         super().__init__()
@@ -318,7 +326,9 @@ class SuperLaser(PowerUp):
 
 
 class TripleShot(PowerUp):
-    texture_key="triple_shot"
+    texture_key = "triple_shot"
+
+    _display_name = "Triple Shot"
     def __init__(self, rounds=30):
         super().__init__()
         self.__rounds = rounds
@@ -366,7 +376,8 @@ class TripleShot(PowerUp):
 
 
 class Dodge(PowerUp):
-    texture_key="dodge"
+    texture_key = "dodge"
+    _usage_instr = "Hold <powerup_use> and input the direction you wanna dodge in"
 
     def __init__(self, amount=5, cooldown_used=0):
         super().__init__()

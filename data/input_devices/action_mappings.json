@@ -353,7 +353,7 @@
     "powerup_use": [
         {
             "input_device": "keyboard_mouse",
-            "key": "l",
+            "key": "shift",
             "type": "hold"
         },
         {
