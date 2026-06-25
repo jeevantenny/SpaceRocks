@@ -1,7 +1,9 @@
 import pygame as pg
+import pickle
+from json import JSONDecodeError
+
 import unittest
 from unittest.mock import patch, MagicMock, mock_open, ANY
-from json import JSONDecodeError
 
 from src.file_processing import assets, data
 from src.custom_types import LevelData, SaveData
@@ -269,14 +271,18 @@ class DataTest(unittest.TestCase):
         data.load_settings("")
 
 
-    def get_test_save_data(self) -> bytes:
-        with open("test/resources/test_progress.bin", "rb") as fp:
-            return fp.read()
+    def get_test_save_data(self) -> SaveData:
+        return SaveData("test", 100, 2.0, 3, (0, 0), {})
+
+
+    def get_test_save_bytes(self) -> bytes:
+        return pickle.dumps(self.get_test_save_data())
+
         
 
     def get_invalid_save_data(self) -> bytes:
-        with open("test/resources/invalid_progress.bin", "rb") as fp:
-            return fp.read()
+        invalid_object = dict()
+        return pickle.dumps(invalid_object)
 
         
 
@@ -355,7 +361,7 @@ class DataTest(unittest.TestCase):
     @patch('src.file_processing.data.load_json')
     def test_load_level_invalid_name(self, mock_load_json: MagicMock):
         mock_load_json.side_effect = FileNotFoundError()
-        with self.assertRaises(ValueError):
+        with self.assertRaises(FileNotFoundError):
             data.load_level("level_not_found")
 
     @patch('src.file_processing.data.load_json')
@@ -428,7 +434,7 @@ class DataTest(unittest.TestCase):
 
 
     def test_load_progress(self):
-        opener = mock_open(read_data=self.get_test_save_data())
+        opener = mock_open(read_data=self.get_test_save_bytes())
         with patch("builtins.open", opener) as mock_file:
             save_data = data.load_progress()
 
@@ -472,7 +478,7 @@ class DataTest(unittest.TestCase):
 
 
     def test_save_progress(self):
-        save_data = SaveData("test_level", 30, 3, (0, 0), {})
+        save_data = self.get_test_save_data()
         with patch("builtins.open", mock_open()) as mock_file:
             data.save_progress(save_data)
         
@@ -495,7 +501,7 @@ class DataTest(unittest.TestCase):
 
 
     def test_delete_progress(self):
-        opener = mock_open(read_data=self.get_test_save_data())
+        opener = mock_open(read_data=self.get_test_save_bytes())
         with patch("builtins.open", opener) as mock_file:
             data.delete_progress()
         
