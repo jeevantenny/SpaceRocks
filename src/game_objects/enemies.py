@@ -21,7 +21,7 @@ from .components import ObjectAnimation, ObjectHitbox, Obstacle
 
 
 
-class Enemy(Obstacle, ObjectAnimation, ObjectHitbox):
+class Enemy(Obstacle, ObjectAnimation):
     _layer = 9
 
     def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):
@@ -43,7 +43,7 @@ class Enemy(Obstacle, ObjectAnimation, ObjectHitbox):
 
 
 class EnemyShip(Enemy):
-    progress_save_key=None
+    progress_save_key="enemy_ship"
     ignore_camera_rotation=True
     _layer=9
 
@@ -67,10 +67,16 @@ class EnemyShip(Enemy):
         )
 
         self.__speed = 0
+        self.__move_direction = pg.Vector2()
         self.__shoot_interval = Timer(22)
         self.__start_attack_delay = Timer(35).start()
 
         self.set_angular_vel(self.__rotation_speed)
+
+
+    def __init_from_data__(self, object_data):
+        self.__init__(object_data["position"])
+
 
     def update(self):
         super().update()
@@ -86,39 +92,37 @@ class EnemyShip(Enemy):
         for obj in self.primary_group:
             if (isinstance(obj, Asteroid)
                 and obj.health
-                and self.__shoot_interval.time_elapsed > 6
-                and self.distance_to(obj) < self.__asteroid_shoot_range):
-                self.__shoot(obj.position-self.position)
-        
+                and self.within_distance(obj, self.__asteroid_shoot_range)):
+                if self.__shoot_interval.time_elapsed > 8:
+                    self.__shoot(obj.position-self.position)
+                
+                self.__decrease_speed()
+                break
+        else:
+            if self._player_ship is None:
+                self._player_ship = self._get_player()
 
-        if self._player_ship is None:
-            self._player_ship = self._get_player()
 
-        
+            elif self._player_ship.health:
+                displacement = self._player_ship.position-self.position
+                
+                if self.within_distance(self._player_ship, 50):
+                    self.__decrease_speed()
+                else:
+                    self.__increase_speed()
+                
 
-        elif self._player_ship.health:
-            displacement = self._player_ship.position-self.position
-            distance = displacement.magnitude()
-            
-            if distance > 50:
-                self.__speed = min(self.__speed+1, self.__move_speed)
-            else:
-                self.__speed = max(self.__speed-1, 0)
-            
-            if self.__speed:
-                velocity = displacement.copy()
-                velocity.scale_to_length(self.__speed)
-                self.set_velocity(velocity)
-            else:
-                self.clear_velocity()
-            
+                if self.__start_attack_delay.complete and self.__shoot_interval.complete and self.within_distance(self._player_ship, self.__player_shoot_range):
+                    self.__shoot(displacement.rotate(random.randint(-self.__shoot_deviation, self.__shoot_deviation)))
+                
+                self.__move_direction = displacement
 
-            if self.__start_attack_delay.complete and self.__shoot_interval.complete and distance < self.__player_shoot_range:
-                self.__shoot(displacement.rotate(random.randint(-self.__shoot_deviation, self.__shoot_deviation)))
-            
-            # if self.colliderect(self.__player_ship.rect):
-            #     self.__player_ship.kill()
-            #     self.kill()
+
+        if self.__move_direction and self.__speed > 0:
+            self.__move_direction.scale_to_length(self.__speed)
+            self.set_velocity(self.__move_direction)
+        elif self._velocity:
+            self.clear_velocity()
 
 
     def on_collide(self, collided_with):
@@ -134,6 +138,11 @@ class EnemyShip(Enemy):
         self._queue_sound("entity.asteroid.medium_explode")
 
 
+    def __increase_speed(self) -> None:
+        self.__speed = min(self.__speed+0.5, self.__move_speed)
+    
+    def __decrease_speed(self) -> None:
+        self.__speed = max(self.__speed-0.5, 0)
         
 
     

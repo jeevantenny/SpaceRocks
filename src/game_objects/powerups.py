@@ -19,18 +19,19 @@ from .projectiles import Laser
 from .particles import DisplayText
 
 
-powerup_list: dict[str, type["PowerUp"]] = {}
+
 
 
 class PowerUp(HasSoundQueue):
     "Gives the player's spaceship additional abilities that they can either be offensive or defensive."
 
     texture_key: str | None = None
+    powerup_list: dict[str, type["PowerUp"]] = {}
 
     _info_text = "No information"
 
     def __init_subclass__(cls):
-        powerup_list[cls.__name__] = cls
+        cls.powerup_list[cls.__name__] = cls
 
     @classmethod
     def get_name(cls) -> str:
@@ -105,7 +106,7 @@ class PowerUpGroup(HasSoundQueue):
 
     def add(self, powerup_name: str) -> None:
         try:
-            self.__container.add(powerup_list[powerup_name]())
+            self.__container.add(PowerUp.powerup_list[powerup_name]())
         except KeyError:
             raise ValueError(F"Invalid powerup '{powerup_name}'")
         
@@ -115,7 +116,7 @@ class PowerUpGroup(HasSoundQueue):
         
     def includes(self, powerup_name: str) -> bool:
         try:
-            powerup_type = powerup_list[powerup_name]
+            powerup_type = PowerUp.powerup_list[powerup_name]
         except KeyboardInterrupt:
             raise ValueError(F"Invalid powerup '{powerup_name}'")
         
@@ -147,7 +148,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
             powerup_name: str
             ):
 
-        powerup_type = powerup_list[powerup_name]
+        powerup_type = PowerUp.powerup_list[powerup_name]
         if powerup_type.texture_key is not None:
             texture = assets.load_texture_map("powerups")[powerup_type.texture_key]
         else:
@@ -200,7 +201,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
         
         elif self.rect.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
-            self.host_state.powerup_info(powerup_list[self.__powerup_name])
+            self.host_state.powerup_info(PowerUp.powerup_list[self.__powerup_name])
             self.kill()
 
 
@@ -240,18 +241,8 @@ class SuperLaser(PowerUp):
 
         
         if not (self.__laser is None or self.__laser.alive()):
-            points = 0
-            for asteroid in self.__laser.killed_list:
-                points += asteroid.points
-            
-            if points:
-                points_added = spaceship.take_points(points)
-                spaceship.primary_group.add(
-                    DisplayText(
-                        spaceship.position+self.__laser.get_rotation_vector()*40,
-                        font.large_font.render(f"+{points_added}", 1, "#cc8800", "#442200", False)  
-                    )
-                )
+            for obstacle in self.__laser.killed_list:
+                spaceship.host_state.player_destroy_obstacle(obstacle)
 
             self.__laser = None
             spaceship.remove_powerup(self)

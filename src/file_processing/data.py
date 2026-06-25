@@ -29,6 +29,7 @@ DEFAULT_SETTINGS = {
     "controller_rumble": True,
     "motion_blur": True,
     "scale_blur": False,
+    "open_fullscreen": False,
 
     "show_version_number": True
 }
@@ -48,14 +49,14 @@ def load_level(name: str) -> LevelData:
     """
     Loads a level data json file as a LevelData object.
 
-    Raises ValueError if name is invalid.  
+    Raises FileNotFoundError if name is invalid.  
     Raises LevelDataError if level data is missing required properties.
     """
 
     try:
         level_data = load_json(f"{LEVELS_DIR}/{name}")
     except FileNotFoundError:
-        raise ValueError(f"Invalid level name '{name}'")
+        raise FileNotFoundError(f"Could not find level '{name}'")
 
     asteroids: dict = level_data.get("spawn_asteroids", {})
     asteroid_weights = (list(asteroids.keys()), list(asteroids.values()))

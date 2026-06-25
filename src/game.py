@@ -57,7 +57,7 @@ class GameEngine:
 
     def __setup_engine(self) -> None:
         "Called by the initializer to initialize the object."
-        self.run = True
+        self.run = False
 
         self.window = None
         self.window_surface = None
@@ -115,19 +115,20 @@ class GameEngine:
 
         if not self.__setup:
             raise RuntimeError("Cannot start game because an exception has occurred during setup.")
+        
+        self.run = True
+        data.load_settings()
+        self.__fullscreen = data.get_setting("open_fullscreen")
 
-        self.window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE, resizable=True)
+        # Setup Game Window
+        self.window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE, resizable=True, fullscreen_desktop=self.__fullscreen)
         self.window_surface = self.window.get_surface()
         self.window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
         self.window.minimum_size = WINDOW_MINIUM_SIZE
 
-        if self.__fullscreen:
-            self.window.set_fullscreen(True)
-
+        # Initialize states
         font.init()
-        data.load_settings()
         self.debug_font = pg.font.SysFont("consolas", 13)
-
         init_state.Initializer(self.state_stack)
 
         # Starts game loop that processes game logic
@@ -263,15 +264,19 @@ class GameEngine:
             self.window_surface.fill("black")
 
         if debug.DEBUG_MODE:
-            blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
-            debug_message = self.state_stack.debug_info()
-            if debug_message:
-                blit_text = f"{blit_text}\n{debug_message}"
-            self.window_surface.blit(self.debug_font.render(blit_text, False, "white", "black"))
-
+            self.__show_debug_text()
             self.__show_stack_view()
 
 
+    def __show_debug_text(self) -> None:
+        blit_text = f"FPS: {self.frame_clock.get_fps():.0f}, TPS: {self.tick_clock.get_fps():.0f}, state: {self.state_stack.top_state}"
+        debug_message = self.state_stack.debug_info()
+        if debug_message:
+            blit_text += f"\n{debug_message}"
+
+        text_surface = self.debug_font.render(blit_text, False, "white")
+        self.window_surface.fill((100, 100, 100), (0, 0, *text_surface.size), BLEND_RGB_SUB)
+        self.window_surface.blit(text_surface)
 
     
     def __show_stack_view(self) -> None:
@@ -282,7 +287,8 @@ class GameEngine:
             text += f"\n{current_state.name}"
             current_state = current_state.prev_state
         
-        text_surface = self.debug_font.render(text, False, "green", "black")
+        text_surface = self.debug_font.render(text, False, "green")
+        self.window_surface.fill((100, 100, 100), (0, self.window_surface.height-text_surface.height, *text_surface.size), BLEND_RGB_SUB)
         self.window_surface.blit(text_surface, (0, self.window_surface.height-text_surface.height))
 
 

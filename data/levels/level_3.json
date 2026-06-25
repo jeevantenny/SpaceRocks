@@ -17,7 +17,7 @@
         "Shield": 1
     },
 
-    "enemy_frequency": 1,
+    "enemy_frequency": 0.005,
     "enemy_count": 1,
     "spawn_enemies": {
         "EnemyShip": 1

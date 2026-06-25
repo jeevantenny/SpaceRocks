@@ -83,19 +83,19 @@ class Projectile(ObjectTexture, ObjectVelocity):
     def update(self):
         super().update()
         self._distance_traveled += self.__speed
-        self._lifetime -= 1
 
         if self.primary_group is None:
             return
 
         hit = False
         for obj in self.primary_group:
-            hit = self._process_object(obj) or hit
+            hit = self._assess_collision(obj) or hit
         if hit:
             self.kill()
         
+        self._lifetime -= 1
         if self._lifetime <= 0:
-            self.force_kill()
+            self.kill()
 
             
         
@@ -124,10 +124,10 @@ class Projectile(ObjectTexture, ObjectVelocity):
         return rect_line_collision(rect, self.__get_collision_lines())
     
 
-    def _process_object(self, obj: GameObject) -> bool:
+    def _assess_collision(self, obj: GameObject) -> bool:
         """
         This method controls what should happen to objects in the bullet's primary group every frame. Returns
-        True if the projectile should count as colliding with the object and should be deleted in the next
+        True if the projectile should count as colliding with the object and should be killed as a result.
         frame.
         """
         return False
@@ -154,9 +154,6 @@ class PlayerBullet(Projectile):
             -direction.angle_to((0, -1))
         )
 
-        from .asteroids import Asteroid
-        self.hit_list = set[Asteroid]()
-
 
     
     def __init_from_data__(self, object_data):
@@ -170,9 +167,6 @@ class PlayerBullet(Projectile):
         )
         self._distance_traveled = object_data["distance_traveled"]
 
-        from .asteroids import Obstacle
-        self.hit_list = set[Obstacle]()
-
 
     
     def get_data(self):
@@ -185,7 +179,7 @@ class PlayerBullet(Projectile):
         return data
 
 
-    def _process_object(self, obj):
+    def _assess_collision(self, obj):
         from .asteroids import Obstacle, Asteroid
         if isinstance(obj, Obstacle) and obj.has_health() and self._collides_with(obj.rect):
             if isinstance(obj, Asteroid):
@@ -193,14 +187,17 @@ class PlayerBullet(Projectile):
             else:
                 obj.damage(1)
                 
-            self.hit_list.add(obj)
+            self.host_state.player_destroy_obstacle(obj)
             return True
-        # elif isinstance(obj, EnemyBullet):
-        #     obj.kill()
-        #     return True
 
         else:
             return False
+    
+
+    def kill(self):
+        if not self._lifetime:
+            self.host_state.reset_point_combo()
+        super().kill()
     
 
 
@@ -275,7 +272,7 @@ class EnemyBullet(Projectile):
         )
 
     
-    def _process_object(self, obj):
+    def _assess_collision(self, obj):
         from .spaceship import PlayerShip
         from .asteroids import Asteroid
         if isinstance(obj, PlayerShip) and self._collides_with(obj.rect):

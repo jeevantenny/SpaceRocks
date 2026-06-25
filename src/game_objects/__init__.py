@@ -23,6 +23,7 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
     progress_save_key: str | None = None
     distance_based_sound=True
     ignore_camera_rotation=False
+    can_despawn=True
 
     __object_type_list: dict[str, type["GameObject"]] = {}
 
@@ -33,6 +34,8 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
             super().__init__()
         
         self.position = pg.Vector2(position)
+        from src.states.play import Play
+        self.host_state: Play
 
 
     def __init_subclass__(cls):
@@ -132,6 +135,9 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
     
     def distance_to(self, other: "GameObject | pg.Vector2") -> float:
         return self.position.distance_to(self.__get_other_pos(other))
+    
+    def within_distance(self, other: "GameObject | pg.Vector2", distance: int) -> bool:
+        return self.position.distance_squared_to(self.__get_other_pos(other)) <=distance*distance
     
 
     def angle_to(self, other: "GameObject | pg.Vector2") -> float:

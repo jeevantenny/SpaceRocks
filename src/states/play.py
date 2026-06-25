@@ -1,4 +1,5 @@
 import pygame as pg
+import math
 import random
 from typing import Self
 
@@ -11,8 +12,12 @@ from src.game_objects import (
     GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, projectiles, spaceship, particles
 )
 
+from src.ui import font
+from src.game_errors import SaveFileError
+
 from . import State
 from .menus import PauseMenu
+from .info_states import PowerupInfo
 from .visuals import BackgroundTint
 
 
@@ -23,10 +28,12 @@ class Play(State):
     Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
     and player score.
     """
-    __spawn_radius = 200
-    __despawn_radius = 500
-
+    _spawn_radius = 200
+    _despawn_radius = 500
+    _player_respawn_radius = 250
     _player_max_lives = 3
+
+    __max_combo = 30
 
     def _setup(self) -> None:
         "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
@@ -34,12 +41,15 @@ class Play(State):
         self.__parl_b: pg.Surface | None = None
         self.__base_color: pg.typing.ColorLike = "#000000"
         self.__background_tint: pg.typing.ColorLike = "#777777"
+        self.__score_limit = None
         self.__save_progress = True
     
         self._object_spawn_delay = Timer(15)
         self._game_over_timer = Timer(40, False, self._game_over)
         self._respawn_timer = Timer(25, False, self._respawn_player)
         self._player_lives = self._player_max_lives
+        self._score = 0
+        self._point_combo = 1.0
 
 
     def __init__(self):
@@ -53,7 +63,7 @@ class Play(State):
 
     @property
     def is_saving_progress(self) -> bool:
-        return self.__save_progress and self.spaceship.score and self._player_lives
+        return self.__save_progress and self._score and self._player_lives > 0
 
 
     @classmethod
@@ -69,6 +79,7 @@ class Play(State):
 
         self.__load_objects_from_save(save_data.entity_data)
         self.camera.set_position(save_data.camera_pos)
+        self._score = save_data.score
         self._player_lives = save_data.player_lives
 
         return self
@@ -109,6 +120,7 @@ class Play(State):
 
         self.__base_color = self._level_data.base_color
         self.__background_tint = self._level_data.background_tint
+        self.__score_limit = self._level_data.score_range[1]
 
 
 
@@ -118,6 +130,7 @@ class Play(State):
         must have been called beforehand.
         """
         object_dict = {}
+        self.spaceship = None
 
         for entity_data in entity_data:
             entity = GameObject.init_from_data(entity_data)
@@ -130,6 +143,10 @@ class Play(State):
                 self.spaceship = entity
 
             object_dict[entity_data["id"]] = entity
+        
+        if self.spaceship is None:
+            self.can_save_progress(False)
+            raise SaveFileError("Could not get player ship from save data")
         
         for entity in self.entities.sprites():
             entity.post_init_from_data(object_dict)
@@ -180,7 +197,7 @@ class Play(State):
             for obj in self.asteroids.sprites() + self.enemies.sprites():
                 if not obj.has_health():
                     obj.update()
-        else:
+        elif self._player_lives:
             self._game_loop()
 
         self._join_sound_queue(self.entities.clear_sound_queue())
@@ -202,7 +219,41 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, combo: {self.spaceship.combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+
+
+    def add_points(self, points: int) -> None:
+        self._score = min(self.__score_limit, self._score+points)
+
+
+    def player_destroy_obstacle(self, obstacle: components.Obstacle):
+        if self._score >= self.__score_limit or obstacle.has_health():
+            return
+        
+        if debug.Cheats.no_point_combo:
+            points = obstacle.points
+        else:
+            points = math.ceil(obstacle.points * self._point_combo)
+    
+        if self._point_combo > 1:
+            text_surface = font.small_font.render(f"+{points} COMBO", cache=False)
+        else:
+            text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
+        
+        self.add_points(points)
+        if not debug.Cheats.no_point_combo:
+            self._point_combo = min(self._point_combo*1.1, self.__max_combo)
+
+        self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
+    
+
+    def reset_point_combo(self) -> None:
+        self._point_combo = 1.0
+        
+
+    def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
+        PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
+
 
 
 
@@ -212,7 +263,7 @@ class Play(State):
     def _delete_distant_objects(self) -> None:
         "Deletes objects that are beyond the despawn radius of the spaceship."
         for obj in self.spawned_entities.sprites():
-            if obj.distance_to(self.spaceship) > self.__despawn_radius:
+            if obj.can_despawn and not obj.within_distance(self.spaceship, self._despawn_radius):
                 obj.force_kill()
 
 
@@ -222,7 +273,7 @@ class Play(State):
         self.camera.update()
 
 
-    def _freeze_gameplay(self) -> None:
+    def _freeze_gameplay(self) -> bool:
         return not self._respawn_timer.complete or not self._game_over_timer.complete
 
 
@@ -231,7 +282,12 @@ class Play(State):
         self._update_game_objects()
         self._delete_distant_objects()
 
-        if not self.spaceship.health:
+
+        if (not self.spaceship.health
+            and self._player_lives > 0
+            and self._respawn_timer.complete
+            and self._game_over_timer.complete):
+
             self._player_lives -= 1
             self.camera.clear_velocity()
 
@@ -253,17 +309,16 @@ class Play(State):
 
 
     def _respawn_player(self) -> None:
-        score = self.spaceship.score
         self.spaceship = spaceship.PlayerShip(self._player_respawn_pos())
-        self.spaceship.score = score
         self.entities.add(self.spaceship)
         self.spaceship.invincibility_frames()
 
         self.powerups.kill_all()
+        self.reset_point_combo()
     
     def _player_respawn_pos(self) -> pg.Vector2:
         spaceship_pos = self.spaceship.position.xy
-        spawn_radius = self.__despawn_radius + 50
+        spawn_radius = self._player_respawn_radius
         if self.spaceship.position == (0, 0):
             return pg.Vector2(0, -spawn_radius)
         else:
@@ -326,7 +381,7 @@ class Play(State):
 
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
-        distance_from_center = self.__spawn_radius+self.spaceship.get_speed()*0.3
+        distance_from_center = self._spawn_radius+self.spaceship.get_speed()*0.3
         return self.camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
     
 
@@ -352,6 +407,11 @@ class Play(State):
                        
                        if entity.progress_save_key is not None]
         
-        camera_pos = tuple(self.camera.position)
-        save_data = SaveData(self._level_data.level_name, self.spaceship.score, self._player_lives, camera_pos, entity_data)
+        save_data = SaveData(self._level_data.level_name,
+                             self._score,
+                             self._point_combo,
+                             self._player_lives,
+                             tuple(self.camera.position),
+                             entity_data)
+
         data.save_progress(save_data)

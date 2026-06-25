@@ -11,6 +11,12 @@
         1,
         5
     ],
+    "asteroid_frequency": 0.02,
+    
+    "powerup_frequency": 1.0,
+    "spawn_powerups": {
+        "SuperLaser": 1
+    },
     "score_range": [99999, 100000],
     "next_level": null
 }

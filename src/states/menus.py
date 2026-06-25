@@ -226,6 +226,8 @@ class Settings(State):
 
             elements.UIPadding(8),
 
+            elements.Toggle("Start game in fullscreen", data.get_setting("open_fullscreen"),
+                            lambda x: data.update_settings(open_fullscreen=x)),
             elements.Toggle("Show version number", data.get_setting("show_version_number"),
                             lambda x: data.update_settings(show_version_number=x)),
         ]

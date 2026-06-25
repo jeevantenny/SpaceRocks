@@ -25,10 +25,13 @@ from .play import Play
 
 class PlayBossLevel(Play):
     "Plays through the final level of the game (Boss level). NOT FINISHED"
+    _player_max_lives=5
+    _player_respawn_radius=800
+
     def __init__(self):
         super().__init__()
         self._setup_level("boss_level")
-        self.spaceship.score = 500
+        self._score = 500
 
 
     @classmethod
@@ -38,7 +41,7 @@ class PlayBossLevel(Play):
 
     def _setup(self):
         super()._setup()
-        self.__lives_indicator = hud.LivesIndicator()
+        self.__lives_indicator = hud.LivesIndicator(self._player_max_lives)
     
     def _setup_game_objects(self):
         super()._setup_game_objects()
@@ -48,13 +51,13 @@ class PlayBossLevel(Play):
         # self.camera.set_zoom(1.5)
 
 
-    def update(self):
-        self._game_loop()
-        self._join_sound_queue(self.entities.clear_sound_queue())
-        if not self.spaceship.health:
-            self.camera.set_angular_vel(0)
+    # def update(self):
+    #     self._game_loop()
+    #     self._join_sound_queue(self.entities.clear_sound_queue())
+    #     if not self.spaceship.health:
+    #         self.camera.set_angular_vel(0)
         
-        self._game_over_timer.update()
+    #     self._game_over_timer.update()
 
 
     def draw(self, surface, lerp_amount=0):
@@ -64,7 +67,7 @@ class PlayBossLevel(Play):
 
 
     def debug_info(self):
-        return f"{super().debug_info()}\ncamera_rotation: {self.camera.get_rotation()}"
+        return f"{super().debug_info()}\ncamera_rotation: {self.camera.get_rotation()}, boss_health: {self.boss.health}"
 
     
     def _update_game_objects(self):
@@ -93,16 +96,15 @@ class PlayBossLevel(Play):
 
 
     def _draw_hud(self, surface):
-        indicator_surface = self.__lives_indicator.render(3)
+        indicator_surface = self.__lives_indicator.render(self._player_lives)
         surface.blit(indicator_surface, ((surface.width-indicator_surface.width)*0.5, surface.height-22))
         if self.spaceship.health and self.is_top_state():
             surface.blit(font.icon_font.render("Pause<pause>"), (10, surface.height-18))
 
 
-    def _game_loop(self):
-        self._update_game_objects()
-        if not self.spaceship.health and self._game_over_timer.complete:
-            self._game_over_timer.start()
+    # def _game_loop(self):
+    #     self._update_game_objects()
+
 
 
     def _game_over(self):
