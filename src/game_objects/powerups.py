@@ -356,3 +356,60 @@ class TripleShot(PowerUp):
 
     def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
         pg.draw.circle(surface, "green", spaceship.position+offset, 20, 1)
+
+
+
+
+
+
+
+
+
+class Dodge(PowerUp):
+    texture_key="dodge"
+
+    def __init__(self, amount=5, cooldown_used=0):
+        super().__init__()
+        self.__dodge_direction = pg.Vector2()
+        self.__dodge_cooldown = Timer(14)
+        self.__dodge_duration = Timer(6)
+        self.__dodges = amount
+        if cooldown_used:
+            self.__dodge_cooldown.start()
+            self.__dodge_cooldown.advance(cooldown_used)
+
+
+    def get_data(self):
+        return (self.__dodges, self.__dodge_cooldown.time_elapsed)
+    
+
+    def userinput(self, inputs):
+        if self.__dodge_cooldown.complete and (self.__dodge_duration.countdown or inputs.check_input("powerup_use")):
+            if self.__dodge_duration.complete:
+                self.__dodge_duration.start()
+
+            if inputs.check_input("up"):
+                self.__dodge_direction.y -= 1
+            if inputs.check_input("down"):
+                self.__dodge_direction.y += 1
+            if inputs.check_input("left"):
+                self.__dodge_direction.x -= 1
+            if inputs.check_input("right"):
+                self.__dodge_direction.x += 1
+            
+            if self.__dodge_direction:
+                self.__dodge_cooldown.start()
+    
+    def update(self, spaceship):
+        self.__dodge_cooldown.update()
+        self.__dodge_duration.update()
+        if self.__dodge_direction:
+            # self.__dodge_direction.rotate_ip(spaceship.get_rotation())
+            self.__dodge_direction.scale_to_length(80)
+            spaceship.move(self.__dodge_direction)
+            spaceship.invincibility_frames(15)
+
+            self.__dodge_direction.xy = (0, 0)
+            self.__dodges -= 1
+            if self.__dodges <= 0:
+                spaceship.remove_powerup(self)

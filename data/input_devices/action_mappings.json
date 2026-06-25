@@ -272,9 +272,8 @@
         },
         {
             "input_device": "controller",
-            "type": "trigger",
-            "side": "right",
-            "value": 0.5
+            "type": "hold_button",
+            "value": "r_trigger"
         }
     ],
     "ship_backward": [
@@ -349,6 +348,18 @@
             "input_device": "controller",
             "type": "hold_button",
             "value": "a"
+        }
+    ],
+    "powerup_use": [
+        {
+            "input_device": "keyboard_mouse",
+            "key": "l",
+            "type": "hold"
+        },
+        {
+            "input_device": "controller",
+            "type": "hold_button",
+            "value": "b"
         }
     ]
 }
