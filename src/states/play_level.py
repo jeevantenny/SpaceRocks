@@ -351,12 +351,6 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
     def __asteroid_density(self) -> int:
         "The sum of the sizes of all asteroids loaded in."
         return sum(asteroid.size for asteroid in self.asteroids if asteroid.within_distance(self.spaceship, self._spawn_radius))
-
-
-    def __delete_offscreen_spawned_entities(self) -> None:
-        for obj in self.spawned_entities.sprites():
-            if not obj.rect.colliderect(self.camera.get_visible_area((config.CANVAS_SIDES, config.CANVAS_SIDES))):
-                obj.force_kill()
                 
     
 
