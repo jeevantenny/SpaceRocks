@@ -154,6 +154,7 @@ class PlayerBullet(Projectile):
             texture = assets.load_texture_map("particles")["player_bullet_2"]
         else:
             texture = assets.load_texture_map("particles")["player_bullet_1"]
+        self.__alt_texture = alt_texture
 
         super().__init__(
             texture,
@@ -167,8 +168,14 @@ class PlayerBullet(Projectile):
 
     
     def __init_from_data__(self, object_data):
+        self.__alt_texture = object_data["alt_texture"]
+        if self.__alt_texture:
+            texture = assets.load_texture_map("particles")["player_bullet_2"]
+        else:
+            texture = assets.load_texture_map("particles")["player_bullet_1"]
+
         super().__init__(
-            assets.load_texture_map("particles")["player_bullet"],
+            texture,
             object_data["position"],
             object_data["velocity"],
             18,
@@ -185,7 +192,8 @@ class PlayerBullet(Projectile):
                      "velocity": tuple(self._velocity),
                      "rotation": self._rotation,
                      "lifetime": self._lifetime,
-                     "distance_traveled": self._distance_traveled})
+                     "distance_traveled": self._distance_traveled,
+                     "alt_texture": self.__alt_texture})
         return data
 
 

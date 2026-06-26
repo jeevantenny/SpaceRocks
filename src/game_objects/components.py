@@ -39,9 +39,9 @@ class ObjectVelocity(GameObject):
 
     _max_speed = 100
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, velocity: pg.typing.Point = (0, 0), **kwargs) -> None:
         super().__init__(**kwargs)
-        self._velocity = pg.Vector2(0, 0)
+        self._velocity = pg.Vector2(velocity)
         self.__max_speed_squared = self._max_speed*self._max_speed
 
 

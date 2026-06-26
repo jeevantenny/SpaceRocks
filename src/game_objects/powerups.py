@@ -1,6 +1,5 @@
 import pygame as pg
-import random
-from typing import Callable, Iterator
+from typing import Iterator
 
 import debug
 
@@ -10,13 +9,11 @@ from src.file_processing import assets
 from src.audio.soundfx import HasSoundQueue
 from src.input_device import controller_rumble
 
-from src.ui import font
-
-from .components import ObjectHitbox, ObjectTexture, ObjectCollision
+from .components import ObjectHitbox, ObjectTexture, ObjectVelocity
 from .spaceship import PlayerShip
 from .asteroids import Asteroid
 from .projectiles import PlayerBullet, Laser
-from .particles import DisplayText
+from .particles import Particle, Emitter
 
 
 
@@ -91,7 +88,7 @@ class PowerUpGroup(HasSoundQueue):
 
     def __init__(self):
         super().__init__()
-        self.__container: set[PowerUp] = set()
+        self.__container: list[PowerUp] = []
 
     def userinput(self, inputs: InputInterpreter) -> None:
         for powerup in self.__container:
@@ -117,7 +114,7 @@ class PowerUpGroup(HasSoundQueue):
         return False
 
     def add(self, powerup: PowerUp) -> None:
-        self.__container.add(powerup)
+        self.__container.append(powerup)
 
     def add_by_name(self, powerup_name: str) -> None:
         try:
@@ -146,7 +143,7 @@ class PowerUpGroup(HasSoundQueue):
         self.__container.clear()
 
     def __iter__(self) -> Iterator[PowerUp]:
-        return self.__container.__iter__()
+        return iter(self.__container)
     
     
     def __len__(self):
@@ -157,9 +154,10 @@ class PowerUpGroup(HasSoundQueue):
 
 
 
-class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
+class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
     ignore_camera_rotation=True
     progress_save_key="powerup_collectable"
+    _layer = -1
 
     def __init__(
             self,
@@ -178,14 +176,13 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
         super().__init__(
             position=position,
             texture=texture,
-            hitbox_size=(25, 25),
-            radius=8,
-            bounce=0.95
+            hitbox_size=(25, 25)
         )
 
         self.accelerate(velocity)
         self.__powerup_name = powerup_name
         self.__player_ship: PlayerShip | None = None
+        self.__emitter: Emitter | None = None
 
 
     def __init_from_data__(self, object_data):
@@ -223,6 +220,19 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectCollision):
             self.__player_ship.acquire_powerup(self.__powerup_name)
             self.host_state.powerup_info(PowerUp.powerup_list[self.__powerup_name])
             self.kill()
+        
+
+        if self.__emitter is None:
+            if self.primary_group is not None:
+                self.__set_emitter()
+        else:
+            self.__emitter.emit(self.position)
+    
+
+    def __set_emitter(self) -> None:
+        particle_factory = Particle.get_factory("smoke", -2, True)
+        self.__emitter = Emitter(particle_factory, self.primary_group, 0, [1, 4], [12, 18])
+        
 
 
 
