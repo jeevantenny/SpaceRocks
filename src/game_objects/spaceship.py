@@ -105,16 +105,17 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
                 
 
 
+    def _get_bullet(self) -> PlayerBullet:
+        direction = self.get_rotation_vector()
+        return PlayerBullet(self.position+direction*12, direction, self.get_velocity())
 
 
 
     def shoot(self) -> PlayerBullet:
-        from .projectiles import PlayerBullet
-        direction = self.get_rotation_vector()
-        bullet = PlayerBullet(self.position+direction*12, direction, self.get_velocity())
+        bullet = self._get_bullet()
         self.primary_group.add(bullet)
         if not self.__thrust:
-            self.accelerate(-direction*0.5)
+            self.accelerate(-self.get_rotation_vector()*0.5)
         self._queue_sound("entity.ship.shoot", 0.8)
 
         return bullet
@@ -241,9 +242,14 @@ class PlayerShip(Spaceship):
         controller_rumble("ship_thrusters", 0.25, True)
 
 
-    def shoot(self) -> PlayerBullet:
-        controller_rumble("gun_fire")
-        return super().shoot()
+    def _get_bullet(self) -> PlayerBullet:
+        direction = self.get_rotation_vector()
+        return PlayerBullet(
+            self.position+direction*12,
+            direction,
+            self.get_velocity(),
+            self.has_powerup("TripleShot")
+        )
 
 
     def do_collision(self):

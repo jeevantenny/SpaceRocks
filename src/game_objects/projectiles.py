@@ -144,14 +144,24 @@ class PlayerBullet(Projectile):
     __speed = 40
     __lifetime_value = 18
 
-    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter_vel: pg.typing.Point):
+    def __init__(self,
+                 position: pg.typing.Point,
+                 direction: pg.typing.Point,
+                 shooter_vel: pg.typing.Point,
+                 alt_texture=False):
+        
+        if alt_texture:
+            texture = assets.load_texture_map("particles")["player_bullet_2"]
+        else:
+            texture = assets.load_texture_map("particles")["player_bullet_1"]
+
         super().__init__(
-            assets.load_texture_map("particles")["player_bullet"],
+            texture,
             position,
             direction*self.__speed+shooter_vel,
             13,
             self.__lifetime_value,
-            -direction.angle_to((0, -1))
+            -pg.Vector2(direction).angle_to((0, -1))
         )
 
 

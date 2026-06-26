@@ -371,7 +371,8 @@ class TripleShot(PowerUp):
         spaceship.primary_group.add(PlayerBullet(
             spaceship.position+direction*40,
             direction,
-            spaceship.get_velocity()
+            spaceship.get_velocity(),
+            True
         ))
 
 

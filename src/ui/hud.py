@@ -53,26 +53,8 @@ class LivesIndicator(UIElement):
 
 
 
-class PowerupIndicator(UIElement):
-    """Show information about a powerup."""
-
-    def __init__(self, powerup_type: type[PowerUp]):
-        texture_map = assets.load_texture_map("ui_elements")
-        self.__base_texture = texture_map["powerup_base"]
-        self.__overlay_texture = texture_map["powerup_overlay"]
-        self.__powerup_texture = assets.load_texture_map("powerups")[powerup_type.texture_key]
-    
-
-    def render(self) -> pg.Surface:
-        output = render_status_bar(self.__base_texture, self.__overlay_texture, 0.2)
-        output.blit(self.__powerup_texture, (2, 2))
-        return output
-    
-
-
-
 class PowerupList(UIElement):
-    "Show all powerups that the player currently has."
+    """Show all powerups that the player currently has."""
 
     def __init__(self, powerup_group: PowerUpGroup):
         self.__powerups = powerup_group
@@ -96,7 +78,7 @@ class PowerupList(UIElement):
     def __render_powerup(self, powerup: PowerUp) -> pg.Surface:
         output = render_status_bar(self.__base_texture, self.__overlay_texture, powerup.indicator_slider_amount())
         output.blit(self.__powerup_textures[powerup.texture_key], (2, 2))
-        text = font.small_font.render(powerup.get_display_name(), color_a="#eebb99", color_b="#dd6644")
+        text = font.small_font.render(powerup.get_display_name(), color_a="#eedd88", color_b="#550011")
         output.blit(text, (21, 5))
         return output
     
