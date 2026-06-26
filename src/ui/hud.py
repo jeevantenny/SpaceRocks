@@ -1,12 +1,14 @@
 import pygame as pg
 
 from src.file_processing import assets
+from src.game_objects.powerups import PowerUp, PowerUpGroup
 
-
+from . import font, render_status_bar
+from .elements import UIElement
     
 
 
-class ProgressBar:
+class ProgressBar(UIElement):
     "Shows how much of a level the player has completed."
 
     def __init__(self):
@@ -17,17 +19,12 @@ class ProgressBar:
     
     def render(self, amount: float) -> pg.Surface:
         "Render progress bar for the given amount between 0 and 1."
-
-        amount = pg.math.clamp(amount, 0, 1)
-        output = self.__base_texture.copy()
-        overlay = self.__overlay_texture.subsurface(0, 0, int(88*amount), 8)
-        output.blit(overlay, (1, 1))
-        return output
+        return render_status_bar(self.__base_texture, self.__overlay_texture, amount)
     
 
 
-class LivesIndicator:
-    "Shows how many loves the player has left during boss battle."
+class LivesIndicator(UIElement):
+    "Shows how many lives the player has left during a level."
 
     __texture_size = 16
     __padding = 5
@@ -52,3 +49,61 @@ class LivesIndicator:
             output.blit(texture, (i*(self.__texture_size+self.__padding), 0))
         
         return output
+    
+
+
+
+class PowerupIndicator(UIElement):
+    """Show information about a powerup."""
+
+    def __init__(self, powerup_type: type[PowerUp]):
+        texture_map = assets.load_texture_map("ui_elements")
+        self.__base_texture = texture_map["powerup_base"]
+        self.__overlay_texture = texture_map["powerup_overlay"]
+        self.__powerup_texture = assets.load_texture_map("powerups")[powerup_type.texture_key]
+    
+
+    def render(self) -> pg.Surface:
+        output = render_status_bar(self.__base_texture, self.__overlay_texture, 0.2)
+        output.blit(self.__powerup_texture, (2, 2))
+        return output
+    
+
+
+
+class PowerupList(UIElement):
+    "Show all powerups that the player currently has."
+
+    def __init__(self, powerup_group: PowerUpGroup):
+        self.__powerups = powerup_group
+
+        texture_map = assets.load_texture_map("ui_elements")
+        self.__base_texture = texture_map["powerup_base"]
+        self.__overlay_texture = texture_map["powerup_overlay"]
+
+        self.__powerup_textures = assets.load_texture_map("powerups")
+
+
+    @property
+    def size(self):
+        return (80, max(len(self.__powerups)*23 - 2, 1))
+    
+
+    def update_powerup_group(self, powerup_group: PowerUpGroup) -> None:
+        self.__powerups = powerup_group
+    
+
+    def __render_powerup(self, powerup: PowerUp) -> pg.Surface:
+        output = render_status_bar(self.__base_texture, self.__overlay_texture, powerup.indicator_slider_amount())
+        output.blit(self.__powerup_textures[powerup.texture_key], (2, 2))
+        text = font.small_font.render(powerup.get_display_name(), color_a="#eebb99", color_b="#dd6644")
+        output.blit(text, (21, 5))
+        return output
+    
+
+    def render(self) -> pg.Surface:
+        output = assets.colorkey_surface(self.size)
+        for i, powerup in enumerate(self.__powerups):
+            output.blit(self.__render_powerup(powerup), (0, i*23))
+        return output
+    

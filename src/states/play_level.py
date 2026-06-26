@@ -37,6 +37,7 @@ class PlayLevel(Play):
 
         super().__init__()
         self._setup_level(level_name)
+        self._setup_hud()
         self._score = self._level_data.score_range[0]
 
 
@@ -82,6 +83,7 @@ class PlayLevel(Play):
     def init_from_save(cls, save_data: SaveData) -> Self:
         self = super().init_from_save(save_data)
         self._setup_level(save_data.level_name)
+        self._setup_hud()
 
         self.__display_score = save_data.score
         self.__hud_timer.stop()
@@ -95,16 +97,21 @@ class PlayLevel(Play):
     def _setup(self):
         super()._setup()
 
-        self.__display_score = 0
         self.highscore = data.load_highscore()
         self.__prev_highscore = self.highscore
         self.highscore_changed = False
-        self.__progress_bar = hud.ProgressBar()
         
-        self.__hud_timer = Timer(10).start()
         self.__lvl_transition_timer = Timer(60)
         self.__level_cleared = False
+
+
+    def _setup_hud(self) -> None:
+        self.__display_score = 0
+        self.__hud_timer = Timer(10).start()
+        self.__progress_bar = hud.ProgressBar()
         self.__lives_indicator = hud.LivesIndicator(self._player_max_lives)
+        self.__powerup_list = hud.PowerupList(self.spaceship.get_powerup_group())
+
 
 
     
@@ -182,6 +189,10 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
         # Show lives indicator
         lives_render = self.__lives_indicator.render(self._player_lives)
         surface.blit(lives_render, (surface.width-lives_render.width-10, 10-entrance_offset))
+
+        # Show powerups
+        if self.spaceship.health:
+            surface.blit(self.__powerup_list.render(), pg.Vector2(surface.size)-self.__powerup_list.size+(entrance_offset, -6))
         
 
         if self.is_top_state():
@@ -227,6 +238,11 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
     def _freeze_gameplay(self):
         return super()._freeze_gameplay() or not self.__lvl_transition_timer.complete
+    
+
+    def _respawn_player(self):
+        super()._respawn_player()
+        self.__powerup_list.update_powerup_group(self.spaceship.get_powerup_group())
 
     
     

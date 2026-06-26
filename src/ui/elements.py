@@ -6,12 +6,13 @@ from src.math_functions import sign
 from src.input_device import InputInterpreter
 from src.file_processing import assets
 
-from . import font
+from . import font, render_status_bar
 
 
 
 
 class UIElement:
+    _size = (20, 20)
     def __init__(self, label: str | None = None) -> None:
         self._label = label
 
@@ -114,7 +115,7 @@ class UIPadding(UIElement):
 
 
 class Slider(UIElement):
-    __size = (75, 12)
+    _size = (75, 12)
     def __init__(self,
                  label: str,
                  slider_range: tuple[int, int],
@@ -138,7 +139,7 @@ class Slider(UIElement):
 
         texture_map = assets.load_texture_map("ui_elements")
         self.__base_texture = texture_map["slider_base"]
-        self.__bar_texture = texture_map["slider_bar"]
+        self.__overlay_texture = texture_map["slider_overlay"]
         self.__handle_texture = texture_map["slider_handle"]
 
         self.__on_slide: Callable[[float], None] | None = None
@@ -147,7 +148,7 @@ class Slider(UIElement):
 
     @property
     def size(self) -> pg.typing.Point:
-        return self.__size
+        return self._size
     
     @property
     def value(self) -> int:
@@ -176,18 +177,16 @@ class Slider(UIElement):
             self.__on_slide(self.value)
     
     def render(self):
-        surface = self.__base_texture.copy()
-        bar_area = (0, 0, 3+(self.__size[0]-7)*self.slider_amount(), self.__size[1])
-        surface.blit(self.__bar_texture.subsurface(bar_area))
-        handle_pos = (2+(self.__size[0]-16)*self.slider_amount(), 2)
-        surface.blit(self.__handle_texture, handle_pos)
-        return surface
+        output = render_status_bar(self.__base_texture, self.__overlay_texture, 0.1+self.slider_amount()*0.8)
+        handle_pos = (2+(self._size[0]-16)*self.slider_amount(), 2)
+        output.blit(self.__handle_texture, handle_pos)
+        return output
         
     
     
 
 class Toggle(UIElement):
-    __size = (31, 13)
+    _size = (31, 13)
 
     def __init__(self, label: str, on=False, on_toggle: Callable[[bool], None] | None = None):
         super().__init__(label)
@@ -205,7 +204,7 @@ class Toggle(UIElement):
 
     @property
     def size(self) -> pg.typing.Point:
-        return self.__size
+        return self._size
     
     @property
     def on(self) -> bool:

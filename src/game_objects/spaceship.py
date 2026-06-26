@@ -275,3 +275,7 @@ class PlayerShip(Spaceship):
 
     def remove_powerup(self, powerup) -> None:
         self.__powerups.remove(powerup)
+
+    
+    def get_powerup_group(self):
+        return self.__powerups

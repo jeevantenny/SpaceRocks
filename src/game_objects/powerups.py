@@ -59,6 +59,8 @@ class PowerUp(HasSoundQueue):
     def get_data(self) -> tuple:
         return ()
 
+    def indicator_slider_amount(self) -> float:
+        return 1.0
 
     def userinput(self, inputs: InputInterpreter) -> None:
         "Processes userinput for powerup."
@@ -145,6 +147,10 @@ class PowerUpGroup(HasSoundQueue):
 
     def __iter__(self) -> Iterator[PowerUp]:
         return self.__container.__iter__()
+    
+    
+    def __len__(self):
+        return len(self.__container)
 
 
 
@@ -329,7 +335,9 @@ class TripleShot(PowerUp):
     texture_key = "triple_shot"
 
     _display_name = "Triple Shot"
-    def __init__(self, rounds=30):
+    __max_rounds = 30
+
+    def __init__(self, rounds=__max_rounds):
         super().__init__()
         self.__rounds = rounds
         self.__shoot = False
@@ -337,6 +345,9 @@ class TripleShot(PowerUp):
     
     def get_data(self):
         return (self.__rounds,)
+    
+    def indicator_slider_amount(self):
+        return self.__rounds/self.__max_rounds
     
 
     def userinput(self, inputs):
@@ -362,10 +373,6 @@ class TripleShot(PowerUp):
             direction,
             spaceship.get_velocity()
         ))
-    
-
-    def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
-        pg.draw.circle(surface, "green", spaceship.position+offset, 20, 1)
 
 
 
@@ -378,8 +385,9 @@ class TripleShot(PowerUp):
 class Dodge(PowerUp):
     texture_key = "dodge"
     _usage_instr = "Hold <powerup_use> and input the direction you wanna dodge in"
+    __max_dodges = 5
 
-    def __init__(self, amount=5, cooldown_used=0):
+    def __init__(self, amount=__max_dodges, cooldown_used=0):
         super().__init__()
         self.__dodges = amount
         self.__dodge_cooldown = Timer(15)
@@ -395,6 +403,9 @@ class Dodge(PowerUp):
 
     def get_data(self):
         return (self.__dodges, self.__dodge_cooldown.time_elapsed)
+    
+    def indicator_slider_amount(self):
+        return self.__dodges/self.__max_dodges
     
 
     def userinput(self, inputs):

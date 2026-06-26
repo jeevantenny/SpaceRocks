@@ -25,3 +25,18 @@ def load_icon(icon_name) -> pg.Surface:
 def blit_to_center(source: pg.Surface, dest: pg.Surface, offset: pg.typing.Point = (0, 0)):
     blit_bos = (pg.Vector2(dest.size)-source.size)*0.5 + offset
     dest.blit(source, blit_bos)
+
+
+
+def render_status_bar(base: pg.Surface, overlay: pg.Surface, amount: float):
+    if base.size != overlay.size:
+        raise ValueError("Both base and overlay must have the same size.")
+
+    output = base.copy()
+    amount = pg.math.clamp(amount, 0, 1)
+    if amount == 1:
+        output.blit(overlay)
+    elif amount != 0:
+        output.blit(overlay.subsurface(0, 0, int(overlay.width*amount), overlay.height))
+    
+    return output
