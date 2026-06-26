@@ -381,13 +381,16 @@ class Dodge(PowerUp):
 
     def __init__(self, amount=5, cooldown_used=0):
         super().__init__()
-        self.__dodge_direction = pg.Vector2()
-        self.__dodge_cooldown = Timer(14)
-        self.__dodge_duration = Timer(6)
         self.__dodges = amount
+        self.__dodge_cooldown = Timer(15)
         if cooldown_used:
             self.__dodge_cooldown.start()
             self.__dodge_cooldown.advance(cooldown_used)
+
+        self.__dodge_direction = pg.Vector2()
+        self.__dodge_duration = Timer(6, exec_after=self.__reset_dodge)
+        self.__activate_dodge = False
+
 
 
     def get_data(self):
@@ -395,32 +398,42 @@ class Dodge(PowerUp):
     
 
     def userinput(self, inputs):
-        if self.__dodge_cooldown.complete and (self.__dodge_duration.countdown or inputs.check_input("powerup_use")):
-            if self.__dodge_duration.complete:
-                self.__dodge_duration.start()
+        if inputs.check_input("up"):
+            self.__dodge_direction.y -= 1
+        if inputs.check_input("down"):
+            self.__dodge_direction.y += 1
+        if inputs.check_input("left"):
+            self.__dodge_direction.x -= 1
+        if inputs.check_input("right"):
+            self.__dodge_direction.x += 1
+        
+        
+        if self.__dodge_cooldown.complete and inputs.check_input("powerup_use"):
+            self.__dodge_duration.start()
+            self.__activate_dodge = True
 
-            if inputs.check_input("up"):
-                self.__dodge_direction.y -= 1
-            if inputs.check_input("down"):
-                self.__dodge_direction.y += 1
-            if inputs.check_input("left"):
-                self.__dodge_direction.x -= 1
-            if inputs.check_input("right"):
-                self.__dodge_direction.x += 1
-            
-            if self.__dodge_direction:
-                self.__dodge_cooldown.start()
+        elif self.__dodge_direction and self.__dodge_duration.complete:
+            self.__dodge_duration.start()
+
     
     def update(self, spaceship):
         self.__dodge_cooldown.update()
         self.__dodge_duration.update()
-        if self.__dodge_direction:
-            # self.__dodge_direction.rotate_ip(spaceship.get_rotation())
+
+        if self.__activate_dodge and self.__dodge_direction:
             self.__dodge_direction.scale_to_length(80)
             spaceship.move(self.__dodge_direction)
+            spaceship.accelerate(spaceship.get_velocity()*-0.5)
             spaceship.invincibility_frames(15)
 
-            self.__dodge_direction.xy = (0, 0)
+            self.__dodge_duration.stop()
+            self.__reset_dodge()
+            self.__dodge_cooldown.start()
             self.__dodges -= 1
             if self.__dodges <= 0:
                 spaceship.remove_powerup(self)
+    
+
+    def __reset_dodge(self) -> None:
+        self.__dodge_direction.xy = (0, 0)
+        self.__activate_dodge = False
