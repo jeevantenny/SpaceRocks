@@ -1,16 +1,13 @@
 import pygame as pg
-from typing import Iterable
+from typing import Callable
 
 import debug
 
 from src.custom_types import Timer
 from src.file_processing import assets
-from src.math_functions import unit_vector
-from src.ui import font
 
 from . import GameObject
-from .components import ObjectTexture, ObjectVelocity, ObjectHitbox
-from .particles import DisplayText
+from .components import ObjectTexture, ObjectVelocity, ObjectHealth
 
 
 
@@ -144,21 +141,38 @@ class PlayerBullet(Projectile):
     __speed = 40
     __lifetime_value = 18
 
-    def __init__(self, position: pg.typing.Point, direction: pg.typing.Point, shooter_vel: pg.typing.Point):
+    def __init__(self,
+                 position: pg.typing.Point,
+                 direction: pg.typing.Point,
+                 shooter_vel: pg.typing.Point,
+                 alt_texture=False):
+        
+        if alt_texture:
+            texture = assets.load_texture_map("particles")["player_bullet_2"]
+        else:
+            texture = assets.load_texture_map("particles")["player_bullet_1"]
+        self.__alt_texture = alt_texture
+
         super().__init__(
-            assets.load_texture_map("particles")["player_bullet"],
+            texture,
             position,
             direction*self.__speed+shooter_vel,
             13,
             self.__lifetime_value,
-            -direction.angle_to((0, -1))
+            -pg.Vector2(direction).angle_to((0, -1))
         )
 
 
     
     def __init_from_data__(self, object_data):
+        self.__alt_texture = object_data["alt_texture"]
+        if self.__alt_texture:
+            texture = assets.load_texture_map("particles")["player_bullet_2"]
+        else:
+            texture = assets.load_texture_map("particles")["player_bullet_1"]
+
         super().__init__(
-            assets.load_texture_map("particles")["player_bullet"],
+            texture,
             object_data["position"],
             object_data["velocity"],
             18,
@@ -175,7 +189,8 @@ class PlayerBullet(Projectile):
                      "velocity": tuple(self._velocity),
                      "rotation": self._rotation,
                      "lifetime": self._lifetime,
-                     "distance_traveled": self._distance_traveled})
+                     "distance_traveled": self._distance_traveled,
+                     "alt_texture": self.__alt_texture})
         return data
 
 
@@ -187,7 +202,7 @@ class PlayerBullet(Projectile):
             else:
                 obj.damage(1)
                 
-            self.host_state.player_destroy_obstacle(obj)
+            self.host_state.player_damage_obstacle(obj)
             return True
 
         else:
@@ -209,46 +224,51 @@ class Laser(ObjectTexture):
     "A beam like weapon that has no range limit."
 
     save_entity_progress=False
+    can_despawn=False
     def __init__(
             self,
-            position: pg.typing.Point,
-            rotation: int,
+            anchor_object: ObjectTexture,
             width: int,
             damage: int,
-            duration=3
+            duration=3,
+            damage_types: tuple[ObjectHealth, ...] = (),
+            on_damage: Callable[[GameObject], None] = None
             ):
 
-        super().__init__(position=position, texture=None)
+        super().__init__(position=anchor_object.position, texture=None)
+        self.set_rotation(anchor_object.get_rotation())
 
+        self.__anchor_object = anchor_object
         self.__damage_duration = Timer(duration, exec_after=self.kill).start()
         self.__damage = damage
-        self._rotation = rotation
-
-        self.__collision_lines = get_collision_lines(position, self.get_rotation_vector(), 300, width, 5)
+        self.__width = width
         self.killed_list: list[GameObject] = []
 
-
-
-    def set_rotation(self, value):
-        raise AttributeError(f"Cannot change rotation of {type(self).__name__}")
-
-
+        self.__damage_types = damage_types
+        self.__on_damage = on_damage
 
 
     def update(self):
-        from .asteroids import Asteroid
+        self.set_position(self.__anchor_object.position)
+        self.set_rotation(self.__anchor_object.get_rotation())
+        collision_lines = self._get_collision_lines(self.position, self.get_rotation_vector())
         if not self.__damage_duration.complete:
             for obj in self.primary_group:
-                if isinstance(obj, Asteroid) and obj.has_health() and rect_line_collision(obj.rect, self.__collision_lines):
-                    obj.kill(False)
-                    self.killed_list.append(obj)
+                if isinstance(obj, self.__damage_types) and obj.has_health() and rect_line_collision(obj.rect, collision_lines):
+                    obj.damage(self.__damage)
+                    if self.__on_damage is not None:
+                        self.__on_damage(obj)
         
         self.__damage_duration.update()
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0) -> None:
-        for line in self.__collision_lines:
+        for line in self._get_collision_lines(self.position, self.__anchor_object.get_lerp_rotation_vector()):
             pg.draw.line(surface, "green", pg.Vector2(line[0])+offset, pg.Vector2(line[1])+offset)
+
+    
+    def _get_collision_lines(self, position: pg.Vector2, direction: pg.Vector2) -> None:
+        return get_collision_lines(position, direction, 300, self.__width, 4)
 
 
 

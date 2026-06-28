@@ -5,7 +5,9 @@
 
 /build
 /dist
-*test_folder
+
+**/test/
+/test_folder
 
 /user_data
 

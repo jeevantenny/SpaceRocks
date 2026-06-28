@@ -9,7 +9,8 @@
         "quit": "K_x",
 
         "ship_forward": "K_w",
-        "shoot": "K_space"
+        "shoot": "K_space",
+        "powerup_use": "K_shift"
     },
 
     "controllers": {
@@ -25,7 +26,8 @@
             "quit": "sw_x",
 
             "ship_forward": "sw_r_bumper",
-            "shoot": "sw_a"
+            "shoot": "sw_a",
+            "powerup_use": "sw_b"
         },
         "Nintendo Switch Joy-Con (L)": {
             "same_as": "Nintendo Switch Joy-Con (L/R)",
@@ -34,7 +36,8 @@
             "pause": "sw_minus",
             "settings": "sw_al_left",
             "quit": "sw_al_up",
-            "shoot": "sw_al_right"
+            "shoot": "sw_al_right",
+            "powerup_use": "sw_al_down"
         },
         "Nintendo Switch Joy-Con (R)": {
             "same_as": "Nintendo Switch Joy-Con (L)",

@@ -52,6 +52,19 @@ class KeyboardMouse:
         return self.__hold_keys.copy()
     
 
+    @classmethod
+    def get_key_code(self, key_name) -> int:
+        match key_name:
+            case "ctrl":
+                return KMOD_CTRL
+            case "shift":
+                return KMOD_SHIFT
+            case "alt":
+                return KMOD_ALT
+            case _:
+                return pg.key.key_code(key_name)
+    
+
 
     def get_userinput(self, events: list[pg.Event]) -> None:
         self.__tap_keys.clear()
@@ -406,7 +419,7 @@ class InputInterpreter:
 
         for bind_data in self.__get_bind_options(action_name):
             if bind_data["input_device"] == "keyboard_mouse":
-                key_code = pg.key.key_code(bind_data["key"])
+                key_code = KeyboardMouse.get_key_code(bind_data["key"])
                 if bind_data["type"] == "hold":
                     result = self.__keyboard_mouse.hold_keys[key_code] > bind_data.get("threshold", 0)
                 else:

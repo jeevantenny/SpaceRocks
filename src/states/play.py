@@ -58,6 +58,7 @@ class Play(State):
         self._setup_game_objects()
 
         self.spaceship = spaceship.PlayerShip((0, 0))
+        self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
     
 
@@ -141,6 +142,7 @@ class Play(State):
                 self.powerups.add(entity)
             elif isinstance(entity, spaceship.PlayerShip):
                 self.spaceship = entity
+                self._powerups = self.spaceship.get_powerup_group()
 
             object_dict[entity_data["id"]] = entity
         
@@ -226,7 +228,7 @@ class Play(State):
         self._score = min(self.__score_limit, self._score+points)
 
 
-    def player_destroy_obstacle(self, obstacle: components.Obstacle):
+    def player_damage_obstacle(self, obstacle: components.Obstacle):
         if self._score >= self.__score_limit or obstacle.has_health():
             return
         
@@ -310,6 +312,7 @@ class Play(State):
 
     def _respawn_player(self) -> None:
         self.spaceship = spaceship.PlayerShip(self._player_respawn_pos())
+        self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
         self.spaceship.invincibility_frames()
 

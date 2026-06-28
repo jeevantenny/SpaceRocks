@@ -102,27 +102,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
         self.__thrust = False
         self.__turn_direction = 0
-                
-
-
-
-
-
-    def shoot(self) -> PlayerBullet:
-        from .projectiles import PlayerBullet
-        direction = self.get_rotation_vector()
-        bullet = PlayerBullet(self.position+direction*12, direction, self.get_velocity())
-        self.primary_group.add(bullet)
-        if not self.__thrust:
-            self.accelerate(-direction*0.5)
-        self._queue_sound("entity.ship.shoot", 0.8)
-
-        return bullet
-
-
-    
-    def boost_speed(self) -> bool:
-        return self._velocity.magnitude() > self._max_speed-3
 
 
 
@@ -154,6 +133,16 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
     def _turn(self, direction: Literal[-1, 1]) -> None:
         self.__turn_direction = sign(self.__turn_direction+direction)
+
+
+
+    def _shoot(self) -> None:
+        direction = self.get_rotation_vector()
+        bullet = PlayerBullet(self.position+direction*12, direction, self.get_velocity())
+        self.primary_group.add(bullet)
+        if not self.__thrust:
+            self.accelerate(-direction*0.5)
+        self._queue_sound("entity.ship.shoot", 0.8)
 
     
 
@@ -188,10 +177,11 @@ class PlayerShip(Spaceship):
     def __init_from_data__(self, object_data):
         super().__init_from_data__(object_data)
 
-        from .powerups import PowerUpGroup
+        from .powerups import PowerUpGroup, PowerUp
         self.__powerups = PowerUpGroup()
-        for powerup_name in object_data.get("powerups", []):
-            self.__powerups.add(powerup_name)
+        for name, data in object_data.get("powerups", []):
+            powerup = PowerUp.powerup_list[name](*data)
+            self.__powerups.add(powerup)
 
         self._do_transition()
         self._skip_animation_to_end()
@@ -199,7 +189,7 @@ class PlayerShip(Spaceship):
 
     def get_data(self):
         data = super().get_data()
-        data.update({"powerups": [powerup.get_name() for powerup in self.__powerups]})
+        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups]})
         return data
 
 
@@ -216,7 +206,7 @@ class PlayerShip(Spaceship):
                 self._turn(1)
             
             if inputs.check_input("shoot") and self.alive():
-                self.shoot()
+                self._shoot()
 
             self.__powerups.userinput(inputs)
 
@@ -225,9 +215,7 @@ class PlayerShip(Spaceship):
         super().update()
         self.__powerups.update(self)
         self._join_sound_queue(self.__powerups.clear_sound_queue())
-
-        self.__invincibility_timer.update()
-                
+        self.__invincibility_timer.update()      
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
@@ -236,17 +224,22 @@ class PlayerShip(Spaceship):
 
 
     def _thrust(self):
-        super()._thrust()
-        controller_rumble("ship_thrusters", 0.25, True)
+        if self.__powerups.on_thrust(self):
+            super()._thrust()
+            controller_rumble("ship_thrusters", 0.25, True)
 
+    def _turn(self, direction: Literal[-1, 1]):
+        if self.__powerups.on_turn(self, direction):
+            super()._turn(direction)
 
-    def shoot(self) -> PlayerBullet:
-        controller_rumble("gun_fire")
-        return super().shoot()
+    def _shoot(self):
+        if self.__powerups.on_shoot(self):
+            super()._shoot()
+            controller_rumble("gun_fire")
 
 
     def do_collision(self):
-        return super().do_collision() and not self.invincible
+        return super().do_collision() and not self.__powerups.do_collision(self)
 
 
     
@@ -255,7 +248,10 @@ class PlayerShip(Spaceship):
 
 
     def kill(self):
-        if self.health and self.__invincibility_timer.complete and not self.__powerups.kill_protection(self):
+        if not self.__powerups.on_kill(self):
+            return
+
+        if self.health and self.__invincibility_timer.complete:
             if debug.Cheats.invincible:
                 self.invincibility_frames()
             else:
@@ -269,8 +265,12 @@ class PlayerShip(Spaceship):
 
     def acquire_powerup(self, powerup_name: str) -> None:
         if not self.has_powerup(powerup_name):
-            self.__powerups.add(powerup_name)
+            self.__powerups.add_by_name(powerup_name)
 
 
     def remove_powerup(self, powerup) -> None:
         self.__powerups.remove(powerup)
+
+    
+    def get_powerup_group(self):
+        return self.__powerups
