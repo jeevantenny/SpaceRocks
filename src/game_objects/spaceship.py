@@ -110,16 +110,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
         return PlayerBullet(self.position+direction*12, direction, self.get_velocity())
 
 
-
-    def shoot(self) -> None:
-        direction = self.get_rotation_vector()
-        bullet = PlayerBullet(self.position+direction*12, direction, self.get_velocity())
-        self.primary_group.add(bullet)
-        if not self.__thrust:
-            self.accelerate(-direction*0.5)
-        self._queue_sound("entity.ship.shoot", 0.8)
-
-
     
     def boost_speed(self) -> bool:
         return self._velocity.magnitude() > self._max_speed-3
@@ -154,6 +144,16 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
     def _turn(self, direction: Literal[-1, 1]) -> None:
         self.__turn_direction = sign(self.__turn_direction+direction)
+
+
+
+    def _shoot(self) -> None:
+        direction = self.get_rotation_vector()
+        bullet = PlayerBullet(self.position+direction*12, direction, self.get_velocity())
+        self.primary_group.add(bullet)
+        if not self.__thrust:
+            self.accelerate(-direction*0.5)
+        self._queue_sound("entity.ship.shoot", 0.8)
 
     
 
@@ -217,7 +217,7 @@ class PlayerShip(Spaceship):
                 self._turn(1)
             
             if inputs.check_input("shoot") and self.alive():
-                self.shoot()
+                self._shoot()
 
             self.__powerups.userinput(inputs)
 
@@ -239,13 +239,13 @@ class PlayerShip(Spaceship):
             super()._thrust()
             controller_rumble("ship_thrusters", 0.25, True)
 
-    def turn(self, direction: Literal[-1, 1]):
+    def _turn(self, direction: Literal[-1, 1]):
         if self.__powerups.on_turn(self, direction):
             super()._turn(direction)
 
-    def shoot(self):
+    def _shoot(self):
         if self.__powerups.on_shoot(self):
-            super().shoot()
+            super()._shoot()
             controller_rumble("gun_fire")
 
 

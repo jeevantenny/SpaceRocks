@@ -9,7 +9,7 @@ from src.file_processing import assets
 from src.audio.soundfx import HasSoundQueue
 from src.input_device import controller_rumble
 
-from .components import ObjectHitbox, ObjectTexture, ObjectVelocity
+from .components import ObjectHitbox, ObjectTexture, ObjectVelocity, Obstacle
 from .spaceship import PlayerShip
 from .asteroids import Asteroid
 from .projectiles import PlayerBullet, Laser
@@ -476,17 +476,25 @@ class SuperLaser(PowerUp):
     __charge_time = 18
     __laser_duration = 25
 
-    def __init__(self):
+    def __init__(self, laser_spawned=False, time_used=0):
         super().__init__()
 
         self.__charge_timer = Timer(self.__charge_time).start()
         self.__laser_timer = Timer(self.__laser_duration)
         self.__charging = False
         self.__laser = None
+        self.__laser_from_save = laser_spawned
+
+        if laser_spawned:
+            self.__laser_timer.start()
+            self.__laser_timer.advance(time_used)
+
+    def get_data(self):
+        return (self.__laser is not None, self.__laser_timer.time_elapsed)
 
 
     def indicator_slider_amount(self):
-        return self.__laser is None or 1 - self.__laser_timer.completion_amount
+        return self.__laser_timer.complete or 1 - self.__laser_timer.completion_amount
 
     def userinput(self, inputs):
         self.__charging = inputs.check_input("shoot_hold")
@@ -494,8 +502,9 @@ class SuperLaser(PowerUp):
     
     def update(self, spaceship):
         self.__laser_timer.update()
-        if self.__charge_timer.complete and not self.__charging:
+        if self.__laser_from_save or self.__charge_timer.complete and not self.__charging:
             self.__fire_laser(spaceship)
+            self.__laser_from_save = False
 
         if self.__charging:
             self.__charge_timer.update()
@@ -505,34 +514,51 @@ class SuperLaser(PowerUp):
         
         if not (self.__laser is None or self.__laser.alive()):
             for obstacle in self.__laser.killed_list:
-                spaceship.host_state.player_destroy_obstacle(obstacle)
+                spaceship.host_state.player_damage_obstacle(obstacle)
 
             self.__laser = None
+            spaceship.accelerate(spaceship.get_rotation_vector()*-5)
             spaceship.remove_powerup(self)
 
 
     def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
+        if self.__charge_timer.complete:
+            pg.draw.circle(surface, "purple", spaceship.get_lerp_pos(lerp_amount)+offset, 15, 1)
+
         if not (debug.Cheats.show_bounding_boxes and self.__charge_timer.complete):
             return
         
         offset = pg.Vector2(offset)
         direction = spaceship.get_rotation_vector()
-        perp = direction.rotate(90)*25
+        perp = direction.rotate(90)*15
         start_pos = spaceship.position + offset
         end_pos = start_pos + direction*300
 
-        pg.draw.line(surface, "red", start_pos+perp, end_pos+perp)
-        pg.draw.line(surface, "red", start_pos-perp, end_pos+direction-perp)
+        pg.draw.line(surface, "blue", start_pos+perp, end_pos+perp)
+        pg.draw.line(surface, "blue", start_pos-perp, end_pos-perp)
     
 
     def __fire_laser(self, spaceship: PlayerShip) -> None:
-        self.__laser = Laser(spaceship.position, spaceship.get_rotation(), 50, 1, self.__laser_duration)
+        if self.__laser_timer.complete:
+            self.__laser_timer.start()
+
+        self.__laser = Laser(spaceship,
+                             30, 1, self.__laser_timer.countdown,
+                             (Obstacle,),
+                             spaceship.host_state.player_damage_obstacle)
+
         spaceship.primary_group.add(self.__laser)
-        spaceship.accelerate(-spaceship.get_rotation_vector()*5)
-        self.__laser_timer.start()
+        spaceship.set_velocity(spaceship.get_velocity().clamp_magnitude(8))
 
     def on_thrust(self, spaceship):
         return self.__laser_timer.complete
     
     def on_shoot(self, spaceship):
         return self.__laser_timer.complete
+    
+    def on_turn(self, spaceship, direction):
+        if self.__laser_timer.complete:
+            return True
+        else:
+            spaceship.rotate(direction*4)
+            return False

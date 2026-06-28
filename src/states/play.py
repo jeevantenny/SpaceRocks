@@ -228,7 +228,7 @@ class Play(State):
         self._score = min(self.__score_limit, self._score+points)
 
 
-    def player_destroy_obstacle(self, obstacle: components.Obstacle):
+    def player_damage_obstacle(self, obstacle: components.Obstacle):
         if self._score >= self.__score_limit or obstacle.has_health():
             return
         

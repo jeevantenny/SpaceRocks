@@ -1,4 +1,5 @@
 import pygame as pg
+from typing import Callable
 
 import debug
 
@@ -6,7 +7,7 @@ from src.custom_types import Timer
 from src.file_processing import assets
 
 from . import GameObject
-from .components import ObjectTexture, ObjectVelocity
+from .components import ObjectTexture, ObjectVelocity, ObjectHealth
 
 
 
@@ -201,7 +202,7 @@ class PlayerBullet(Projectile):
             else:
                 obj.damage(1)
                 
-            self.host_state.player_destroy_obstacle(obj)
+            self.host_state.player_damage_obstacle(obj)
             return True
 
         else:
@@ -223,47 +224,51 @@ class Laser(ObjectTexture):
     "A beam like weapon that has no range limit."
 
     save_entity_progress=False
+    can_despawn=False
     def __init__(
             self,
-            position: pg.typing.Point,
-            rotation: int,
+            anchor_object: ObjectTexture,
             width: int,
             damage: int,
-            duration=3
+            duration=3,
+            damage_types: tuple[ObjectHealth, ...] = (),
+            on_damage: Callable[[GameObject], None] = None
             ):
 
-        super().__init__(position=position, texture=None)
+        super().__init__(position=anchor_object.position, texture=None)
+        self.set_rotation(anchor_object.get_rotation())
 
+        self.__anchor_object = anchor_object
         self.__damage_duration = Timer(duration, exec_after=self.kill).start()
         self.__damage = damage
-        self._rotation = rotation
-
-        self.__collision_lines = get_collision_lines(position, self.get_rotation_vector(), 300, width, 5)
+        self.__width = width
         self.killed_list: list[GameObject] = []
 
-
-
-    def set_rotation(self, value):
-        raise AttributeError(f"Cannot change rotation of {type(self).__name__}")
-
-
+        self.__damage_types = damage_types
+        self.__on_damage = on_damage
 
 
     def update(self):
-        from .components import Obstacle
+        self.set_position(self.__anchor_object.position)
+        self.set_rotation(self.__anchor_object.get_rotation())
+        collision_lines = self._get_collision_lines(self.position, self.get_rotation_vector())
         if not self.__damage_duration.complete:
             for obj in self.primary_group:
-                if isinstance(obj, Obstacle) and obj.has_health() and rect_line_collision(obj.rect, self.__collision_lines):
+                if isinstance(obj, self.__damage_types) and obj.has_health() and rect_line_collision(obj.rect, collision_lines):
                     obj.damage(self.__damage)
-                    if not obj.has_health():
-                        self.killed_list.append(obj)
+                    if self.__on_damage is not None:
+                        self.__on_damage(obj)
         
         self.__damage_duration.update()
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0) -> None:
-        for line in self.__collision_lines:
+        for line in self._get_collision_lines(self.position, self.__anchor_object.get_lerp_rotation_vector()):
             pg.draw.line(surface, "green", pg.Vector2(line[0])+offset, pg.Vector2(line[1])+offset)
+
+    
+    def _get_collision_lines(self, position: pg.Vector2, direction: pg.Vector2) -> None:
+        return get_collision_lines(position, direction, 300, self.__width, 4)
 
 
 
