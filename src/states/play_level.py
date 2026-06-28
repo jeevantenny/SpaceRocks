@@ -192,7 +192,8 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
         # Show powerups
         if self.spaceship.health:
-            surface.blit(self.__powerup_list.render(), pg.Vector2(surface.size)-self.__powerup_list.size+(entrance_offset, -6))
+            surface.blit(self.__powerup_list.render(),
+                         pg.Vector2(surface.size)-self.__powerup_list.size+(entrance_offset*1.5, -6))
         
 
         if self.is_top_state():

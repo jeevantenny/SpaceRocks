@@ -102,17 +102,6 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
         self.__thrust = False
         self.__turn_direction = 0
-                
-
-
-    def _get_bullet(self) -> PlayerBullet:
-        direction = self.get_rotation_vector()
-        return PlayerBullet(self.position+direction*12, direction, self.get_velocity())
-
-
-    
-    def boost_speed(self) -> bool:
-        return self._velocity.magnitude() > self._max_speed-3
 
 
 
