@@ -1,16 +1,12 @@
 import pygame as pg
-from typing import Iterable
 
 import debug
 
 from src.custom_types import Timer
 from src.file_processing import assets
-from src.math_functions import unit_vector
-from src.ui import font
 
 from . import GameObject
-from .components import ObjectTexture, ObjectVelocity, ObjectHitbox
-from .particles import DisplayText
+from .components import ObjectTexture, ObjectVelocity
 
 
 
@@ -254,12 +250,13 @@ class Laser(ObjectTexture):
 
 
     def update(self):
-        from .asteroids import Asteroid
+        from .components import Obstacle
         if not self.__damage_duration.complete:
             for obj in self.primary_group:
-                if isinstance(obj, Asteroid) and obj.has_health() and rect_line_collision(obj.rect, self.__collision_lines):
-                    obj.kill(False)
-                    self.killed_list.append(obj)
+                if isinstance(obj, Obstacle) and obj.has_health() and rect_line_collision(obj.rect, self.__collision_lines):
+                    obj.damage(self.__damage)
+                    if not obj.has_health():
+                        self.killed_list.append(obj)
         
         self.__damage_duration.update()
 

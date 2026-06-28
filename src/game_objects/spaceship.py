@@ -111,14 +111,13 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
 
 
 
-    def shoot(self) -> PlayerBullet:
-        bullet = self._get_bullet()
+    def shoot(self) -> None:
+        direction = self.get_rotation_vector()
+        bullet = PlayerBullet(self.position+direction*12, direction, self.get_velocity())
         self.primary_group.add(bullet)
         if not self.__thrust:
-            self.accelerate(-self.get_rotation_vector()*0.5)
+            self.accelerate(-direction*0.5)
         self._queue_sound("entity.ship.shoot", 0.8)
-
-        return bullet
 
 
     
@@ -227,9 +226,7 @@ class PlayerShip(Spaceship):
         super().update()
         self.__powerups.update(self)
         self._join_sound_queue(self.__powerups.clear_sound_queue())
-
-        self.__invincibility_timer.update()
-                
+        self.__invincibility_timer.update()      
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
@@ -238,22 +235,22 @@ class PlayerShip(Spaceship):
 
 
     def _thrust(self):
-        super()._thrust()
-        controller_rumble("ship_thrusters", 0.25, True)
+        if self.__powerups.on_thrust(self):
+            super()._thrust()
+            controller_rumble("ship_thrusters", 0.25, True)
 
+    def turn(self, direction: Literal[-1, 1]):
+        if self.__powerups.on_turn(self, direction):
+            super()._turn(direction)
 
-    def _get_bullet(self) -> PlayerBullet:
-        direction = self.get_rotation_vector()
-        return PlayerBullet(
-            self.position+direction*12,
-            direction,
-            self.get_velocity(),
-            self.has_powerup("TripleShot")
-        )
+    def shoot(self):
+        if self.__powerups.on_shoot(self):
+            super().shoot()
+            controller_rumble("gun_fire")
 
 
     def do_collision(self):
-        return super().do_collision() and not self.invincible
+        return super().do_collision() and not self.__powerups.do_collision(self)
 
 
     
@@ -262,7 +259,10 @@ class PlayerShip(Spaceship):
 
 
     def kill(self):
-        if self.health and self.__invincibility_timer.complete and not self.__powerups.kill_protection(self):
+        if not self.__powerups.on_kill(self):
+            return
+
+        if self.health and self.__invincibility_timer.complete:
             if debug.Cheats.invincible:
                 self.invincibility_frames()
             else:

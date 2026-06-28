@@ -1,5 +1,5 @@
 import pygame as pg
-from typing import Iterator
+from typing import Iterator, Literal
 
 import debug
 
@@ -24,6 +24,7 @@ class PowerUp(HasSoundQueue):
 
     texture_key: str | None = None
     powerup_list: dict[str, type["PowerUp"]] = {}
+    priority = 0
 
     _display_name = None
     _powerup_info = "No information"
@@ -64,15 +65,28 @@ class PowerUp(HasSoundQueue):
         ...
 
     def update(self, spaceship: PlayerShip) -> None:
-        "Updates powerup for every frame."
+        "Updates powerup for every game tick."
         ...
 
     def draw(self, spaceship: PlayerShip, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)) -> None:
+        "Draws powerup for every frame."
         ...
 
     
-    def kill_protection(self, spaceship: PlayerShip) -> bool:
-        return False
+    def on_kill(self, spaceship: PlayerShip) -> bool:
+        return True
+    
+    def on_shoot(self, spaceship: PlayerShip) -> bool:
+        return True
+    
+    def on_thrust(self, spaceship: PlayerShip) -> bool:
+        return True
+    
+    def on_turn(self, spaceship: PlayerShip, direction: Literal[-1, 1]) -> bool:
+        return True
+
+    def do_collision(self, spaceship: PlayerShip) -> bool:
+        return True
 
 
 
@@ -105,16 +119,65 @@ class PowerUpGroup(HasSoundQueue):
             powerup.draw(spaceship, surface, lerp_amount, offset)
 
 
-    def kill_protection(self, spaceship: PlayerShip) -> bool:
-        "Called by the `PlayerShip` object to see if any of it's powerups can shield it from a collision."
-        
+    def on_kill(self, spaceship: PlayerShip) -> bool:
+        """Run when kill method is called on PlayerShip
+
+        Returns True if the kill should continue, False if it should be cancelled.
+        """
         for powerup in self:
-            if powerup.kill_protection(spaceship):
-                return True
-        return False
+            if not powerup.on_kill(spaceship):
+                return False
+        return True
+    
+    def on_shoot(self, spaceship: PlayerShip) -> bool:
+        """Run when shoot method is called on PlayerShip
+        
+        Returns True if the shoot should continue, False if it should be cancelled.
+        """
+        for powerup in self:
+            if not powerup.on_shoot(spaceship):
+                return False
+        return True
+
+    def on_thrust(self, spaceship: PlayerShip) -> bool:
+        """Run when _thrust method is called on PlayerShip
+        
+        Returns True if the thrust should continue, False if it should be cancelled.
+        """
+        for powerup in self:
+            if not powerup.on_thrust(spaceship):
+                return False
+        return True
+    
+    def on_turn(self, spaceship: PlayerShip, direction: Literal[-1, 1]) -> bool:
+        """Run when _turn method is called on PlayerShip
+        
+        Returns True if the turn should continue, False if it should be cancelled.
+        """
+        for powerup in self:
+            if not powerup.on_turn(spaceship, direction):
+                return False
+        return True
+    
+    def do_collision(self, spaceship: PlayerShip) -> bool:
+        """Run when do_collision method is called on PlayerShip
+        
+        Returns True if the collision should continue, False if it should be cancelled.
+        """
+        for powerup in self:
+            if not powerup.do_collision(spaceship):
+                return False
+        return True
+
+
 
     def add(self, powerup: PowerUp) -> None:
-        self.__container.append(powerup)
+        for i, p in enumerate(self):
+            if p.priority <= powerup.priority:
+                self.__container.insert(i, powerup)
+                break
+        else:
+            self.__container.append(powerup)
 
     def add_by_name(self, powerup_name: str) -> None:
         try:
@@ -243,6 +306,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
 
 class Shield(PowerUp):
     texture_key = "shield"
+    priority = 1
     def __init__(self):
         super().__init__()
         self.__used = False
@@ -255,7 +319,7 @@ class Shield(PowerUp):
             spaceship.remove_powerup(self)
     
 
-    def kill_protection(self, spaceship):
+    def on_kill(self, spaceship):
         for obj in spaceship.overlapping_objects():
             if isinstance(obj, Asteroid) and obj.has_health():
                 push_amount = obj.position-spaceship.position
@@ -268,72 +332,7 @@ class Shield(PowerUp):
         
         controller_rumble("small_pulse", 0.8)
         self._queue_sound("entity.asteroid.small_explode", 0.5)
-        return True
-
-
-
-
-
-
-
-
-class SuperLaser(PowerUp):
-    __charge_time = 16
-    __cooldown = 100
-
-    _display_name = "Super Laser"
-    texture_key = "super_laser"
-    _usage_instr = "Hold<shoot> to charge laser, then release"
-
-    def __init__(self):
-        super().__init__()
-
-        self.__charge_timer = Timer(self.__charge_time).start()
-        self.__cooldown_timer = Timer(self.__cooldown)
-        self.__charging = False
-        self.__laser = None
-
-
-    def userinput(self, inputs):
-        self.__charging = self.__cooldown_timer.complete and inputs.check_input("shoot_hold")
-        
-    
-    def update(self, spaceship):
-        if self.__charge_timer.complete and not self.__charging:
-            self.__fire_laser(spaceship)
-
-        if self.__charging:
-            self.__charge_timer.update()
-        else:
-            self.__charge_timer.restart()
-
-        
-        if not (self.__laser is None or self.__laser.alive()):
-            for obstacle in self.__laser.killed_list:
-                spaceship.host_state.player_destroy_obstacle(obstacle)
-
-            self.__laser = None
-            spaceship.remove_powerup(self)
-
-
-    def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
-        if not (debug.Cheats.show_bounding_boxes and self.__charge_timer.complete):
-            return
-        
-        offset = pg.Vector2(offset)
-        direction = spaceship.get_rotation_vector()
-        perp = direction.rotate(90)*25
-        start_pos = spaceship.position + offset
-        end_pos = start_pos + direction*300
-
-        pg.draw.line(surface, "red", start_pos+perp, end_pos+perp)
-        pg.draw.line(surface, "red", start_pos-perp, end_pos+direction-perp)
-    
-
-    def __fire_laser(self, spaceship: PlayerShip) -> None:
-        self.__laser = Laser(spaceship.position, spaceship.get_rotation(), 50, 1)
-        spaceship.primary_group.add(self.__laser)
-        spaceship.accelerate(-spaceship.get_rotation_vector()*5)
+        return False
 
 
 
@@ -343,6 +342,7 @@ class SuperLaser(PowerUp):
 
 class TripleShot(PowerUp):
     texture_key = "triple_shot"
+    priority = 2
 
     _display_name = "Triple Shot"
     __max_rounds = 30
@@ -350,36 +350,29 @@ class TripleShot(PowerUp):
     def __init__(self, rounds=__max_rounds):
         super().__init__()
         self.__rounds = rounds
-        self.__shoot = False
 
-    
     def get_data(self):
         return (self.__rounds,)
     
     def indicator_slider_amount(self):
         return self.__rounds/self.__max_rounds
-    
 
-    def userinput(self, inputs):
-        if inputs.check_input("shoot"):
-            self.__shoot = True
-    
+    def on_shoot(self, spaceship: PlayerShip) -> bool:
+        bullet_rotation_a = spaceship.get_rotation_vector()
+        self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(10))
+        self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(-10))
+        self.__spawn_bullet(spaceship, bullet_rotation_a)
 
-    def update(self, spaceship):
-        if self.__shoot:
-            bullet_rotation_a = spaceship.get_rotation_vector()
-            self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(10))
-            self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(-10))
-
-            self.__shoot = False
-            self.__rounds -= 1
-            if self.__rounds <= 0:
-                spaceship.remove_powerup(self)
+        self.__rounds -= 1
+        if self.__rounds <= 0:
+            spaceship.remove_powerup(self)
+        
+        return False
     
 
     def __spawn_bullet(self, spaceship: PlayerShip, direction: pg.Vector2) -> None:
         spaceship.primary_group.add(PlayerBullet(
-            spaceship.position+direction*40,
+            spaceship.position+direction*12,
             direction,
             spaceship.get_velocity(),
             True
@@ -395,6 +388,8 @@ class TripleShot(PowerUp):
 
 class Dodge(PowerUp):
     texture_key = "dodge"
+    priority = 3
+
     _usage_instr = "Hold <powerup_use> and input the direction you wanna dodge in"
     __max_dodges = 5
 
@@ -417,7 +412,6 @@ class Dodge(PowerUp):
     
     def indicator_slider_amount(self):
         return self.__dodges/self.__max_dodges
-    
 
     def userinput(self, inputs):
         if inputs.check_input("up"):
@@ -454,8 +448,91 @@ class Dodge(PowerUp):
             self.__dodges -= 1
             if self.__dodges <= 0:
                 spaceship.remove_powerup(self)
+
+    def on_thrust(self, spaceship) -> bool:
+        return not self.__activate_dodge
     
+    def on_turn(self, spaceship, direction):
+        return not self.__activate_dodge
 
     def __reset_dodge(self) -> None:
         self.__dodge_direction.xy = (0, 0)
         self.__activate_dodge = False
+
+
+
+
+
+
+
+
+class SuperLaser(PowerUp):
+    priority = 4
+
+    _display_name = "Super Laser"
+    texture_key = "super_laser"
+    _usage_instr = "Hold<shoot> to charge laser, then release"
+
+    __charge_time = 18
+    __laser_duration = 25
+
+    def __init__(self):
+        super().__init__()
+
+        self.__charge_timer = Timer(self.__charge_time).start()
+        self.__laser_timer = Timer(self.__laser_duration)
+        self.__charging = False
+        self.__laser = None
+
+
+    def indicator_slider_amount(self):
+        return self.__laser is None or 1 - self.__laser_timer.completion_amount
+
+    def userinput(self, inputs):
+        self.__charging = inputs.check_input("shoot_hold")
+        
+    
+    def update(self, spaceship):
+        self.__laser_timer.update()
+        if self.__charge_timer.complete and not self.__charging:
+            self.__fire_laser(spaceship)
+
+        if self.__charging:
+            self.__charge_timer.update()
+        else:
+            self.__charge_timer.restart()
+
+        
+        if not (self.__laser is None or self.__laser.alive()):
+            for obstacle in self.__laser.killed_list:
+                spaceship.host_state.player_destroy_obstacle(obstacle)
+
+            self.__laser = None
+            spaceship.remove_powerup(self)
+
+
+    def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
+        if not (debug.Cheats.show_bounding_boxes and self.__charge_timer.complete):
+            return
+        
+        offset = pg.Vector2(offset)
+        direction = spaceship.get_rotation_vector()
+        perp = direction.rotate(90)*25
+        start_pos = spaceship.position + offset
+        end_pos = start_pos + direction*300
+
+        pg.draw.line(surface, "red", start_pos+perp, end_pos+perp)
+        pg.draw.line(surface, "red", start_pos-perp, end_pos+direction-perp)
+    
+
+    def __fire_laser(self, spaceship: PlayerShip) -> None:
+        self.__laser = Laser(spaceship.position, spaceship.get_rotation(), 50, 1, self.__laser_duration)
+        spaceship.primary_group.add(self.__laser)
+        spaceship.accelerate(-spaceship.get_rotation_vector()*5)
+        self.__laser_timer.start()
+
+    def on_thrust(self, spaceship):
+        return self.__laser_timer.complete
+    
+    def on_shoot(self, spaceship):
+        return self.__laser_timer.complete
