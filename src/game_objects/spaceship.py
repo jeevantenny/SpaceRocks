@@ -72,8 +72,11 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
                      "velocity": tuple(self._velocity),
                      "rotation": self._rotation})
         return data
+    
 
-
+    def userinput(self) -> None:
+        self.__thrust = False
+        self.__turn_direction = 0
 
 
     def update(self) -> None:
@@ -89,19 +92,13 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
                 self._angular_vel += 8*self.__turn_direction
         else:
             self._angular_vel = 0
-
-        super().update()
-
-            
         
         if not self.health:
             if self.animations_complete:
                 self.force_kill()
             return
 
-
-        self.__thrust = False
-        self.__turn_direction = 0
+        super().update()
 
 
 
@@ -195,6 +192,7 @@ class PlayerShip(Spaceship):
 
 
     def userinput(self, inputs: InputInterpreter):
+        super().userinput()
         if self.health and not inputs.keyboard_mouse.hold_keys[pg.KMOD_CTRL]:            
             if inputs.check_input("ship_forward"):
                 self._thrust()

@@ -25,6 +25,7 @@ class PowerUp(HasSoundQueue):
     texture_key: str | None = None
     powerup_list: dict[str, type["PowerUp"]] = {}
     priority = 0
+    collectable_despawn = True
 
     _display_name = None
     _powerup_info = "No information"
@@ -246,6 +247,9 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
         self.__powerup_name = powerup_name
         self.__player_ship: PlayerShip | None = None
         self.__emitter: Emitter | None = None
+
+        if not powerup_type.collectable_despawn:
+            self.can_despawn = False
 
 
     def __init_from_data__(self, object_data):
@@ -570,3 +574,34 @@ class SuperLaser(PowerUp):
         else:
             spaceship.rotate(direction*self.__rotation_speed)
             return False
+
+
+
+
+class Hyperdrive(PowerUp):
+    texture_key = "hyperdrive"
+    collectable_despawn = False
+
+    __drive_speed = 70
+
+    def __init__(self):
+        super().__init__()
+        self.__timer = Timer(45).start()
+
+    def indicator_slider_amount(self):
+        return self.__timer.completion_amount
+    
+
+    def update(self, spaceship):
+        if (spaceship.thrust
+            and -80 < spaceship.get_rotation_vector().angle_to(spaceship.get_velocity()) < 80
+            and spaceship.get_velocity().magnitude_squared() > self.__drive_speed**2):
+            self.__timer.update()
+            if self.__timer.complete:
+                spaceship.host_state.start_next_level()
+                spaceship.remove_powerup(self)
+        else:
+            self.__timer.advance(-1)
+            
+        
+

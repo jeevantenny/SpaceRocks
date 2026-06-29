@@ -268,6 +268,10 @@ class Play(State):
     def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
         PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
 
+    
+    def start_next_level(self) -> None:
+        ...
+
 
 
 

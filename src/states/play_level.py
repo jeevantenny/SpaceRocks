@@ -41,7 +41,7 @@ class PlayLevel(Play):
         self._score = self._level_data.score_range[0]
 
 
-    def reinit_next_level(self, level_name: str) -> None:
+    def __reinit_for_level(self, level_name: str) -> None:
         "Reinitializes the current Play object for the next level without creating another Play object."
 
         if level_name == "boss_level":
@@ -120,10 +120,10 @@ class PlayLevel(Play):
 
         if debug.DEBUG_MODE:
             if inputs.keyboard_mouse.tap_keys[pg.K_b]:
-                self.add_points(100)
+                self.add_points(1000)
 
             if inputs.keyboard_mouse.tap_keys[pg.K_t]:
-                self.reinit_next_level(self._level_data.next_level)
+                self.__reinit_for_level(self._level_data.next_level)
 
 
 
@@ -164,8 +164,26 @@ class PlayLevel(Play):
 score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives}"""
 
 
+
+
     def hud_message(self, message, duration=40):
         self.__hud_message.queue_message(message, duration)
+    
+    def player_damage_obstacle(self, obstacle):
+        super().player_damage_obstacle(obstacle)
+        if self._score >= self._level_data.score_range[1] and not obstacle.has_health():
+            self.powerups.add(powerups.PowerupCollectable(
+                obstacle.position,
+                (self.spaceship.position - obstacle.position).clamp_magnitude(3),
+                "Hyperdrive"
+            ))
+
+    def start_next_level(self):
+        self.__reinit_for_level(self._level_data.next_level)
+
+
+
+
 
 
     def _draw_hud(self, surface: pg.Surface) -> None:
@@ -226,11 +244,6 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
                 # self.__delete_offscreen_spawned_entities()
                 for asteroid in self.asteroids.sprites():
                     asteroid.kill(False)
-        
-        else:
-            if self.spaceship.get_velocity().magnitude_squared() > 5000:
-                self.reinit_next_level(self._level_data.next_level)
-
 
         super()._game_loop()
 
