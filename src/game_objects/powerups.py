@@ -330,8 +330,8 @@ class Shield(PowerUp):
         self.__used = True
         spaceship.invincibility_frames()
         
-        controller_rumble("small_pulse", 0.8)
         self._queue_sound("entity.asteroid.small_explode", 0.5)
+        controller_rumble("small_pulse", 0.8)
         return False
 
 
@@ -362,6 +362,8 @@ class TripleShot(PowerUp):
         self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(10))
         self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(-10))
         self.__spawn_bullet(spaceship, bullet_rotation_a)
+        self._queue_sound("entity.ship.shoot", 0.8)
+        controller_rumble("gun_fire")
 
         self.__rounds -= 1
         if self.__rounds <= 0:

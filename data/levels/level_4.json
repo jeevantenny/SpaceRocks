@@ -13,6 +13,11 @@
         "green_medium": 5,
         "green_large": 3
     },
+    
+    "powerup_frequency": 0.05,
+    "spawn_powerups": {
+        "TripleShot": 1
+    },
 
     "score_range": [30000, 40000],
     "next_level": "level_5"

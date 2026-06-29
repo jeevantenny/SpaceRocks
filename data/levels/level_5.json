@@ -16,7 +16,7 @@
 
     "powerup_frequency": 0.1,
     "spawn_powerups": {
-        "SuperLaser": 2,
+        "TripleShot": 2,
         "Shield": 1
     },
 

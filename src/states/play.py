@@ -178,7 +178,7 @@ class Play(State):
                         asteroid.kill(False)
 
             if keyboard.tap_keys[pg.K_c]:
-                self.spaceship.combo *= 2
+                self._point_combo = min(self._point_combo*1.1, self.__max_combo)
 
             if keyboard.tap_keys[pg.K_g]:
                 debug.Cheats.show_bounding_boxes = not debug.Cheats.show_bounding_boxes

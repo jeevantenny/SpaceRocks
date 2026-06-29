@@ -12,6 +12,11 @@
         "yellow_small": 5,
         "yellow_medium": 1
     },
+    
+    "powerup_frequency": 0.08,
+    "spawn_powerups": {
+        "Dodge": 1
+    },
 
     "score_range": [50000, 60000],
     "next_level": "level_7"
