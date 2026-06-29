@@ -28,7 +28,7 @@ class UIElement:
     def update(self) -> None:
         pass
 
-    def render(self) -> pg.Surface: ...
+    def render(self) -> pg.Surface | None: ...
 
 
 
@@ -92,7 +92,9 @@ class ElementList:
                 if label is not None:
                     label_pos = (self.__padding, y_offset+2)
                     subsurface.blit(font.small_font.render(label), label_pos)
-                subsurface.blit(element.render(), position)
+                output = element.render()
+                if output is not None:
+                    subsurface.blit(output, position)
 
             y_offset += element.size[1] + self.__padding
 
@@ -176,7 +178,7 @@ class Slider(UIElement):
         if prev_value != self.__value and self.__on_slide is not None:
             self.__on_slide(self.value)
     
-    def render(self):
+    def render(self) -> pg.Surface:
         output = render_status_bar(self.__base_texture, self.__overlay_texture, 0.1+self.slider_amount()*0.8)
         handle_pos = (2+(self._size[0]-16)*self.slider_amount(), 2)
         output.blit(self.__handle_texture, handle_pos)
@@ -227,5 +229,5 @@ class Toggle(UIElement):
     def update(self):
         self.__controller.update(self)
 
-    def render(self):
+    def render(self) -> pg.Surface:
         return self.__controller.get_frame(self.__texture_map)

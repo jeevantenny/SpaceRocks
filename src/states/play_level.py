@@ -14,7 +14,7 @@ from src.file_processing import data
 
 from src.game_objects import asteroids, components, enemies, powerups
 
-from src.ui import font, hud
+from src.ui import font, hud, blit_to_center
 
 from .menus import GameOverScreen
 from .visuals import ShowText
@@ -111,7 +111,7 @@ class PlayLevel(Play):
         self.__progress_bar = hud.ProgressBar()
         self.__lives_indicator = hud.LivesIndicator(self._player_max_lives)
         self.__powerup_list = hud.PowerupList(self.spaceship.get_powerup_group())
-
+        self.__hud_message = hud.HudMessage()
 
 
     
@@ -133,6 +133,7 @@ class PlayLevel(Play):
             super().update()
             self.__process_score()
             self.__hud_timer.update()
+            self.__hud_message.update()
             
 
 
@@ -163,6 +164,8 @@ class PlayLevel(Play):
 score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives}"""
 
 
+    def hud_message(self, message, duration=40):
+        self.__hud_message.queue_message(message, duration)
 
 
     def _draw_hud(self, surface: pg.Surface) -> None:
@@ -192,8 +195,17 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
         # Show powerups
         if self.spaceship.health:
-            surface.blit(self.__powerup_list.render(),
-                         pg.Vector2(surface.size)-self.__powerup_list.size+(entrance_offset*1.5, -6))
+            output = self.__powerup_list.render()
+            if output is not None:
+                surface.blit(
+                    output,
+                    pg.Vector2(surface.size)-self.__powerup_list.size+(entrance_offset*1.5, -6)
+                )
+        
+        # Show hud message if any
+        output = self.__hud_message.render()
+        if output is not None:
+            blit_to_center(output, surface, (0, surface.height*0.5 - 40))
         
 
         if self.is_top_state():

@@ -251,6 +251,11 @@ class Play(State):
 
     def reset_point_combo(self) -> None:
         self._point_combo = 1.0
+
+    
+    def hud_message(self, message: str, duration=40) -> None:
+        """Show a temporary message to the player"""
+        ...
         
 
     def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:

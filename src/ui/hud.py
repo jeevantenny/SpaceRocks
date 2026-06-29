@@ -1,9 +1,10 @@
 import pygame as pg
 
 from src.file_processing import assets
+from src.custom_types import Timer
 from src.game_objects.powerups import PowerUp, PowerUpGroup
 
-from . import font, render_status_bar
+from . import font, effects, render_status_bar
 from .elements import UIElement
     
 
@@ -83,9 +84,59 @@ class PowerupList(UIElement):
         return output
     
 
-    def render(self) -> pg.Surface:
+    def render(self) -> pg.Surface | None:
+        if not self.__powerups:
+            return None
+
         output = assets.colorkey_surface(self.size)
         for i, powerup in enumerate(self.__powerups):
             output.blit(self.__render_powerup(powerup), (0, i*23))
         return output
     
+
+
+
+class HudMessage(UIElement):
+    def __init__(self):
+        super().__init__()
+        self.__message_queue: list[tuple[str, int]] = []
+        self.__message_text: effects.AnimatedText | None = None
+        self.__timer = Timer(1)
+        self.__state = 0
+    
+    def queue_message(self, message: str, duration=40) -> None:
+        self.__message_queue.append((message, duration))
+    
+    def update(self):
+        match self.__state:
+            case 0:
+                if self.__message_queue:
+                    self.__set_message(*self.__message_queue.pop(0))
+                    self.__state = 1
+            case 1:
+                if self.__message_text.animations_complete:
+                    self.__timer.start()
+                    self.__state = 2
+            case 2:
+                if self.__timer.complete:
+                    self.__message_text.set_effect("main_exit")
+                    self.__state = 3
+            case 3:
+                if self.__message_text.animations_complete:
+                    self.__state = 0
+        
+        self.__timer.update()
+        if self.__message_text is not None:
+            self.__message_text.update()
+    
+    def render(self):
+        if self.__state == 0:
+            return None
+        elif self.__message_text is not None:
+            return self.__message_text.render()
+
+
+    def __set_message(self, message: str, duration: int) -> None:
+        self.__message_text = effects.AnimatedText(message, "main_entrance_b", font.large_font)
+        self.__timer = Timer(duration).start()
+        
