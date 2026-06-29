@@ -85,6 +85,10 @@ class Timer:
         self.__exec_after = exec_after
         self.__time_left = 0.0
         self.__run = False
+    
+    @property
+    def running(self) -> bool:
+        return self.__run
 
     @property
     def duration(self) -> float:
@@ -92,7 +96,7 @@ class Timer:
 
     @property
     def countdown(self) -> float:
-        return pg.math.clamp(self.__time_left, 0, self.__duration)
+        return self.__sanitize_time(self.__time_left)
     
     @property
     def time_elapsed(self) -> float:
@@ -130,13 +134,21 @@ class Timer:
             self.__time_left -= speed_multiplier
             
             if self.__time_left <= 0.0:
-                if self.loop:
-                    self.__time_left += self.__duration
-                else:
-                    self.__time_left = 0.0
-                    self.__run = False
                 if self.__exec_after is not None:
                     self.__exec_after()
+                if not self.loop:
+                    self.__run = False
+            self.__time_left = self.__sanitize_time(self.__time_left)
+    
+
+    def __sanitize_time(self, time: float) -> float:
+        if not self.loop:
+            return pg.math.clamp(time, 0.0, self.__duration)
+        elif time == 0:
+            return 0
+        else:
+            output = time % self.__duration
+            return output or self.__duration
     
 
     
