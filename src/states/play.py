@@ -60,6 +60,7 @@ class Play(State):
         self.spaceship = spaceship.PlayerShip((0, 0))
         self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
+        self.set_camera_target(self.spaceship)
     
 
     @property
@@ -80,6 +81,7 @@ class Play(State):
 
         self.__load_objects_from_save(save_data.entity_data)
         self.camera.set_position(save_data.camera_pos)
+        self.set_camera_target(self.spaceship)
         self._score = save_data.score
         self._player_lives = save_data.player_lives
 
@@ -101,6 +103,7 @@ class Play(State):
         self.enemies = self.spawned_entities.make_subgroup()
 
         self.camera = camera.Camera((0, 0))
+        self.__camera_target: pg.typing.Point | GameObject | None = None
 
 
 
@@ -219,6 +222,15 @@ class Play(State):
         self._draw_entities(surface, lerp_amount)
 
 
+    
+    def hud_message(self, message: str, duration=40) -> None:
+        """Show a temporary message to the player"""
+        ...
+
+
+    def set_camera_target(self, target: GameObject | pg.typing.Point | None) -> None:
+        self.__camera_target = target
+
 
     def debug_info(self) -> str | None:
         return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
@@ -251,11 +263,6 @@ class Play(State):
 
     def reset_point_combo(self) -> None:
         self._point_combo = 1.0
-
-    
-    def hud_message(self, message: str, duration=40) -> None:
-        """Show a temporary message to the player"""
-        ...
         
 
     def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
@@ -276,7 +283,16 @@ class Play(State):
 
     def _update_game_objects(self) -> None:
         self.entities.update(self.camera.position)
-        self.camera.set_target(self.spaceship.position + self.spaceship.get_velocity()*2)
+
+        if isinstance(self.__camera_target, GameObject):
+            target_pos = self.__camera_target.position.copy()
+            if isinstance(self.__camera_target, components.ObjectVelocity):
+                target_pos += self.__camera_target.get_velocity()*2
+        else:
+            target_pos = self.__camera_target
+
+        if target_pos is not None:
+            self.camera.set_target(target_pos)
         self.camera.update()
 
 

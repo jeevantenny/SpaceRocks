@@ -477,6 +477,7 @@ class SuperLaser(PowerUp):
 
     __charge_time = 18
     __laser_duration = 25
+    __rotation_speed = 4
 
     def __init__(self, laser_spawned=False, time_used=0):
         super().__init__()
@@ -513,14 +514,18 @@ class SuperLaser(PowerUp):
         else:
             self.__charge_timer.restart()
 
-        
-        if not (self.__laser is None or self.__laser.alive()):
-            for obstacle in self.__laser.killed_list:
-                spaceship.host_state.player_damage_obstacle(obstacle)
+        if self.__laser is not None:
+            if self.__laser.alive():
+                direction = spaceship.get_rotation_vector()
+                spaceship.accelerate(direction*-0.3)
+                spaceship.host_state.set_camera_target(spaceship.position + direction*50)
+            else:
+                for obstacle in self.__laser.killed_list:
+                    spaceship.host_state.player_damage_obstacle(obstacle)
 
-            self.__laser = None
-            spaceship.accelerate(spaceship.get_rotation_vector()*-5)
-            spaceship.remove_powerup(self)
+                self.__laser = None
+                spaceship.host_state.set_camera_target(spaceship)
+                spaceship.remove_powerup(self)
 
 
     def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
@@ -531,7 +536,8 @@ class SuperLaser(PowerUp):
             return
         
         offset = pg.Vector2(offset)
-        direction = spaceship.get_rotation_vector()
+        ship_rotation = spaceship.get_rotation()
+        direction = pg.Vector2(0, -1).rotate(ship_rotation - self.__rotation_speed*(1-lerp_amount))
         perp = direction.rotate(90)*15
         start_pos = spaceship.position + offset
         end_pos = start_pos + direction*300
@@ -562,5 +568,5 @@ class SuperLaser(PowerUp):
         if self.__laser_timer.complete:
             return True
         else:
-            spaceship.rotate(direction*4)
+            spaceship.rotate(direction*self.__rotation_speed)
             return False
