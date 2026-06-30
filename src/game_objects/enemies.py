@@ -116,6 +116,8 @@ class EnemyShip(Enemy):
                     self.__shoot(displacement.rotate(random.randint(-self.__shoot_deviation, self.__shoot_deviation)))
                 
                 self.__move_direction = displacement
+            else:
+                self._player_ship = None
 
 
         if self.__move_direction and self.__speed > 0:

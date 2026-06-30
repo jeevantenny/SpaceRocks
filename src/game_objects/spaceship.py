@@ -93,12 +93,11 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
         else:
             self._angular_vel = 0
         
+        super().update()
         if not self.health:
             if self.animations_complete:
                 self.force_kill()
             return
-
-        super().update()
 
 
 

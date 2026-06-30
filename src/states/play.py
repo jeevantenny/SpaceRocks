@@ -340,6 +340,7 @@ class Play(State):
         self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
         self.spaceship.invincibility_frames()
+        self.set_camera_target(self.spaceship)
 
         self.powerups.kill_all()
         self.reset_point_combo()

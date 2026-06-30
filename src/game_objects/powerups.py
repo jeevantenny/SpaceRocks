@@ -581,12 +581,17 @@ class SuperLaser(PowerUp):
 class Hyperdrive(PowerUp):
     texture_key = "hyperdrive"
     collectable_despawn = False
+    priority = 6
 
     __drive_speed = 70
 
-    def __init__(self):
+    def __init__(self, hyper_drive_elapsed=0):
         super().__init__()
         self.__timer = Timer(45).start()
+        self.__timer.advance(hyper_drive_elapsed)
+    
+    def get_data(self):
+        return (self.__timer.time_elapsed,)
 
     def indicator_slider_amount(self):
         return self.__timer.completion_amount
