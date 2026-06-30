@@ -50,6 +50,9 @@ class PlayLevel(Play):
             PlayBossLevel().add_to_stack(self.state_stack)
             return
         
+        self.__asteroid_timer.stop()
+        self.__enemy_timer.stop()
+        self.__powerup_timer.stop()
         self._setup_level(level_name)
         
         # Remove all entities except player
@@ -103,6 +106,28 @@ class PlayLevel(Play):
         
         self.__lvl_transition_timer = Timer(60)
         self.__level_cleared = False
+
+    
+    def _setup_game_objects(self):
+        super()._setup_game_objects()
+        self.__asteroid_timer = Timer(0, True, self.__spawn_asteroid)
+        self.__enemy_timer = Timer(0, True, self.__spawn_enemy)
+        self.__powerup_timer = Timer(0, True, self.__spawn_powerup)
+
+
+    def _setup_level(self, level_name):
+        super()._setup_level(level_name)
+        if self._level_data.asteroid_interval:
+            self.__asteroid_timer.set_duration(random.randint(*self._level_data.asteroid_interval))
+            self.__asteroid_timer.start()
+
+        if self._level_data.enemy_interval:
+            self.__enemy_timer.set_duration(random.randint(*self._level_data.enemy_interval))
+            self.__enemy_timer.start()
+
+        if self._level_data.powerup_interval:
+            self.__powerup_timer.set_duration(random.randint(*self._level_data.powerup_interval))
+            self.__powerup_timer.start()
 
 
     def _setup_hud(self) -> None:
@@ -160,8 +185,10 @@ class PlayLevel(Play):
 
 
     def debug_info(self) -> str | None:
-        return f"""level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})
-score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives}"""
+        return "\n".join((
+            f"level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})",
+            f"lives: {self._player_lives}, score: {self._score}, combo: {self._point_combo:.1f}, enemies: {len(self.enemies)}, powerups: {len(self.powerups)}"
+        ))
 
 
 
@@ -171,7 +198,9 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
     
     def player_damage_obstacle(self, obstacle):
         super().player_damage_obstacle(obstacle)
-        if self._score >= self._level_data.score_range[1] and not obstacle.has_health():
+        if (self._score >= self._level_data.score_range[1]
+            and not obstacle.has_health()
+            and not self.__powerup_exists("Hyperdrive")):
             self.powerups.add(powerups.PowerupCollectable(
                 obstacle.position,
                 (self.spaceship.position - obstacle.position).clamp_magnitude(3),
@@ -235,7 +264,8 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
     def _game_loop(self):
         if not self.__level_cleared:
-            self.__do_object_spawning()            
+            if self._object_spawn_delay.complete:
+                self.__do_object_spawning()  
             
             # Stops objects from spawning once the level has been cleared
             if self._score >= self._level_data.score_range[1]:
@@ -295,78 +325,64 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
     def __do_object_spawning(self) -> None:
         if not debug.Cheats.no_obstacles:
-            if self.__should_spawn_asteroid():
-                self.__spawn_asteroid()
+            if (self._level_data.spawn_asteroids
+                and self.__required_asteroid_density() > self.__asteroid_density()):
+                self.__asteroid_timer.update()
+            
+            if (self._level_data.spawn_enemies
+                and self.enemies.count() < self._level_data.enemy_count):
+                self.__enemy_timer.update()
 
-            if self.__should_spawn_enemy():
-                self.__spawn_enemy()
-
-        if self.__should_spawn_powerup():
-            self.__spawn_powerup()
-
-
-    def __should_spawn_asteroid(self) -> bool:
-        "Returns wether an asteroid should spawn in the tick."
-        return (self._level_data.spawn_asteroids
-                and self._object_spawn_delay.complete
-                and self.__required_asteroid_density() > self.__asteroid_density()
-                and random.random() < self._level_data.asteroid_frequency)
+        if (self._level_data.spawn_powerups
+            and len(self.powerups) + len(self.spaceship.get_powerup_group()) < len(self._level_data.powerup_spawn_weights[0])):
+            self.__powerup_timer.update()
+            print(self.__powerup_timer.countdown)
 
 
     def __spawn_asteroid(self) -> None:
         spawn_pos = self._get_object_spawn_pos()
         velocity = self._get_object_spawn_velocity(spawn_pos, self.__get_asteroid_speed())
         asteroid_id = weighted_choice(self._level_data.asteroid_spawn_weights)
-
-        asteroid = asteroids.Asteroid(
-            spawn_pos,
-            velocity,
-            asteroid_id
-        )
+        asteroid = asteroids.Asteroid(spawn_pos, velocity, asteroid_id)
 
         for a in self.asteroids.sprites():
             if asteroid.collides_with(a):
                 try:
                     return self.__spawn_asteroid()
                 except RecursionError:
-                    print(f"Failed to spawn asteroid a {spawn_pos}")
-                    return None
+                    print("Failed to spawn asteroid")
+                    return
 
         self.asteroids.add(asteroid)
-
-
-    def __should_spawn_enemy(self) -> bool:
-        "Returns wether an enemy should spawn in the tick."
-        return (self._level_data.spawn_enemies
-                and self._object_spawn_delay.complete
-                and self.enemies.count() < self._level_data.enemy_count
-                and random.random() < self._level_data.enemy_frequency)
+        self.__asteroid_timer.set_duration(random.randint(*self._level_data.asteroid_interval))
 
 
     def __spawn_enemy(self) -> None:
         spawn_pos = self._get_object_spawn_pos()
         self.enemies.add(enemies.EnemyShip(spawn_pos))
-
-
-    def __should_spawn_powerup(self) -> bool:
-        "Returns wether a powerup should spawn in the tick."
-        return (self._level_data.spawn_powerups
-                and self._object_spawn_delay.complete
-                and self.powerups.count() == 0
-                and random.random() < self._level_data.powerup_frequency)
+        self.__enemy_timer.set_duration(random.randint(*self._level_data.enemy_interval))
 
 
     def __spawn_powerup(self) -> None:
         powerups_name = weighted_choice(self._level_data.powerup_spawn_weights)
-        if not self.spaceship.has_powerup(powerups_name):
+        if not self.__powerup_exists(powerups_name):
             spawn_pos = self._get_object_spawn_pos()
             velocity = self._get_object_spawn_velocity(spawn_pos, 2)
             self.powerups.add(powerups.PowerupCollectable(spawn_pos, velocity, powerups_name))
+            self.__powerup_timer.set_duration(random.randint(*self._level_data.powerup_interval))
+    
+    def __powerup_exists(self, powerup_name: str) -> bool:
+        """Determine if the player currently has the powerup or the collectable for it is spawned in"""
+        if self.spaceship.has_powerup(powerup_name):
+            return True
+        for powerup in self.powerups:
+            if powerup.powerup_name == powerup_name:
+                return True
+        return False
 
 
     def __show_scores(self, surface: pg.Surface, name: str, score: int, offset: pg.typing.Point, cache=True):
         score_text = f"{score:05}"
-
         score_desc_surf = font.small_font.render(name)
         surface.blit(score_desc_surf, offset+pg.Vector2(0, 8))
         surface.blit(font.large_font.render(score_text, cache=cache), offset+pg.Vector2(score_desc_surf.width+max(40-score_desc_surf.width, 0), 0))
@@ -397,7 +413,7 @@ score: {self._score}, combo: {self._point_combo:.1f}, lives: {self._player_lives
 
     def __asteroid_density(self) -> int:
         "The sum of the sizes of all asteroids loaded in."
-        return sum(asteroid.size for asteroid in self.asteroids if asteroid.within_distance(self.spaceship, self._spawn_radius))
+        return sum(asteroid.size for asteroid in self.asteroids)# if asteroid.within_distance(self.spaceship, self._spawn_radius+40))
                 
     
 

@@ -137,7 +137,7 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
         return self.position.distance_to(self.__get_other_pos(other))
     
     def within_distance(self, other: "GameObject | pg.Vector2", distance: int) -> bool:
-        return self.position.distance_squared_to(self.__get_other_pos(other)) <=distance*distance
+        return self.position.distance_squared_to(self.__get_other_pos(other)) <= distance*distance
     
 
     def angle_to(self, other: "GameObject | pg.Vector2") -> float:

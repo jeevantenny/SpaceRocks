@@ -59,13 +59,20 @@ def load_level(name: str) -> LevelData:
         raise FileNotFoundError(f"Could not find level '{name}'")
 
     asteroids: dict = level_data.get("spawn_asteroids", {})
-    asteroid_weights = (list(asteroids.keys()), list(asteroids.values()))
-
     enemies: dict = level_data.get("spawn_enemies", {})
-    enemy_weights = (list(enemies.keys()), list(enemies.values()))
-
     powerups: dict = level_data.get("spawn_powerups", {})
+
+    asteroid_weights = (list(asteroids.keys()), list(asteroids.values()))
+    enemy_weights = (list(enemies.keys()), list(enemies.values()))
     powerup_weights = (list(powerups.keys()), list(powerups.values()))
+
+    asteroid_interval = level_data.get("asteroid_interval", None)
+    enemy_interval = level_data.get("enemy_interval", None)
+    powerup_interval = level_data.get("powerup_interval", None)
+
+    asteroid_interval = asteroid_interval and tuple(asteroid_interval)
+    enemy_interval = enemy_interval and tuple(enemy_interval)
+    powerup_interval = powerup_interval and tuple(powerup_interval)
 
     try:
         level_data_obj = LevelData(
@@ -78,14 +85,14 @@ def load_level(name: str) -> LevelData:
 
             asteroid_density=       tuple(level_data["asteroid_density"]),
             asteroid_speed=         tuple(level_data["asteroid_speed"]),
-            asteroid_frequency=     level_data.get("asteroid_frequency", 0.0),
+            asteroid_interval=      asteroid_interval,
             asteroid_spawn_weights= asteroid_weights,
 
-            enemy_frequency=        level_data.get("enemy_frequency", 0.0),
+            enemy_interval=         enemy_interval,
             enemy_count=            level_data.get("enemy_count", 0),
             enemy_spawn_weights=    enemy_weights,
 
-            powerup_frequency=      level_data.get("powerup_frequency", 0.0),
+            powerup_interval=       powerup_interval,
             powerup_spawn_weights=  powerup_weights,
 
             score_range=            tuple(level_data["score_range"]),

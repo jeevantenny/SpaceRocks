@@ -457,14 +457,14 @@ class LevelData(NamedTuple):
 
     asteroid_density: int
     asteroid_speed: tuple[float, float]
-    asteroid_frequency: float
+    asteroid_interval: tuple[int, int] | None
     asteroid_spawn_weights: tuple[list[str], list[int]]
 
     enemy_count: int
+    enemy_interval: tuple[int, int] | None
     enemy_spawn_weights: tuple[list[str], list[int]]
 
-    enemy_frequency: float
-    powerup_frequency: float
+    powerup_interval: tuple[int, int] | None
     powerup_spawn_weights: tuple[list[str], list[int]]
 
     score_range: tuple[int, int]
@@ -473,15 +473,15 @@ class LevelData(NamedTuple):
 
     @property
     def spawn_asteroids(self) -> bool:
-        return self.asteroid_frequency > 0 and len(self.asteroid_spawn_weights[0]) > 0
+        return self.asteroid_interval is not None and len(self.asteroid_spawn_weights[0]) > 0
     
     @property
     def spawn_enemies(self) -> bool:
-        return self.enemy_frequency > 0 and len(self.enemy_spawn_weights[0]) > 0
+        return self.enemy_interval is not None and len(self.enemy_spawn_weights[0]) > 0
     
     @property
     def spawn_powerups(self) -> bool:
-        return self.powerup_frequency > 0 and len(self.powerup_spawn_weights[0]) > 0
+        return self.powerup_interval is not None and len(self.powerup_spawn_weights[0]) > 0
 
 
 
