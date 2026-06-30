@@ -84,6 +84,7 @@ class Timer:
         self.loop = loop
         self.__exec_after = exec_after
         self.__time_left = 0.0
+        self.__prev_time = 0.0
         self.__run = False
     
     @property
@@ -113,7 +114,7 @@ class Timer:
 
 
     def start(self) -> Self:
-        self.__time_left = self.__duration
+        self.__time_left = self.__prev_time = self.__duration
         self.__run = True
         return self
     
@@ -124,28 +125,35 @@ class Timer:
     def advance(self, ticks: float) -> None:
         self.__time_left -= ticks
 
-
     def stop(self) -> None:
         self.__time_left = 0.0
         self.__run = False
 
+    def set_duration(self, duration: float) -> None:
+        self.__duration = duration
+        self.__time_left = min(self.__time_left, duration)
+
     def update(self, speed_multiplier=1.0) -> None:
         if self.__run:
             self.__time_left -= speed_multiplier
-            
-            if self.__time_left <= 0.0:
-                if self.__exec_after is not None:
+
+            if self.__exec_after is not None:
+                if self.__prev_time > 0 and self.__time_left <= 0:
                     self.__exec_after()
-                if not self.loop:
+
+            if not self.loop:
+                if self.__time_left <= 0:
                     self.__run = False
+            
             self.__time_left = self.__sanitize_time(self.__time_left)
+            self.__prev_time = self.__time_left
     
 
     def __sanitize_time(self, time: float) -> float:
-        if not self.loop:
-            return pg.math.clamp(time, 0.0, self.__duration)
-        elif time == 0:
+        if time == 0 or self.__duration == 0:
             return 0
+        elif not self.loop:
+            return pg.math.clamp(time, 0.0, self.__duration)
         else:
             output = time % self.__duration
             return output or self.__duration

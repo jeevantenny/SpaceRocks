@@ -95,14 +95,22 @@ class TestTimer(unittest.TestCase):
         # Even though the time advanced 4 times the timer's duration
         # the callback function should only be invocated once.
 
-    def test_restart(self) -> None:
+    def test_callback_loop(self):
+        f = Mock()
+        timer = Timer(25, True, f).start()
+        timer.advance(24)
+        timer.update()
+        timer.update()
+        f.assert_called_once_with()
+
+    def test_restart(self):
         timer = Timer(25).start()
         timer.advance(20)
         timer.restart()
         self.assertEqual(timer.running, True)
         self.assertEqual(timer.countdown, 25)
 
-    def test_stop(self) -> None:
+    def test_stop(self):
         f = Mock()
         timer = Timer(25, exec_after=f).start()
         self.assertEqual(timer.running, True)
@@ -110,3 +118,19 @@ class TestTimer(unittest.TestCase):
         self.assertEqual(timer.running, False)
         self.assertEqual(timer.complete, True)
         f.assert_not_called()
+
+    def test_set_duration(self):
+        f = Mock()
+        timer = Timer(25, True, f).start()
+        # Expected duration (D) and countdown (C)
+        self.assertEqual(timer.duration, 25)
+        timer.set_duration(10)
+        self.assertEqual(timer.duration, 10)  # D 10, C 0
+        timer.advance(13)
+        self.assertEqual(timer.countdown, 7)  # D 10, C 7 (since (10-13) % 10 == 7)
+        timer.set_duration(5)
+        self.assertEqual(timer.countdown, 2)  # D 5, C 2 (since (5-13 % 5 == 2))
+        self.assertEqual(timer.duration, 5)
+        timer.update() # C 1 and method invocation
+        f.assert_called_once_with()
+
