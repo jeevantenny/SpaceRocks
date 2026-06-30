@@ -233,14 +233,14 @@ class DataTest(unittest.TestCase):
 
         "asteroid_density": [20, 30],
         "asteroid_speed": [1, 6],
-        "asteroid_frequency": 0.5,
+        "asteroid_interval": [1, 5],
         "spawn_asteroids": {"small_rock": 70, "medium_rock": 30},
 
-        "enemy_frequency": 0.2,
+        "enemy_interval": [50, 200],
         "enemy_count": 5,
         "spawn_enemies": {"basic_enemy": 100, "big_chungus": 80},
 
-        "powerup_frequency": 0.67,
+        "powerup_interval": [70, 300],
         "spawn_powerups": {"health": 100, "speed_boost": 50},
 
         "score_range": [10000, 20000],
@@ -315,14 +315,14 @@ class DataTest(unittest.TestCase):
 
         self.assertEqual(level.asteroid_density, (10, 15))
         self.assertEqual(level.asteroid_speed, (1, 6))
-        self.assertEqual(level.asteroid_frequency, 0.0)
+        self.assertEqual(level.asteroid_interval, None)
         self.assertEqual(level.asteroid_spawn_weights, ([], []))
 
-        self.assertEqual(level.enemy_frequency, 0.0)
+        self.assertEqual(level.enemy_interval, None)
         self.assertEqual(level.enemy_count, 0)
         self.assertEqual(level.enemy_spawn_weights, ([], []))
 
-        self.assertEqual(level.powerup_frequency, 0.0)
+        self.assertEqual(level.powerup_interval, None)
         self.assertEqual(level.powerup_spawn_weights, ([], []))
 
         self.assertEqual(level.score_range, (0, 10000))
@@ -345,14 +345,14 @@ class DataTest(unittest.TestCase):
 
         self.assertEqual(level.asteroid_density, (20, 30))
         self.assertEqual(level.asteroid_speed, (1, 6))
-        self.assertEqual(level.asteroid_frequency, 0.5)
+        self.assertEqual(level.asteroid_interval, (1, 5))
         self.assertEqual(level.asteroid_spawn_weights, (["small_rock", "medium_rock"], [70, 30]))
 
-        self.assertEqual(level.enemy_frequency, 0.2)
+        self.assertEqual(level.enemy_interval, (50, 200))
         self.assertEqual(level.enemy_count, 5)
         self.assertEqual(level.enemy_spawn_weights, (["basic_enemy", "big_chungus"], [100, 80]))
 
-        self.assertEqual(level.powerup_frequency, 0.67)
+        self.assertEqual(level.powerup_interval, (70, 300))
         self.assertEqual(level.powerup_spawn_weights, (["health", "speed_boost"], [100, 50]))
 
         self.assertEqual(level.score_range, (10000, 20000))

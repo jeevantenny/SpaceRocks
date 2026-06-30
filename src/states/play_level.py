@@ -252,7 +252,7 @@ class PlayLevel(Play):
         # Show hud message if any
         output = self.__hud_message.render()
         if output is not None:
-            blit_to_center(output, surface, (0, surface.height*0.5 - 40))
+            blit_to_center(output, surface, (0, surface.height*0.5 - 50))
         
 
         if self.is_top_state():
@@ -270,8 +270,14 @@ class PlayLevel(Play):
             # Stops objects from spawning once the level has been cleared
             if self._score >= self._level_data.score_range[1]:
                 self.__level_cleared = True
-                ShowText("Level Cleared").add_to_stack(self.state_stack)
-                # self.__delete_offscreen_spawned_entities()
+                self.hud_message("Level Cleared")
+                if not self.__powerup_exists("Hyperdrive"):
+                    self.powerups.add(powerups.PowerupCollectable(
+                        self.spaceship.position+(0, -50),
+                        self.spaceship.get_velocity()*0.5,
+                        "Hyperdrive"
+                    ))
+
                 for asteroid in self.asteroids.sprites():
                     asteroid.kill(False)
 
@@ -336,7 +342,6 @@ class PlayLevel(Play):
         if (self._level_data.spawn_powerups
             and len(self.powerups) + len(self.spaceship.get_powerup_group()) < len(self._level_data.powerup_spawn_weights[0])):
             self.__powerup_timer.update()
-            print(self.__powerup_timer.countdown)
 
 
     def __spawn_asteroid(self) -> None:

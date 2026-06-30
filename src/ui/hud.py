@@ -137,6 +137,6 @@ class HudMessage(UIElement):
 
 
     def __set_message(self, message: str, duration: int) -> None:
-        self.__message_text = effects.AnimatedText(message, "main_entrance_b", font.large_font)
+        self.__message_text = effects.AnimatedText(message, "main_entrance_a", font.large_font)
         self.__timer = Timer(duration).start()
         

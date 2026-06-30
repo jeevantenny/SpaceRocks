@@ -43,6 +43,7 @@ class Play(State):
         self.__background_tint: pg.typing.ColorLike = "#777777"
         self.__score_limit = None
         self.__save_progress = True
+        self.__inactivity_timer = Timer(2400, True, self._pause_game).start()
     
         self._object_spawn_delay = Timer(15)
         self._game_over_timer = Timer(40, False, self._game_over)
@@ -163,6 +164,12 @@ class Play(State):
 
 
     def userinput(self, inputs):
+        if (inputs.check_input("ship_forward")
+            or inputs.check_input("shoot")
+            or inputs.check_input("ship_left")
+            or inputs.check_input("ship_right")):
+            self.__inactivity_timer.restart()
+
         if debug.DEBUG_MODE:
             if inputs.keyboard_mouse.tap_keys[pg.K_r]:
                 self.spaceship.position = pg.Vector2(200, 150)
@@ -191,6 +198,7 @@ class Play(State):
 
         if self._player_lives and inputs.check_input("pause"):
             self._pause_game()
+            self.__inactivity_timer.restart()
 
 
 
@@ -204,6 +212,7 @@ class Play(State):
                     obj.update()
         elif self._player_lives:
             self._game_loop()
+            self.__inactivity_timer.update()
 
         self._join_sound_queue(self.entities.clear_sound_queue())
 
@@ -342,7 +351,6 @@ class Play(State):
         self.spaceship.invincibility_frames()
         self.set_camera_target(self.spaceship)
 
-        self.powerups.kill_all()
         self.reset_point_combo()
     
     def _player_respawn_pos(self) -> pg.Vector2:
