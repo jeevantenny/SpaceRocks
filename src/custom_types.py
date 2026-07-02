@@ -4,9 +4,9 @@ Contains various types that will be used throughout the game.
 
 import pygame as pg
 import random
-
 from typing import Self, Any, Literal, Callable, Generator, NamedTuple
 from collections import defaultdict
+from abc import ABC, abstractmethod
 
 
 
@@ -27,6 +27,27 @@ type ControllerData = dict[Literal["name", "starting_state", "states"], str | di
 
 
 
+class EngineInterface(ABC):
+    __DEFAULT: int = 0
+    @abstractmethod
+    def get_fps(self) -> int:
+        """Get the current framerate of the game"""
+        
+    @abstractmethod
+    def set_fps(self, fps=__DEFAULT) -> None:
+        """Set the framerate of the game"""
+        
+    @abstractmethod
+    def get_tps(self) -> int:
+        """Get the current tickrate of the game"""
+        
+    @abstractmethod
+    def set_tps(self, tps=__DEFAULT) -> int:
+        """Set the current tickrate of the game (this affects how fast the game visually runs)"""
+    
+    @abstractmethod
+    def toggle_fullscreen(self) -> None:
+        """Toggle game between windowed and fullscreen mode"""
 
 
 

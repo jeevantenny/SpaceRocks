@@ -10,6 +10,7 @@ from time import perf_counter
 from config import *
 import debug
 
+from src.custom_types import EngineInterface
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
 from src.ui import blit_to_center, font
@@ -20,9 +21,9 @@ from src.misc import set_console_style, bar_of_dashes
 
 
 
-class GameEngine:
+class GameEngine(EngineInterface):
     """
-    The engine uses two game loop that run on two threads. The main thread runs with the framerate of the game and
+    This engine uses two game loops that run on two threads. The main thread runs with the framerate of the game and
     handles window management, rendering and event handling. The second thread runs with the game's tickrate of 20
     TPS and handles user-input processing and game logic. 
     """

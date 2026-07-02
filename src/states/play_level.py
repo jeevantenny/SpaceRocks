@@ -310,6 +310,7 @@ class PlayLevel(Play):
     
     def _game_over(self) -> None:
         "Updates the score and shows the game over screen."
+        self.stop_slowmo_effect()
         if debug.Cheats.instant_restart:
             self.state_stack.quit()
             from src.states.init_state import Initializer

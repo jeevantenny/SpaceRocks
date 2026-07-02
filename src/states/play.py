@@ -3,8 +3,10 @@ import math
 import random
 from typing import Self
 
+import config
 import debug
 
+from src import glb
 from src.custom_types import Timer, SaveData
 from src.file_processing import assets, data
 
@@ -43,6 +45,9 @@ class Play(State):
         self.__background_tint: pg.typing.ColorLike = "#777777"
         self.__score_limit = None
         self.__save_progress = True
+
+        self.__slowmo_tps = 20
+        self.__slowmo_timer = Timer(0, exec_after=glb.game.set_tps)
         self.__inactivity_timer = Timer(2400, True, self._pause_game).start()
     
         self._object_spawn_delay = Timer(15)
@@ -171,11 +176,11 @@ class Play(State):
             self.__inactivity_timer.restart()
 
         if debug.DEBUG_MODE:
-            if inputs.keyboard_mouse.tap_keys[pg.K_r]:
+            keyboard = inputs.keyboard_mouse
+
+            if keyboard.tap_keys[pg.K_r]:
                 self.spaceship.position = pg.Vector2(200, 150)
                 self.spaceship.set_velocity((0, 0))
-
-            keyboard = inputs.keyboard_mouse
 
             if keyboard.tap_keys[pg.K_k]:
                 if keyboard.hold_keys[pg.KMOD_SHIFT]:
@@ -192,6 +197,9 @@ class Play(State):
 
             if keyboard.tap_keys[pg.K_g]:
                 debug.Cheats.show_bounding_boxes = not debug.Cheats.show_bounding_boxes
+            
+            if keyboard.tap_keys[pg.K_s]:
+                self.slowmo_effect(40)
 
 
         self.spaceship.userinput(inputs)
@@ -220,6 +228,10 @@ class Play(State):
         self._game_over_timer.update()
         self._respawn_timer.update()
 
+        self.__slowmo_timer.update()
+        if self.__slowmo_timer.countdown:
+            glb.game.set_tps(self.__slowmo_tps)
+
 
 
 
@@ -239,6 +251,16 @@ class Play(State):
 
     def set_camera_target(self, target: GameObject | pg.typing.Point | None) -> None:
         self.__camera_target = target
+
+    def slowmo_effect(self, duration: int, slowmo_tps=5) -> None:
+        self.__slowmo_tps = slowmo_tps
+        # duration = duration * slowmo_tps / config.TICKRATE
+        self.__slowmo_timer.set_duration(duration)
+        self.__slowmo_timer.start()
+    
+    def stop_slowmo_effect(self) -> None:
+        self.__slowmo_timer.stop()
+        glb.game.set_tps()
 
 
     def debug_info(self) -> str | None:
@@ -342,6 +364,7 @@ class Play(State):
         "Adds PauseMenu state to state stack as well as some background tint."
         BackgroundTint(self.__background_tint).add_to_stack(self.state_stack)
         PauseMenu().add_to_stack(self.state_stack)
+        glb.game.set_tps()
 
 
     def _respawn_player(self) -> None:
@@ -364,6 +387,7 @@ class Play(State):
 
     
     def _game_over(self) -> None:
+        self.stop_slowmo_effect()
         self.state_stack.quit()
         type(self)().add_to_stack(self.state_stack)
 

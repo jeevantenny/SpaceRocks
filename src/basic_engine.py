@@ -2,6 +2,9 @@ import pygame as pg
 from pygame.locals import *
 
 from config import *
+import debug
+
+from src.custom_types import EngineInterface
 from src.input_device import InputInterpreter, KeyboardMouse
 
 from src.file_processing import assets
@@ -11,7 +14,7 @@ from src.states import StateStack, init_state
 
 
 
-class BasicEngine:
+class BasicEngine(EngineInterface):
     """
     A stripped down version of the game engine that does not use threading. Framerate will be
     the same as the tickrate. Can be used to test other parts of the game if the main engine
@@ -26,54 +29,70 @@ class BasicEngine:
 
         pg.init()
         pg.joystick.init()
-        self.clock = pg.Clock()
-        self.state_stack = StateStack()
+        self.__tickrate = TICKRATE
+        self.__clock = pg.Clock()
+        self.__state_stack = StateStack()
 
-        self.input_interpreter = InputInterpreter(KeyboardMouse(), None)
+        self._input_interpreter = InputInterpreter(KeyboardMouse(), None)
 
-        self.run = True
-        self.error = None
+        self._run = True
+        self._error = None
+    
+    def get_fps(self):
+        return self.__tickrate
+    
+    def set_fps(self, fps=0):
+        raise NotImplementedError("Cannot change FPS")
+    
+    def get_tps(self):
+        return self.__tickrate
+    
+    def set_tps(self, tps=TICKRATE):
+        self.__tickrate = tps
+    
+    def toggle_fullscreen(self):
+        raise NotImplementedError("Cannot toggle fullscreen")
 
 
     def start(self) -> None:
-        self.window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE)
-        self.window_surface = self.window.get_surface()
-        self.window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
-        self.window.minimum_size = WINDOW_MINIUM_SIZE
-        self.game_canvas = pg.Surface(DEFAULT_CANVAS_SIZE)
+        self._window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE)
+        self._window_surface = self._window.get_surface()
+        self._window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
+        self._window.minimum_size = WINDOW_MINIUM_SIZE
+        self._game_canvas = pg.Surface(DEFAULT_CANVAS_SIZE)
 
         font.init()
-        init_state.Initializer(self.state_stack)
+        init_state.Initializer(self.__state_stack)
 
         try:
-            while self.run:
-                self.get_userinput()
+            while self._run:
+                self._get_userinput()
 
-                self.state_stack.userinput(self.input_interpreter)
-                self.state_stack.update()
-                SoundFXManager.play_sound_queue(self.state_stack.clear_sound_queue())
+                self.__state_stack.userinput(self._input_interpreter)
+                self.__state_stack.update()
+                SoundFXManager.play_sound_queue(self.__state_stack.clear_sound_queue())
 
-                self.state_stack.draw(self.game_canvas)
-                pg.transform.scale(self.game_canvas, self.window_surface.size, self.window_surface)
-                self.window.flip()
-                self.clock.tick(TICKRATE)
+                self.__state_stack.draw(self._game_canvas)
+                pg.transform.scale(self._game_canvas, self._window_surface.size, self._window_surface)
+                self._window.flip()
+                self.__clock.tick(self.__tickrate*debug.Cheats.game_speed)
         except KeyboardInterrupt:
-            self.error = KeyboardInterrupt.__name__
+            self._error = KeyboardInterrupt.__name__
         
         except Exception as e:
-            self.error = type(e).__name__
+            self._error = type(e).__name__
         
         finally:
-            self.state_stack.quit()
-            print(f"error: {self.error}")
+            self.__state_stack.quit()
+            print(f"error: {self._error}")
 
 
-    def get_userinput(self) -> None:
+    def _get_userinput(self) -> None:
         events = pg.event.get()
         
         for event in events:
             if event.type == QUIT:
-                self.run = False
+                self._run = False
                 return
         
-        self.input_interpreter.keyboard_mouse.get_userinput(events)
+        self._input_interpreter.keyboard_mouse.get_userinput(events)
