@@ -330,6 +330,15 @@ class Play(State):
             self.camera.set_target(target_pos)
         self.camera.update()
 
+    def _spawn_hyperdrive_powerup(self) -> None:
+        powerup = powerups.PowerupCollectable(
+            self.spaceship.position+(0, -50),
+            self.spaceship.get_velocity()*0.5,
+            "Hyperdrive"
+        )
+        self.powerups.add(powerup)
+        self.enemies.add(camera.ObjectTracker(powerup))
+
 
     def _freeze_gameplay(self) -> bool:
         return not self._respawn_timer.complete or not self._game_over_timer.complete

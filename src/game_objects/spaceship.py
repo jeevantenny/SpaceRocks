@@ -162,7 +162,7 @@ class PlayerShip(Spaceship):
         super().__init__(position)
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
-        self.__invincibility_timer = Timer(1)
+        self.__invincibility_timer = Timer(0)
 
     
     @property
@@ -181,11 +181,13 @@ class PlayerShip(Spaceship):
 
         self._do_transition()
         self._skip_animation_to_end()
+        self.invincibility_frames(object_data["invincibility"])
 
 
     def get_data(self):
         data = super().get_data()
-        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups]})
+        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups],
+                     "invincibility": self.__invincibility_timer.countdown})
         return data
 
 
@@ -241,7 +243,8 @@ class PlayerShip(Spaceship):
 
     
     def invincibility_frames(self, amount=30) -> None:
-        self.__invincibility_timer = Timer(amount).start()
+        self.__invincibility_timer.set_duration(amount)
+        self.__invincibility_timer.start()
 
 
     def kill(self):

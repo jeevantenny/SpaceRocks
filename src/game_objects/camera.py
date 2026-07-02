@@ -4,8 +4,8 @@ import debug
 from src.math_functions import unit_vector, format_angle, sign
 from src.file_processing import assets
 
-from . import ObjectGroup
-from .components import ObjectVelocity
+from . import GameObject, ObjectGroup
+from .components import ObjectVelocity, ObjectTexture
 
 
 
@@ -199,3 +199,55 @@ class RotoZoomCamera(Camera):
             crosshair_pos = (self.get_target()-self.position).rotate(-self.__rotation) + pg.Vector2(output_surface.size)*0.5
             self._draw_crosshair(output_surface, crosshair_pos)
     
+
+
+class ObjectTracker(ObjectTexture):
+    can_despawn=False
+    ignore_camera_rotation=True
+    progress_save_key="object_tracker"
+
+    __arrow_distance=200
+    __circle_distance=100
+
+    def __init__(self, track_object: GameObject):
+        super().__init__(position=(0, 0), texture=None)
+        self.__track_object = track_object
+
+    def __init_from_data__(self, object_data):
+        self.__init__(None)
+        self.__track_id = object_data["track_id"]
+    
+    def post_init_from_data(self, object_dict):
+        self.__track_object = object_dict.get(self.__track_id)
+    
+    def get_data(self):
+        data = super().get_data()
+        data.update(track_id=id(self.__track_object))
+        return data
+    
+    def update(self):
+        super().update()
+        if self.__track_object is None or not self.__track_object.alive():
+            self.kill()
+
+    
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        if self.__track_object is None:
+            return
+
+        canvas_center = pg.Vector2(surface.size)*0.5
+        camera_pos = canvas_center-offset
+        if self.__track_object.within_distance(camera_pos, self.__circle_distance):
+            return
+
+        if isinstance(self.__track_object, ObjectVelocity):
+            track_position = self.__track_object.get_lerp_pos(lerp_amount)
+        else:
+            track_position = self.__track_object.position
+        pg.draw.circle(surface, "yellow", track_position+offset, 30, 1)
+
+        if self.__track_object.within_distance(camera_pos, self.__arrow_distance):
+            return
+
+        line_end = canvas_center + (track_position-camera_pos).clamp_magnitude(40)
+        pg.draw.line(surface, "yellow", canvas_center, track_position+offset)

@@ -103,9 +103,10 @@ class PlayLevel(Play):
         self.highscore = data.load_highscore()
         self.__prev_highscore = self.highscore
         self.highscore_changed = False
+        self.__level_cleared = False
         
         self.__lvl_transition_timer = Timer(60)
-        self.__level_cleared = False
+        self.__hyperdrive_spawn_timer = Timer(60, False, self._spawn_hyperdrive_powerup)
 
     
     def _setup_game_objects(self):
@@ -145,7 +146,10 @@ class PlayLevel(Play):
 
         if debug.DEBUG_MODE:
             if inputs.keyboard_mouse.tap_keys[pg.K_b]:
-                self.add_points(1000)
+                if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
+                    self.add_points(1000)
+                else:
+                    self.add_points(100)
 
             if inputs.keyboard_mouse.tap_keys[pg.K_t]:
                 self.__reinit_for_level(self._level_data.next_level)
@@ -159,6 +163,7 @@ class PlayLevel(Play):
             self.__process_score()
             self.__hud_timer.update()
             self.__hud_message.update()
+            self.__hyperdrive_spawn_timer.update()
             
 
 
@@ -201,11 +206,8 @@ class PlayLevel(Play):
         if (self._score >= self._level_data.score_range[1]
             and not obstacle.has_health()
             and not self.__powerup_exists("Hyperdrive")):
-            self.powerups.add(powerups.PowerupCollectable(
-                obstacle.position,
-                (self.spaceship.position - obstacle.position).clamp_magnitude(3),
-                "Hyperdrive"
-            ))
+            self.slowmo_effect(7)
+            self.__hyperdrive_spawn_timer.start()
 
     def start_next_level(self):
         self.__reinit_for_level(self._level_data.next_level)
@@ -271,7 +273,7 @@ class PlayLevel(Play):
             if self._score >= self._level_data.score_range[1]:
                 self.__level_cleared = True
                 self.hud_message("Level Cleared")
-                if not self.__powerup_exists("Hyperdrive"):
+                if self.__hyperdrive_spawn_timer.complete:
                     self.powerups.add(powerups.PowerupCollectable(
                         self.spaceship.position+(0, -50),
                         self.spaceship.get_velocity()*0.5,
@@ -429,6 +431,10 @@ class PlayLevel(Play):
         self.highscore = max(self.highscore, self.__display_score)
 
 
+    def _save_progress(self):
+        if self.__hyperdrive_spawn_timer.countdown:
+            self._spawn_hyperdrive_powerup()
+        super()._save_progress()
 
 
 
