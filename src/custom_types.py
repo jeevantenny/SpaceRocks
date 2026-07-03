@@ -329,16 +329,9 @@ class Animation:
 
     def __get_frame_flipbook(self, texture_map: TextureMap, lerp_amount=0.0) -> pg.Surface:
         frame_time = (self.__anim_time.time_elapsed + self.anim_speed_multiplier*lerp_amount*(not self.complete))/self.__frame_duration
-
         frames = list(texture_map.values())
-
-        if self.loop:
-            index = int(frame_time)%len(frames)
-        else:
-            index = min(int(frame_time), len(frames)-1)
-
+        index = int(frame_time)%len(frames)
         return frames[index]
-    
 
     
     @staticmethod

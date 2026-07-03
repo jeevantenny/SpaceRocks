@@ -68,8 +68,8 @@ class PlayLevel(Play):
         self.reset_point_combo()
 
         # Reset Camera
-        self.camera.set_position((0, 0))
-        self.camera.reset_motion()
+        self._camera.set_position((0, 0))
+        self._camera.reset_motion()
 
         # Reset Timers
         self.__lvl_transition_timer.restart()
@@ -191,7 +191,7 @@ class PlayLevel(Play):
 
     def debug_info(self) -> str | None:
         return "\n".join((
-            f"level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})",
+            f"level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})",
             f"lives: {self._player_lives}, score: {self._score}, combo: {self._point_combo:.1f}, enemies: {len(self.enemies)}, powerups: {len(self.powerups)}"
         ))
 
@@ -208,6 +208,7 @@ class PlayLevel(Play):
             and not self.__powerup_exists("Hyperdrive")):
             self.slowmo_effect(7)
             self.__hyperdrive_spawn_timer.start()
+            self.camera_shake(0.7, 12)
 
     def start_next_level(self):
         self.__reinit_for_level(self._level_data.next_level)

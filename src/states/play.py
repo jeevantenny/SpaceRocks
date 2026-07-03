@@ -86,7 +86,7 @@ class Play(State):
         self._setup_game_objects()
 
         self.__load_objects_from_save(save_data.entity_data)
-        self.camera.set_position(save_data.camera_pos)
+        self._camera.set_position(save_data.camera_pos)
         self.set_camera_target(self.spaceship)
         self._score = save_data.score
         self._player_lives = save_data.player_lives
@@ -108,7 +108,7 @@ class Play(State):
         self.powerups: ObjectGroup[powerups.PowerupCollectable] = self.spawned_entities.make_subgroup()
         self.enemies = self.spawned_entities.make_subgroup()
 
-        self.camera = camera.Camera((0, 0))
+        self._camera = camera.Camera((0, 0))
         self.__camera_target: pg.typing.Point | GameObject | None = None
 
 
@@ -199,7 +199,7 @@ class Play(State):
                 debug.Cheats.show_bounding_boxes = not debug.Cheats.show_bounding_boxes
             
             if keyboard.tap_keys[pg.K_s]:
-                self.slowmo_effect(40)
+                self.camera_shake(1.0)
 
 
         self.spaceship.userinput(inputs)
@@ -214,7 +214,7 @@ class Play(State):
 
     def update(self):
         if not self._game_over_timer.complete or not self._respawn_timer.complete:
-            self.entities.update(self.camera.position, (components.Obstacle, powerups.PowerupCollectable))
+            self.entities.update(self._camera.position, (components.Obstacle, powerups.PowerupCollectable))
             for obj in self.asteroids.sprites() + self.enemies.sprites():
                 if not obj.has_health():
                     obj.update()
@@ -248,9 +248,14 @@ class Play(State):
         """Show a temporary message to the player"""
         ...
 
+    def get_camera_pos(self) -> pg.Vector2:
+        return self._camera.position
 
     def set_camera_target(self, target: GameObject | pg.typing.Point | None) -> None:
         self.__camera_target = target
+
+    def camera_shake(self, intensity: float, duration=0) -> None:
+        self._camera.camera_shake(intensity, duration)
 
     def slowmo_effect(self, duration: int, slowmo_tps=5) -> None:
         self.__slowmo_tps = slowmo_tps
@@ -264,7 +269,7 @@ class Play(State):
 
 
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})"
 
 
     def add_points(self, points: int) -> None:
@@ -317,7 +322,7 @@ class Play(State):
 
 
     def _update_game_objects(self) -> None:
-        self.entities.update(self.camera.position)
+        self.entities.update(self._camera.position)
 
         if isinstance(self.__camera_target, GameObject):
             target_pos = self.__camera_target.position.copy()
@@ -327,8 +332,8 @@ class Play(State):
             target_pos = self.__camera_target
 
         if target_pos is not None:
-            self.camera.set_target(target_pos)
-        self.camera.update()
+            self._camera.set_target(target_pos)
+        self._camera.update()
 
     def _spawn_hyperdrive_powerup(self) -> None:
         powerup = powerups.PowerupCollectable(
@@ -356,7 +361,7 @@ class Play(State):
             and self._game_over_timer.complete):
 
             self._player_lives -= 1
-            self.camera.clear_velocity()
+            self._camera.clear_velocity()
 
             for smoke in self.entities.get_type(particles.ShipSmoke):
                 smoke.clear_velocity()
@@ -411,19 +416,17 @@ class Play(State):
 
 
     def _draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        cam_lerp_pos = self.camera.lerp_position(lerp_amount)
-
+        camera_pos = self._camera.blit_position(lerp_amount)
         # Background B
         if self.__parl_b is not None:
-            self.__scrolling_texture(surface, self.__parl_b, cam_lerp_pos, 0.1)
-
+            self.__scrolling_texture(surface, self.__parl_b, camera_pos, 0.1)
         # Background A
         if self.__parl_a is not None:
-            self.__scrolling_texture(surface, self.__parl_a, cam_lerp_pos, 0.3)
+            self.__scrolling_texture(surface, self.__parl_a, camera_pos, 0.3)
 
     
     def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        self.camera.capture(surface, self.entities, lerp_amount)
+        self._camera.capture(surface, self.entities, lerp_amount)
 
 
 
@@ -452,12 +455,12 @@ class Play(State):
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
         distance_from_center = self._spawn_radius+self.spaceship.get_speed()*0.3
-        return self.camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
+        return self._camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
     
 
     def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float) -> pg.Vector2:
         "Returns the velocity of an object so that is goes onscreen towards the spaceship."
-        velocity = self.camera.position-start_pos
+        velocity = self._camera.position-start_pos
         velocity.scale_to_length(magnitude)
         velocity.rotate_ip(random.randint(-40, 40))
         return velocity
@@ -481,7 +484,7 @@ class Play(State):
                              self._score,
                              self._point_combo,
                              self._player_lives,
-                             tuple(self.camera.position),
+                             tuple(self._camera.position),
                              entity_data)
 
         data.save_progress(save_data)
