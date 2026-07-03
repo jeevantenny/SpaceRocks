@@ -30,7 +30,7 @@ class Play(State):
     Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
     and player score.
     """
-    _spawn_radius = 200
+    _spawn_radius = 300
     _despawn_radius = 500
     _player_respawn_radius = 250
     _player_max_lives = 3
@@ -455,7 +455,7 @@ class Play(State):
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
         distance_from_center = self._spawn_radius+self.spaceship.get_speed()*0.3
-        return self._camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
+        return self._camera.position + pg.Vector2(distance_from_center, 0).rotate(random.randint(0, 360))
     
 
     def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float) -> pg.Vector2:

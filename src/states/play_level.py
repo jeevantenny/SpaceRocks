@@ -422,7 +422,7 @@ class PlayLevel(Play):
 
     def __asteroid_density(self) -> int:
         "The sum of the sizes of all asteroids loaded in."
-        return sum(asteroid.size for asteroid in self.asteroids)# if asteroid.within_distance(self.spaceship, self._spawn_radius+40))
+        return sum(asteroid.size for asteroid in self.asteroids if asteroid.within_distance(self.spaceship, self._spawn_radius+40))
                 
     
 

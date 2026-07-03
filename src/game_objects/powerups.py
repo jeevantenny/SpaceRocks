@@ -282,6 +282,9 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
                 if isinstance(obj, PlayerShip):
                     self.__player_ship = obj
                     break
+
+        elif not self.__player_ship.health:
+            self.__player_ship = None
         
         elif self.rect.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
@@ -336,6 +339,7 @@ class Shield(PowerUp):
         
         self._queue_sound("entity.asteroid.small_explode", 0.5)
         controller_rumble("small_pulse", 0.8)
+        spaceship.host_state.camera_shake(0.5)
         return False
 
 
@@ -523,6 +527,7 @@ class SuperLaser(PowerUp):
                 direction = spaceship.get_rotation_vector()
                 spaceship.accelerate(direction*-0.3)
                 spaceship.host_state.set_camera_target(spaceship.position + direction*50)
+                spaceship.host_state.camera_shake(0.4)
             else:
                 for obstacle in self.__laser.killed_list:
                     spaceship.host_state.player_damage_obstacle(obstacle)

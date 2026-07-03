@@ -163,6 +163,7 @@ class PlayerShip(Spaceship):
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
         self.__invincibility_timer = Timer(0)
+        self.__shoot_delay = Timer(2)
 
     
     @property
@@ -204,8 +205,9 @@ class PlayerShip(Spaceship):
             if inputs.check_input("ship_right"):
                 self._turn(1)
             
-            if inputs.check_input("shoot") and self.alive():
+            if self.__shoot_delay.complete and inputs.check_input("shoot") and self.alive():
                 self._shoot()
+                self.__shoot_delay.restart()
 
             self.__powerups.userinput(inputs)
 
@@ -214,7 +216,8 @@ class PlayerShip(Spaceship):
         super().update()
         self.__powerups.update(self)
         self._join_sound_queue(self.__powerups.clear_sound_queue())
-        self.__invincibility_timer.update()      
+        self.__invincibility_timer.update()
+        self.__shoot_delay.update()    
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
