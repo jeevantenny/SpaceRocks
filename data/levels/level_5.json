@@ -6,7 +6,7 @@
 
     "asteroid_density": [30, 50],
     "asteroid_speed": [1, 5],
-    "asteroid_frequency": 0.4,
+    "asteroid_interval": [1, 10],
 
     "spawn_asteroids": {
         "green_small": 5,
@@ -14,10 +14,10 @@
         "green_large": 1
     },
 
-    "powerup_frequency": 0.1,
+    "powerup_interval": [300, 500],
     "spawn_powerups": {
-        "TripleShot": 2,
-        "Shield": 1
+        "TripleShot": 5,
+        "Shield": 3
     },
 
     "score_range": [40000, 50000],

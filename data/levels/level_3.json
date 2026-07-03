@@ -5,19 +5,19 @@
 
     "asteroid_density": [8, 15],
     "asteroid_speed": [2, 5],
-    "asteroid_frequency": 0.05,
+    "asteroid_interval": [10, 20],
 
     "spawn_asteroids": {
         "blue_small": 4,
         "blue_medium": 3
     },
     
-    "powerup_frequency": 0.05,
+    "powerup_interval": [300, 500],
     "spawn_powerups": {
         "Shield": 1
     },
 
-    "enemy_frequency": 0.005,
+    "enemy_interval": [400, 600],
     "enemy_count": 1,
     "spawn_enemies": {
         "EnemyShip": 1

@@ -458,11 +458,12 @@ class Play(State):
         return self._camera.position + pg.Vector2(distance_from_center, 0).rotate(random.randint(0, 360))
     
 
-    def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float) -> pg.Vector2:
+    def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float, deviation=30) -> pg.Vector2:
         "Returns the velocity of an object so that is goes onscreen towards the spaceship."
         velocity = self._camera.position-start_pos
         velocity.scale_to_length(magnitude)
-        velocity.rotate_ip(random.randint(-40, 40))
+        if deviation:
+            velocity.rotate_ip(random.randint(-deviation, deviation))
         return velocity
 
 

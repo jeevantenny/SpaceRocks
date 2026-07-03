@@ -376,7 +376,7 @@ class PlayLevel(Play):
         powerups_name = weighted_choice(self._level_data.powerup_spawn_weights)
         if not self.__powerup_exists(powerups_name):
             spawn_pos = self._get_object_spawn_pos()
-            velocity = self._get_object_spawn_velocity(spawn_pos, 2)
+            velocity = self._get_object_spawn_velocity(spawn_pos, 2, 0)
             self.powerups.add(powerups.PowerupCollectable(spawn_pos, velocity, powerups_name))
             self.__powerup_timer.set_duration(random.randint(*self._level_data.powerup_interval))
     
