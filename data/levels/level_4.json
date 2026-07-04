@@ -4,14 +4,19 @@
     "background_palette": "background/green",
     "background_tint": "#448866",
 
-    "asteroid_density": [10, 30],
+    "asteroid_density": [30, 60],
     "asteroid_speed": [2, 6],
-    "asteroid_frequency": 0.2,
+    "asteroid_interval": [4, 10],
 
     "spawn_asteroids": {
         "green_small": 1,
         "green_medium": 5,
         "green_large": 3
+    },
+    
+    "powerup_interval": [400, 600],
+    "spawn_powerups": {
+        "TripleShot": 1
     },
 
     "score_range": [30000, 40000],

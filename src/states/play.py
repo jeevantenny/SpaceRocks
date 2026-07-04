@@ -3,8 +3,10 @@ import math
 import random
 from typing import Self
 
+import config
 import debug
 
+from src import glb
 from src.custom_types import Timer, SaveData
 from src.file_processing import assets, data
 
@@ -28,7 +30,7 @@ class Play(State):
     Handles the actual Gameplay. Contains a game loop that constantly updates all game objects
     and player score.
     """
-    _spawn_radius = 200
+    _spawn_radius = 300
     _despawn_radius = 500
     _player_respawn_radius = 250
     _player_max_lives = 3
@@ -43,6 +45,10 @@ class Play(State):
         self.__background_tint: pg.typing.ColorLike = "#777777"
         self.__score_limit = None
         self.__save_progress = True
+
+        self.__slowmo_tps = 20
+        self.__slowmo_timer = Timer(0, exec_after=glb.game.set_tps)
+        self.__inactivity_timer = Timer(2400, True, self._pause_game).start()
     
         self._object_spawn_delay = Timer(15)
         self._game_over_timer = Timer(40, False, self._game_over)
@@ -60,6 +66,7 @@ class Play(State):
         self.spaceship = spaceship.PlayerShip((0, 0))
         self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
+        self.set_camera_target(self.spaceship)
     
 
     @property
@@ -79,7 +86,8 @@ class Play(State):
         self._setup_game_objects()
 
         self.__load_objects_from_save(save_data.entity_data)
-        self.camera.set_position(save_data.camera_pos)
+        self._camera.set_position(save_data.camera_pos)
+        self.set_camera_target(self.spaceship)
         self._score = save_data.score
         self._player_lives = save_data.player_lives
 
@@ -100,7 +108,8 @@ class Play(State):
         self.powerups: ObjectGroup[powerups.PowerupCollectable] = self.spawned_entities.make_subgroup()
         self.enemies = self.spawned_entities.make_subgroup()
 
-        self.camera = camera.Camera((0, 0))
+        self._camera = camera.Camera((0, 0))
+        self.__camera_target: pg.typing.Point | GameObject | None = None
 
 
 
@@ -160,12 +169,18 @@ class Play(State):
 
 
     def userinput(self, inputs):
+        if (inputs.check_input("ship_forward")
+            or inputs.check_input("shoot")
+            or inputs.check_input("ship_left")
+            or inputs.check_input("ship_right")):
+            self.__inactivity_timer.restart()
+
         if debug.DEBUG_MODE:
-            if inputs.keyboard_mouse.tap_keys[pg.K_r]:
+            keyboard = inputs.keyboard_mouse
+
+            if keyboard.tap_keys[pg.K_r]:
                 self.spaceship.position = pg.Vector2(200, 150)
                 self.spaceship.set_velocity((0, 0))
-
-            keyboard = inputs.keyboard_mouse
 
             if keyboard.tap_keys[pg.K_k]:
                 if keyboard.hold_keys[pg.KMOD_SHIFT]:
@@ -178,16 +193,20 @@ class Play(State):
                         asteroid.kill(False)
 
             if keyboard.tap_keys[pg.K_c]:
-                self.spaceship.combo *= 2
+                self._point_combo = min(self._point_combo*1.1, self.__max_combo)
 
             if keyboard.tap_keys[pg.K_g]:
                 debug.Cheats.show_bounding_boxes = not debug.Cheats.show_bounding_boxes
+            
+            if keyboard.tap_keys[pg.K_s]:
+                self.camera_shake(1.0)
 
 
         self.spaceship.userinput(inputs)
 
         if self._player_lives and inputs.check_input("pause"):
             self._pause_game()
+            self.__inactivity_timer.restart()
 
 
 
@@ -195,18 +214,23 @@ class Play(State):
 
     def update(self):
         if not self._game_over_timer.complete or not self._respawn_timer.complete:
-            self.entities.update(self.camera.position, (components.Obstacle, powerups.PowerupCollectable))
+            self.entities.update(self._camera.position, (components.Obstacle, powerups.PowerupCollectable))
             for obj in self.asteroids.sprites() + self.enemies.sprites():
                 if not obj.has_health():
                     obj.update()
         elif self._player_lives:
             self._game_loop()
+            self.__inactivity_timer.update()
 
         self._join_sound_queue(self.entities.clear_sound_queue())
 
         self._object_spawn_delay.update()
         self._game_over_timer.update()
         self._respawn_timer.update()
+
+        self.__slowmo_timer.update()
+        if self.__slowmo_timer.countdown:
+            glb.game.set_tps(self.__slowmo_tps)
 
 
 
@@ -219,9 +243,33 @@ class Play(State):
         self._draw_entities(surface, lerp_amount)
 
 
+    
+    def hud_message(self, message: str, duration=40) -> None:
+        """Show a temporary message to the player"""
+        ...
+
+    def get_camera_pos(self) -> pg.Vector2:
+        return self._camera.position
+
+    def set_camera_target(self, target: GameObject | pg.typing.Point | None) -> None:
+        self.__camera_target = target
+
+    def camera_shake(self, intensity: float, duration=0) -> None:
+        self._camera.camera_shake(intensity, duration)
+
+    def slowmo_effect(self, duration: int, slowmo_tps=5) -> None:
+        self.__slowmo_tps = slowmo_tps
+        # duration = duration * slowmo_tps / config.TICKRATE
+        self.__slowmo_timer.set_duration(duration)
+        self.__slowmo_timer.start()
+    
+    def stop_slowmo_effect(self) -> None:
+        self.__slowmo_timer.stop()
+        glb.game.set_tps()
+
 
     def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self.camera.position.x:.0f}, {self.camera.position.y:.0f})"
+        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})"
 
 
     def add_points(self, points: int) -> None:
@@ -256,6 +304,10 @@ class Play(State):
     def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
         PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
 
+    
+    def start_next_level(self) -> None:
+        ...
+
 
 
 
@@ -270,9 +322,27 @@ class Play(State):
 
 
     def _update_game_objects(self) -> None:
-        self.entities.update(self.camera.position)
-        self.camera.set_target(self.spaceship.position + self.spaceship.get_velocity()*2)
-        self.camera.update()
+        self.entities.update(self._camera.position)
+
+        if isinstance(self.__camera_target, GameObject):
+            target_pos = self.__camera_target.position.copy()
+            if isinstance(self.__camera_target, components.ObjectVelocity):
+                target_pos += self.__camera_target.get_velocity()*2
+        else:
+            target_pos = self.__camera_target
+
+        if target_pos is not None:
+            self._camera.set_target(target_pos)
+        self._camera.update()
+
+    def _spawn_hyperdrive_powerup(self) -> None:
+        powerup = powerups.PowerupCollectable(
+            self.spaceship.position+(0, -50),
+            self.spaceship.get_velocity()*0.5,
+            "Hyperdrive"
+        )
+        self.powerups.add(powerup)
+        self.enemies.add(camera.ObjectTracker(powerup))
 
 
     def _freeze_gameplay(self) -> bool:
@@ -291,7 +361,7 @@ class Play(State):
             and self._game_over_timer.complete):
 
             self._player_lives -= 1
-            self.camera.clear_velocity()
+            self._camera.clear_velocity()
 
             for smoke in self.entities.get_type(particles.ShipSmoke):
                 smoke.clear_velocity()
@@ -308,6 +378,7 @@ class Play(State):
         "Adds PauseMenu state to state stack as well as some background tint."
         BackgroundTint(self.__background_tint).add_to_stack(self.state_stack)
         PauseMenu().add_to_stack(self.state_stack)
+        glb.game.set_tps()
 
 
     def _respawn_player(self) -> None:
@@ -315,8 +386,8 @@ class Play(State):
         self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
         self.spaceship.invincibility_frames()
+        self.set_camera_target(self.spaceship)
 
-        self.powerups.kill_all()
         self.reset_point_combo()
     
     def _player_respawn_pos(self) -> pg.Vector2:
@@ -330,6 +401,7 @@ class Play(State):
 
     
     def _game_over(self) -> None:
+        self.stop_slowmo_effect()
         self.state_stack.quit()
         type(self)().add_to_stack(self.state_stack)
 
@@ -344,19 +416,17 @@ class Play(State):
 
 
     def _draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        cam_lerp_pos = self.camera.lerp_position(lerp_amount)
-
+        camera_pos = self._camera.blit_position(lerp_amount)
         # Background B
         if self.__parl_b is not None:
-            self.__scrolling_texture(surface, self.__parl_b, cam_lerp_pos, 0.1)
-
+            self.__scrolling_texture(surface, self.__parl_b, camera_pos, 0.1)
         # Background A
         if self.__parl_a is not None:
-            self.__scrolling_texture(surface, self.__parl_a, cam_lerp_pos, 0.3)
+            self.__scrolling_texture(surface, self.__parl_a, camera_pos, 0.3)
 
     
     def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        self.camera.capture(surface, self.entities, lerp_amount)
+        self._camera.capture(surface, self.entities, lerp_amount)
 
 
 
@@ -385,14 +455,15 @@ class Play(State):
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
         distance_from_center = self._spawn_radius+self.spaceship.get_speed()*0.3
-        return self.camera.position + pg.Vector2(distance_from_center).rotate(random.randint(0, 360))
+        return self._camera.position + pg.Vector2(distance_from_center, 0).rotate(random.randint(0, 360))
     
 
-    def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float) -> pg.Vector2:
+    def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float, deviation=30) -> pg.Vector2:
         "Returns the velocity of an object so that is goes onscreen towards the spaceship."
-        velocity = self.camera.position-start_pos
+        velocity = self._camera.position-start_pos
         velocity.scale_to_length(magnitude)
-        velocity.rotate_ip(random.randint(-40, 40))
+        if deviation:
+            velocity.rotate_ip(random.randint(-deviation, deviation))
         return velocity
 
 
@@ -414,7 +485,7 @@ class Play(State):
                              self._score,
                              self._point_combo,
                              self._player_lives,
-                             tuple(self.camera.position),
+                             tuple(self._camera.position),
                              entity_data)
 
         data.save_progress(save_data)

@@ -45,6 +45,7 @@ class Cheats():
 
     demo_mode = False
     basic_engine = False
+    game_speed = 1.0
 
 
 def timeit(func: Callable):
@@ -69,3 +70,4 @@ def disable_cheats():
     Cheats.test_state = None
     Cheats.test_state_args = ()
     Cheats.test_level = None
+    Cheats.game_speed = 1.0

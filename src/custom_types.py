@@ -4,9 +4,9 @@ Contains various types that will be used throughout the game.
 
 import pygame as pg
 import random
-
 from typing import Self, Any, Literal, Callable, Generator, NamedTuple
 from collections import defaultdict
+from abc import ABC, abstractmethod
 
 
 
@@ -27,6 +27,27 @@ type ControllerData = dict[Literal["name", "starting_state", "states"], str | di
 
 
 
+class EngineInterface(ABC):
+    __DEFAULT: int = 0
+    @abstractmethod
+    def get_fps(self) -> int:
+        """Get the current framerate of the game"""
+        
+    @abstractmethod
+    def set_fps(self, fps=__DEFAULT) -> None:
+        """Set the framerate of the game"""
+        
+    @abstractmethod
+    def get_tps(self) -> int:
+        """Get the current tickrate of the game"""
+        
+    @abstractmethod
+    def set_tps(self, tps=__DEFAULT) -> int:
+        """Set the current tickrate of the game (this affects how fast the game visually runs)"""
+    
+    @abstractmethod
+    def toggle_fullscreen(self) -> None:
+        """Toggle game between windowed and fullscreen mode"""
 
 
 
@@ -84,7 +105,12 @@ class Timer:
         self.loop = loop
         self.__exec_after = exec_after
         self.__time_left = 0.0
+        self.__prev_time = 0.0
         self.__run = False
+    
+    @property
+    def running(self) -> bool:
+        return self.__run
 
     @property
     def duration(self) -> float:
@@ -92,7 +118,7 @@ class Timer:
 
     @property
     def countdown(self) -> float:
-        return pg.math.clamp(self.__time_left, 0, self.__duration)
+        return self.__sanitize_time(self.__time_left)
     
     @property
     def time_elapsed(self) -> float:
@@ -109,7 +135,7 @@ class Timer:
 
 
     def start(self) -> Self:
-        self.__time_left = self.__duration
+        self.__time_left = self.__prev_time = self.__duration
         self.__run = True
         return self
     
@@ -120,23 +146,38 @@ class Timer:
     def advance(self, ticks: float) -> None:
         self.__time_left -= ticks
 
-
     def stop(self) -> None:
         self.__time_left = 0.0
         self.__run = False
 
+    def set_duration(self, duration: float) -> None:
+        self.__duration = duration
+        self.__time_left = min(self.__time_left, duration)
+
     def update(self, speed_multiplier=1.0) -> None:
         if self.__run:
             self.__time_left -= speed_multiplier
-            
-            if self.__time_left <= 0.0:
-                if self.loop:
-                    self.__time_left += self.__duration
-                else:
-                    self.__time_left = 0.0
-                    self.__run = False
-                if self.__exec_after is not None:
+
+            if self.__exec_after is not None:
+                if self.__prev_time > 0 and self.__time_left <= 0:
                     self.__exec_after()
+
+            if not self.loop:
+                if self.__time_left <= 0:
+                    self.__run = False
+            
+            self.__time_left = self.__sanitize_time(self.__time_left)
+            self.__prev_time = self.__time_left
+    
+
+    def __sanitize_time(self, time: float) -> float:
+        if time == 0 or self.__duration == 0:
+            return 0
+        elif not self.loop:
+            return pg.math.clamp(time, 0.0, self.__duration)
+        else:
+            output = time % self.__duration
+            return output or self.__duration
     
 
     
@@ -288,16 +329,9 @@ class Animation:
 
     def __get_frame_flipbook(self, texture_map: TextureMap, lerp_amount=0.0) -> pg.Surface:
         frame_time = (self.__anim_time.time_elapsed + self.anim_speed_multiplier*lerp_amount*(not self.complete))/self.__frame_duration
-
         frames = list(texture_map.values())
-
-        if self.loop:
-            index = int(frame_time)%len(frames)
-        else:
-            index = min(int(frame_time), len(frames)-1)
-
+        index = int(frame_time)%len(frames)
         return frames[index]
-    
 
     
     @staticmethod
@@ -437,14 +471,14 @@ class LevelData(NamedTuple):
 
     asteroid_density: int
     asteroid_speed: tuple[float, float]
-    asteroid_frequency: float
+    asteroid_interval: tuple[int, int] | None
     asteroid_spawn_weights: tuple[list[str], list[int]]
 
     enemy_count: int
+    enemy_interval: tuple[int, int] | None
     enemy_spawn_weights: tuple[list[str], list[int]]
 
-    enemy_frequency: float
-    powerup_frequency: float
+    powerup_interval: tuple[int, int] | None
     powerup_spawn_weights: tuple[list[str], list[int]]
 
     score_range: tuple[int, int]
@@ -453,15 +487,15 @@ class LevelData(NamedTuple):
 
     @property
     def spawn_asteroids(self) -> bool:
-        return self.asteroid_frequency > 0 and len(self.asteroid_spawn_weights[0]) > 0
+        return self.asteroid_interval is not None and len(self.asteroid_spawn_weights[0]) > 0
     
     @property
     def spawn_enemies(self) -> bool:
-        return self.enemy_frequency > 0 and len(self.enemy_spawn_weights[0]) > 0
+        return self.enemy_interval is not None and len(self.enemy_spawn_weights[0]) > 0
     
     @property
     def spawn_powerups(self) -> bool:
-        return self.powerup_frequency > 0 and len(self.powerup_spawn_weights[0]) > 0
+        return self.powerup_interval is not None and len(self.powerup_spawn_weights[0]) > 0
 
 
 

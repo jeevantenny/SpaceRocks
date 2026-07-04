@@ -25,6 +25,7 @@ class PowerUp(HasSoundQueue):
     texture_key: str | None = None
     powerup_list: dict[str, type["PowerUp"]] = {}
     priority = 0
+    collectable_despawn = True
 
     _display_name = None
     _powerup_info = "No information"
@@ -247,6 +248,9 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
         self.__player_ship: PlayerShip | None = None
         self.__emitter: Emitter | None = None
 
+        if not powerup_type.collectable_despawn:
+            self.can_despawn = False
+
 
     def __init_from_data__(self, object_data):
         self.__init__(object_data["position"], object_data["velocity"], object_data["powerup"])
@@ -278,6 +282,9 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
                 if isinstance(obj, PlayerShip):
                     self.__player_ship = obj
                     break
+
+        elif not self.__player_ship.health:
+            self.__player_ship = None
         
         elif self.rect.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
@@ -330,8 +337,9 @@ class Shield(PowerUp):
         self.__used = True
         spaceship.invincibility_frames()
         
-        controller_rumble("small_pulse", 0.8)
         self._queue_sound("entity.asteroid.small_explode", 0.5)
+        controller_rumble("small_pulse", 0.8)
+        spaceship.host_state.camera_shake(0.5)
         return False
 
 
@@ -362,6 +370,8 @@ class TripleShot(PowerUp):
         self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(10))
         self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(-10))
         self.__spawn_bullet(spaceship, bullet_rotation_a)
+        self._queue_sound("entity.ship.shoot", 0.8)
+        controller_rumble("gun_fire")
 
         self.__rounds -= 1
         if self.__rounds <= 0:
@@ -475,6 +485,7 @@ class SuperLaser(PowerUp):
 
     __charge_time = 18
     __laser_duration = 25
+    __rotation_speed = 4
 
     def __init__(self, laser_spawned=False, time_used=0):
         super().__init__()
@@ -511,14 +522,19 @@ class SuperLaser(PowerUp):
         else:
             self.__charge_timer.restart()
 
-        
-        if not (self.__laser is None or self.__laser.alive()):
-            for obstacle in self.__laser.killed_list:
-                spaceship.host_state.player_damage_obstacle(obstacle)
+        if self.__laser is not None:
+            if self.__laser.alive():
+                direction = spaceship.get_rotation_vector()
+                spaceship.accelerate(direction*-0.3)
+                spaceship.host_state.set_camera_target(spaceship.position + direction*50)
+                spaceship.host_state.camera_shake(0.4)
+            else:
+                for obstacle in self.__laser.killed_list:
+                    spaceship.host_state.player_damage_obstacle(obstacle)
 
-            self.__laser = None
-            spaceship.accelerate(spaceship.get_rotation_vector()*-5)
-            spaceship.remove_powerup(self)
+                self.__laser = None
+                spaceship.host_state.set_camera_target(spaceship)
+                spaceship.remove_powerup(self)
 
 
     def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
@@ -529,7 +545,8 @@ class SuperLaser(PowerUp):
             return
         
         offset = pg.Vector2(offset)
-        direction = spaceship.get_rotation_vector()
+        ship_rotation = spaceship.get_rotation()
+        direction = pg.Vector2(0, -1).rotate(ship_rotation - self.__rotation_speed*(1-lerp_amount))
         perp = direction.rotate(90)*15
         start_pos = spaceship.position + offset
         end_pos = start_pos + direction*300
@@ -560,5 +577,41 @@ class SuperLaser(PowerUp):
         if self.__laser_timer.complete:
             return True
         else:
-            spaceship.rotate(direction*4)
+            spaceship.rotate(direction*self.__rotation_speed)
             return False
+
+
+
+
+class Hyperdrive(PowerUp):
+    texture_key = "hyperdrive"
+    collectable_despawn = False
+    priority = 6
+
+    __drive_speed = 70
+
+    def __init__(self, hyper_drive_elapsed=0):
+        super().__init__()
+        self.__timer = Timer(45).start()
+        self.__timer.advance(hyper_drive_elapsed)
+    
+    def get_data(self):
+        return (self.__timer.time_elapsed,)
+
+    def indicator_slider_amount(self):
+        return self.__timer.completion_amount
+    
+
+    def update(self, spaceship):
+        if (spaceship.thrust
+            and -80 < spaceship.get_rotation_vector().angle_to(spaceship.get_velocity()) < 80
+            and spaceship.get_velocity().magnitude_squared() > self.__drive_speed**2):
+            self.__timer.update()
+            if self.__timer.complete:
+                spaceship.host_state.start_next_level()
+                spaceship.remove_powerup(self)
+        else:
+            self.__timer.advance(-1)
+            
+        
+

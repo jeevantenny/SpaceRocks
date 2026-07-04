@@ -134,6 +134,10 @@ class Asteroid(Obstacle, ObjectAnimation):
             self._queue_sound("entity.asteroid.small_explode", 0.7)
         elif self.size == 2:
             self._queue_sound("entity.asteroid.medium_explode", 0.7)
+            self.host_state.camera_shake(0.5)
+        elif self.size == 4:
+            self._queue_sound("entity.asteroid.medium_explode", 0.7)
+            self.host_state.camera_shake(0.7)
 
         self.set_velocity((0, 0))
         self.set_angular_vel(0)

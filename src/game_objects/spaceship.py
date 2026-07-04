@@ -72,8 +72,11 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
                      "velocity": tuple(self._velocity),
                      "rotation": self._rotation})
         return data
+    
 
-
+    def userinput(self) -> None:
+        self.__thrust = False
+        self.__turn_direction = 0
 
 
     def update(self) -> None:
@@ -89,19 +92,12 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
                 self._angular_vel += 8*self.__turn_direction
         else:
             self._angular_vel = 0
-
-        super().update()
-
-            
         
+        super().update()
         if not self.health:
             if self.animations_complete:
                 self.force_kill()
             return
-
-
-        self.__thrust = False
-        self.__turn_direction = 0
 
 
 
@@ -166,7 +162,8 @@ class PlayerShip(Spaceship):
         super().__init__(position)
         from .powerups import PowerUpGroup
         self.__powerups = PowerUpGroup()
-        self.__invincibility_timer = Timer(1)
+        self.__invincibility_timer = Timer(0)
+        self.__shoot_delay = Timer(2)
 
     
     @property
@@ -185,16 +182,19 @@ class PlayerShip(Spaceship):
 
         self._do_transition()
         self._skip_animation_to_end()
+        self.invincibility_frames(object_data["invincibility"])
 
 
     def get_data(self):
         data = super().get_data()
-        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups]})
+        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups],
+                     "invincibility": self.__invincibility_timer.countdown})
         return data
 
 
 
     def userinput(self, inputs: InputInterpreter):
+        super().userinput()
         if self.health and not inputs.keyboard_mouse.hold_keys[pg.KMOD_CTRL]:            
             if inputs.check_input("ship_forward"):
                 self._thrust()
@@ -205,8 +205,9 @@ class PlayerShip(Spaceship):
             if inputs.check_input("ship_right"):
                 self._turn(1)
             
-            if inputs.check_input("shoot") and self.alive():
+            if self.__shoot_delay.complete and inputs.check_input("shoot") and self.alive():
                 self._shoot()
+                self.__shoot_delay.restart()
 
             self.__powerups.userinput(inputs)
 
@@ -215,7 +216,8 @@ class PlayerShip(Spaceship):
         super().update()
         self.__powerups.update(self)
         self._join_sound_queue(self.__powerups.clear_sound_queue())
-        self.__invincibility_timer.update()      
+        self.__invincibility_timer.update()
+        self.__shoot_delay.update()    
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
@@ -244,14 +246,12 @@ class PlayerShip(Spaceship):
 
     
     def invincibility_frames(self, amount=30) -> None:
-        self.__invincibility_timer = Timer(amount).start()
+        self.__invincibility_timer.set_duration(amount)
+        self.__invincibility_timer.start()
 
 
     def kill(self):
-        if not self.__powerups.on_kill(self):
-            return
-
-        if self.health and self.__invincibility_timer.complete:
+        if self.health and not self.invincible and self.__powerups.on_kill(self):
             if debug.Cheats.invincible:
                 self.invincibility_frames()
             else:

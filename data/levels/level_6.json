@@ -5,12 +5,17 @@
     "background_tint": "#448866",
 
     "asteroid_density": [30, 80],
-    "asteroid_speed": [8, 12],
-    "asteroid_frequency": 0.03,
+    "asteroid_speed": [12, 15],
+    "asteroid_interval": [3, 80],
 
     "spawn_asteroids": {
         "yellow_small": 5,
         "yellow_medium": 1
+    },
+    
+    "powerup_interval": [300, 500],
+    "spawn_powerups": {
+        "Dodge": 1
     },
 
     "score_range": [50000, 60000],

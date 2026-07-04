@@ -3,16 +3,16 @@
     "parl_b": "backgrounds/space_background_big",
     "background_palette": "background/blue",
 
-    "asteroid_density": [10, 20],
+    "asteroid_density": [20, 30],
     "asteroid_speed": [2, 8],
-    "asteroid_frequency": 0.2,
+    "asteroid_interval": [5, 10],
 
     "spawn_asteroids": {
         "blue_small": 1,
         "blue_medium": 2
     },
     
-    "powerup_frequency": 0.05,
+    "powerup_interval": [200, 450],
     "spawn_powerups": {
         "Shield": 1
     },

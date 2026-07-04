@@ -1,11 +1,14 @@
 import pygame as pg
+import random
 
 import debug
+
+from src.custom_types import Timer
 from src.math_functions import unit_vector, format_angle, sign
 from src.file_processing import assets
 
-from . import ObjectGroup
-from .components import ObjectVelocity
+from . import GameObject, ObjectGroup
+from .components import ObjectVelocity, ObjectTexture
 
 
 
@@ -18,70 +21,91 @@ class Camera:
     "Moves to target position and captures an area of the world every frame."
     __max_speed = 1000
     __wander_radius = 20
+    __max_shake_offset=12
     def __init__(self, start_pos: pg.typing.Point):
-        self.__position = pg.Vector2(start_pos)
-        self.__velocity = pg.Vector2(0, 0)
+        self._position = pg.Vector2(start_pos)
+        self._velocity = pg.Vector2(0, 0)
+        self._target_pos = self.position
         self.__following = True
-        self.__target_pos = self.position
+        self.__shake_timer = Timer(0)
+        self.__shake_intensity = 0.0
+        self.__shake_offset = pg.Vector2()
 
 
 
     
     @property
     def position(self) -> pg.Vector2:
-        return self.__position.copy()
+        return self._position.copy()
 
 
     def get_target(self) -> pg.Vector2:
-        return self.__target_pos.copy()
-
+        return self._target_pos.copy()
 
     def set_target(self, position: pg.typing.Point) -> None:
-        self.__target_pos.xy = position
+        self._target_pos.xy = position
 
-    
     def set_velocity(self, value: pg.typing.Point) -> None:
-        self.__velocity.xy = value
+        self._velocity.xy = value
+
+    def camera_shake(self, intensity: float, duration=0) -> None:
+        self.__shake_intensity = pg.math.clamp(intensity, 0, 1)
+        self.__shake_timer.set_duration(duration)
+        self.__shake_timer.restart()
 
 
     def reset_motion(self) -> None:
         self.set_velocity((0, 0))
+        self.__shake_timer.stop()
+        self.__shake_intensity = 0.0
+        self.__shake_offset.xy = (0, 0)
 
 
     def update(self) -> None:
         "Updates position of camera for every game tick."
-        displacement = self.__target_pos-self.position
+        displacement = self._target_pos-self.position
         direction = unit_vector(displacement)
         distance = displacement.magnitude()
 
         if self.__following:
             if distance < 5:
-                self.set_position(self.__target_pos)
+                self.set_position(self._target_pos)
                 self.__following = False
                 self.clear_velocity()
             else:
-                self.__velocity = direction*pg.math.clamp((distance-self.__wander_radius)*0.2, 0, self.__max_speed)
+                self._velocity = direction*pg.math.clamp((distance-self.__wander_radius)*0.2, 0, self.__max_speed)
 
         else:
             if distance > self.__wander_radius:
                 self.__following = True
 
         
-        self.__position += self.__velocity
+        self._position += self._velocity
+        self.__update_camera_shake()
+    
+
+    def __update_camera_shake(self) -> None:
+        if self.__shake_intensity > 0:
+            shake_offset = self.__max_shake_offset*self.__shake_intensity**2
+            self.__shake_offset.x = shake_offset*random.uniform(-1, 1)
+            self.__shake_offset.y = shake_offset*random.uniform(-1, 1)
+            if self.__shake_timer.complete:
+                self.__shake_intensity -= 0.1
+            self.__shake_timer.update()
 
     
 
 
     def capture(self, output_surface: pg.Surface, entities: ObjectGroup, lerp_amount=0.0) -> None:
         "Draws game objects relative to the camera and blit them to the output surface."
-        lerp_pos = self.lerp_position(lerp_amount)
+        lerp_pos = self.blit_position(lerp_amount)
         blit_offset = pg.Vector2(output_surface.size)*0.5 - lerp_pos
 
         entities.draw(output_surface, lerp_amount, blit_offset)
         if debug.Cheats.show_bounding_boxes:
             pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
-            blit_offset = pg.Vector2(output_surface.size)*0.5 - self.__position
-            self._draw_crosshair(output_surface, self.__target_pos+blit_offset)
+            blit_offset = pg.Vector2(output_surface.size)*0.5 - self._position
+            self._draw_crosshair(output_surface, self._target_pos+blit_offset)
 
 
     def _draw_crosshair(self, surface: pg.Surface, position: pg.typing.Point) -> None:
@@ -93,7 +117,7 @@ class Camera:
 
 
     def set_position(self, value: pg.typing.Point) -> None:
-        self.__position = pg.Vector2(value)
+        self._position = pg.Vector2(value)
 
     
     def get_visible_area(self, area_size: pg.typing.Point) -> pg.Rect:
@@ -102,13 +126,13 @@ class Camera:
         return rect
 
 
-    def lerp_position(self, lerp_amount: float) -> pg.Vector2:
-        "Position of camera after taking interpolation into account."
-        return self.position + self.__velocity*lerp_amount
+    def blit_position(self, lerp_amount: float) -> pg.Vector2:
+        """Position of camera after taking interpolation into account and camera shake."""
+        return self.position + self._velocity*lerp_amount + self.__shake_offset
 
 
     def clear_velocity(self) -> None:
-        self.__velocity *= 0
+        self._velocity *= 0
 
 
 
@@ -175,7 +199,7 @@ class RotoZoomCamera(Camera):
 
     def capture(self, output_surface, entities, lerp_amount=0):
         scaled_surface = assets.colorkey_surface(pg.Vector2(output_surface.size)*self.__zoom)
-        camera_lerp_pos = self.lerp_position(lerp_amount)
+        camera_lerp_pos = self.blit_position(lerp_amount)
         camera_lerp_rotation = self.get_lerp_rotation(lerp_amount)
         blit_offset = pg.Vector2(scaled_surface.size)*0.5 - camera_lerp_pos
 
@@ -199,3 +223,55 @@ class RotoZoomCamera(Camera):
             crosshair_pos = (self.get_target()-self.position).rotate(-self.__rotation) + pg.Vector2(output_surface.size)*0.5
             self._draw_crosshair(output_surface, crosshair_pos)
     
+
+
+class ObjectTracker(ObjectTexture):
+    can_despawn=False
+    ignore_camera_rotation=True
+    progress_save_key="object_tracker"
+
+    __arrow_distance=200
+    __circle_distance=100
+
+    def __init__(self, track_object: GameObject):
+        super().__init__(position=(0, 0), texture=None)
+        self.__track_object = track_object
+
+    def __init_from_data__(self, object_data):
+        self.__init__(None)
+        self.__track_id = object_data["track_id"]
+    
+    def post_init_from_data(self, object_dict):
+        self.__track_object = object_dict.get(self.__track_id)
+    
+    def get_data(self):
+        data = super().get_data()
+        data.update(track_id=id(self.__track_object))
+        return data
+    
+    def update(self):
+        super().update()
+        if self.__track_object is None or not self.__track_object.alive():
+            self.kill()
+
+    
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        if self.__track_object is None:
+            return
+
+        canvas_center = pg.Vector2(surface.size)*0.5
+        camera_pos = canvas_center-offset
+        if self.__track_object.within_distance(camera_pos, self.__circle_distance):
+            return
+
+        if isinstance(self.__track_object, ObjectVelocity):
+            track_position = self.__track_object.get_lerp_pos(lerp_amount)
+        else:
+            track_position = self.__track_object.position
+        pg.draw.circle(surface, "yellow", track_position+offset, 30, 1)
+
+        if self.__track_object.within_distance(camera_pos, self.__arrow_distance):
+            return
+
+        line_end = canvas_center + (track_position-camera_pos).clamp_magnitude(40)
+        pg.draw.line(surface, "yellow", canvas_center, track_position+offset)
