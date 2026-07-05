@@ -256,6 +256,7 @@ class PlayerShip(Spaceship):
                 self.invincibility_frames()
             else:
                 super().kill()
+                self.progress_save_key = None
                 controller_rumble("large_explosion_b", 0.9)
 
 

@@ -361,7 +361,10 @@ class ObjectCollision(ObjectVelocity):
         for other_obj in self.colliding_objects():
             prev_position = self.position.copy()
             normal: pg.Vector2 = self.position-other_obj.position
-            normal.scale_to_length(self.radius+other_obj.radius)
+            if normal:
+                normal.scale_to_length(self.radius+other_obj.radius)
+            else:
+                normal = pg.Vector2(0, self.radius+other_obj.radius)
 
             speed = (self.get_speed() + other_obj.get_speed())*0.5
 

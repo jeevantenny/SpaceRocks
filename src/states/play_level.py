@@ -189,11 +189,12 @@ class PlayLevel(Play):
 
 
 
-    def debug_info(self) -> str | None:
-        return "\n".join((
-            f"level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})",
-            f"lives: {self._player_lives}, score: {self._score}, combo: {self._point_combo:.1f}, enemies: {len(self.enemies)}, powerups: {len(self.powerups)}"
-        ))
+    def debug_info(self):
+        return (
+            f"level: {self._level_data.level_name}, {super().debug_info()}\n"
+            f"asteroid_density: {self.__asteroid_density()}/{self.__required_asteroid_density()} "
+            f"enemies: {len(self.enemies)}, powerups: {len(self.powerups)}"
+        )
 
 
 

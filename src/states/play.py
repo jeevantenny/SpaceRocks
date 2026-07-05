@@ -142,8 +142,8 @@ class Play(State):
         object_dict = {}
         self.spaceship = None
 
-        for entity_data in entity_data:
-            entity = GameObject.init_from_data(entity_data)
+        for data in entity_data:
+            entity = GameObject.init_from_data(data)
             self.entities.add(entity)
             if isinstance(entity, asteroids.Asteroid):
                 self.asteroids.add(entity)
@@ -153,7 +153,7 @@ class Play(State):
                 self.spaceship = entity
                 self._powerups = self.spaceship.get_powerup_group()
 
-            object_dict[entity_data["id"]] = entity
+            object_dict[data["id"]] = entity
         
         if self.spaceship is None:
             self.can_save_progress(False)
@@ -268,8 +268,11 @@ class Play(State):
         glb.game.set_tps()
 
 
-    def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})"
+    def debug_info(self) -> str:
+        return (
+            f"entity count: {self.entities.count()}, lives: {self._player_lives}, score: {self._score}, "
+            f"combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})"
+        )
 
 
     def add_points(self, points: int) -> None:
@@ -471,9 +474,8 @@ class Play(State):
     def _save_progress(self) -> None:
         "Saves the current state of the game to a save file."
         
-        if not self._respawn_timer.complete:
-            respawn_pos = self._player_respawn_pos()
-            self.spaceship.set_position(respawn_pos)
+        if self._respawn_timer.countdown:
+            self._respawn_player()
 
 
         entity_data = [entity.get_data()

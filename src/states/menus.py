@@ -233,7 +233,6 @@ class Settings(State):
         ]
 
         self.__elements = elements.ElementList(settings_elements, wrap_list=True)
-        self.__background: pg.Surface | None = None
 
 
     def userinput(self, inputs):
@@ -254,26 +253,12 @@ class Settings(State):
         self.__elements.update()
     
     def draw(self, surface, lerp_amount=0):
-        self.__draw_background(surface)
-        # self.prev_state.draw(surface)
+        self.prev_state.draw(surface, lerp_amount)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
         
         surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
         surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
-
-
-    def __draw_background(self, surface: pg.Surface) -> None:
-        """
-        Background is copied and drawn over to avoid having to call draw methods of previous states. This
-        was causing a major performance drop for some reason even though the settings state isn't very performance
-        intensive on it's own.
-        """
-        if self.__background is None or self.__background.size != surface.size:
-            self.prev_state.draw(surface)
-            self.__background = surface.copy()
-        else:
-            surface.blit(self.__background)
 
 
     def quit(self):

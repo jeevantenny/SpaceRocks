@@ -45,7 +45,7 @@ class PlayBossLevel(Play):
     
     def _setup_game_objects(self):
         super()._setup_game_objects()
-        self.camera = RotoZoomCamera((0, 0))
+        self._camera = RotoZoomCamera((0, 0))
         self.boss = BossShip((0, -500))
         self.enemies.add(self.boss)
         # self.camera.set_zoom(1.5)
@@ -67,22 +67,19 @@ class PlayBossLevel(Play):
 
 
     def debug_info(self):
-        return f"{super().debug_info()}\ncamera_rotation: {self.camera.get_rotation()}, boss_health: {self.boss.health}"
+        return f"{super().debug_info()}\ncamera_rotation: {self._camera.get_rotation()}, boss_health: {self.boss.health}"
 
     
     def _update_game_objects(self):
-        self.entities.update(self.camera.position)
-        
         boss_displacement = self.boss.position-self.spaceship.position
         boss_distance = boss_displacement.magnitude()
-        self.camera.set_target_rotation(vector_direction(boss_displacement))
-
-        target_pos = self.spaceship.position + self.spaceship.get_velocity()*2
         if boss_distance < 300:
-            target_pos += boss_displacement*0.2
+            self.set_camera_target(self.spaceship.position + self.spaceship.get_velocity()*2 + boss_displacement*0.2)
+        else:
+            self.set_camera_target(self.spaceship)
+        self._camera.set_target_rotation(vector_direction(boss_displacement))
+        super()._update_game_objects()
         
-        self.camera.set_target(target_pos)
-        self.camera.update()
         boss_displacement.scale_to_length(pg.math.clamp((boss_distance-250)*0.5, 3, 500))
         # self.spaceship.accelerate(boss_displacement)
         if self.spaceship.health:
@@ -92,7 +89,7 @@ class PlayBossLevel(Play):
     def _draw_scrolling_background(self, surface, lerp_amount=0):
         temp_surface = assets.colorkey_surface(pg.Vector2(surface.size)*2)
         super()._draw_scrolling_background(temp_surface, lerp_amount)
-        blit_to_center(pg.transform.rotate(temp_surface, self.camera.get_lerp_rotation(lerp_amount)), surface)
+        blit_to_center(pg.transform.rotate(temp_surface, self._camera.get_lerp_rotation(lerp_amount)), surface)
 
 
     def _draw_hud(self, surface):
