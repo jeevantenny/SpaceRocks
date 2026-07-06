@@ -4,10 +4,11 @@ from typing import Iterator, Literal
 import debug
 
 from src.custom_types import Timer
-from src.input_device import InputInterpreter
+from src.input_device import controller_rumble, InputInterpreter
+
 from src.file_processing import assets
 from src.audio.soundfx import HasSoundQueue
-from src.input_device import controller_rumble
+from src.ui import effects
 
 from .components import ObjectHitbox, ObjectTexture, ObjectVelocity, Obstacle
 from .spaceship import PlayerShip
@@ -22,7 +23,7 @@ from .particles import Particle, Emitter
 class PowerUp(HasSoundQueue):
     "Gives the player's spaceship additional abilities that they can either be offensive or defensive."
 
-    texture_key: str | None = None
+    texture_key = "default"
     powerup_list: dict[str, type["PowerUp"]] = {}
     priority = 0
     collectable_despawn = True
@@ -231,15 +232,12 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
             ):
 
         powerup_type = PowerUp.powerup_list[powerup_name]
-        if powerup_type.texture_key is not None:
-            texture = assets.load_texture_map("powerups")[powerup_type.texture_key]
-        else:
-            texture = assets.colorkey_surface((16, 16))
-            texture.fill("green")
+        texture = assets.load_texture_map("powerups")[powerup_type.texture_key]
+        self.__texture = effects.AnimatedTexture(texture, "powerups", "powerup", "start")
 
         super().__init__(
             position=position,
-            texture=texture,
+            texture=None,
             hitbox_size=(25, 25)
         )
 
@@ -255,6 +253,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
     def __init_from_data__(self, object_data):
         self.__init__(object_data["position"], object_data["velocity"], object_data["powerup"])
         self.set_angular_vel(object_data["angular_vel"])
+        # self.__texture.set_effect("main")
 
 
     @property
@@ -276,6 +275,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
 
     def update(self):
         super().update()
+        self.__texture.update()
 
         if self.__player_ship is None:
             for obj in self.primary_group:
@@ -297,6 +297,10 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
                 self.__set_emitter()
         else:
             self.__emitter.emit(self.position)
+
+    
+    def _get_blit_texture(self, lerp_amount=0, rotation=0):
+        return self.__texture.render(lerp_amount)
     
 
     def __set_emitter(self) -> None:

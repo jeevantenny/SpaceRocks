@@ -1,5 +1,5 @@
 {
-    "texture": "game_objects/powerups",
+    "texture": "game_objects/powerups_new",
 
     "mappings": {
         "shield": [0, 0, 16, 16],
@@ -7,6 +7,20 @@
         "dodge": [32, 0, 16, 16],
         "super_laser": [48, 0, 16, 16],
         "dash": [64, 0, 16, 16],
-        "hyperdrive": [80, 0, 16, 16]
+        "hyperdrive": [80, 0, 16, 16],
+        "default": [96, 0, 16, 16],
+
+        "start_1":  [0, 48, 16, 16],
+        "start_2":  [16, 48, 16, 16],
+        "start_3":  [32, 48, 16, 16],
+        "start_4":  [48, 48, 16, 16],
+        "start_5":  [64, 48, 16, 16],
+        "start_6":  [80, 48, 16, 16],
+        "start_7":  [0, 64, 16, 16],
+        "start_8":  [16, 64, 16, 16],
+        "start_9":  [32, 64, 16, 16],
+        "start_10": [48, 64, 16, 16],
+        "start_11": [64, 64, 16, 16],
+        "start_12": [80, 64, 16, 16]
     }
 }

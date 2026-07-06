@@ -25,6 +25,15 @@ type AnimData = dict[str, dict[Literal["duration", "loop", "timeline"], float | 
 type ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[str, dict[Literal["animations", "transitions"], list[str] | dict[str, str]]]]
 
 
+class LazyDict[K, V](dict):
+    def __init__(self, get_value: Callable[[K], V]):
+        super().__init__()
+        self.__get_value = get_value
+    
+    def __missing__(self, key: K):
+        surface = self.__get_value(key)
+        self[key] = surface
+        return surface
 
 
 class EngineInterface(ABC):

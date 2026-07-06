@@ -1,0 +1,29 @@
+{
+    "group_name": "powerup.animation",
+    "animations": {
+        "start": {
+            "duration": 12,
+            "timeline": {
+                "0": "start_1",
+                "1": "start_2",
+                "2": "start_3",
+                "3": "start_4",
+                "4": "start_5",
+                "5": "start_6",
+                "6": "start_7",
+                "7": "start_8",
+                "8": "start_9",
+                "9": "start_10",
+                "10": "start_11",
+                "11": "start_12",
+                "12": "main"
+            }
+        },
+        "main": {
+            "duration": 0,
+            "timeline": {
+                "0": "main"
+            }
+        }
+    }
+}
