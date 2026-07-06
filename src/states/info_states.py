@@ -1,9 +1,9 @@
 import pygame as pg
 from typing import Callable
 
-from src.ui import font, blit_to_center
-from src.file_processing import data
-from src.game_objects.powerups import PowerUp
+from src.ui import font, blit_to_center, effects
+from src.file_processing import assets, data
+from src.game_objects.powerups import PowerupCollectable
 
 from . import State
 from .visuals import add_background_tint
@@ -66,28 +66,46 @@ class InfoState(State):
 
 
 class PowerupInfo(State):
-    def __init__(self, powerup_type: type[PowerUp], background_tint_color: pg.typing.ColorLike = "#777777"):
+    def __init__(self, collectable: PowerupCollectable, background_tint_color: pg.typing.ColorLike = "#777777"):
         super().__init__()
-        self.__powerup_name = powerup_type.get_display_name()
-        self.__info_text = powerup_type.get_info_text()
-        self.__usage_instr = powerup_type.get_usage_instr()
+        self.__collectable = collectable
+        self.__powerup = collectable.powerup_type
+        self.__info_text = self.__powerup.get_info_text().split("\n")
+        self.__usage_instr = self.__powerup.get_usage_instr()
         self.__tint_color = background_tint_color
+
+        texture = assets.load_texture_map("powerups")[self.__powerup.texture_key]
+        self.__anim_texture = effects.AnimatedTexture(pg.transform.scale_by(texture, 2),
+                                                      "powerups", "powerup", "start")
 
 
     def userinput(self, inputs):
         if inputs.check_input("select"):
             self.state_stack.pop()
     
+    def update(self):
+        if self.__collectable.alive():
+            self.__collectable.update()
+        else:
+            self.__anim_texture.update()
+    
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
         add_background_tint(surface, self.__tint_color)
-        blit_to_center(font.large_font.render(self.__powerup_name), surface, (0, -20))
-        blit_to_center(font.small_font.render(self.__info_text), surface, (0, 0))
-        if self.__usage_instr is not None:
-            blit_to_center(font.icon_font.render(self.__usage_instr), surface, (0, 20))
-        blit_to_center(font.icon_font.render("OK<select>"), surface, (0, 50))
+        
+        blit_to_center(self.__anim_texture.render(lerp_amount), surface, (0, -35))
+        blit_to_center(font.large_font.render(self.__powerup.get_display_name(), 1, *self.__powerup.text_colors), surface, (0, 0))
 
+        for i, text in enumerate(self.__info_text):
+            blit_to_center(font.small_font.render(text, 1, *self.__powerup.text_colors),
+                           surface, (0, 20 + i*8))
+
+        if self.__usage_instr is not None:
+            blit_to_center(font.icon_font.render(self.__usage_instr), surface, (0, 45))
+            blit_to_center(font.icon_font.render("OK<select>"), surface, (0, 60))
+        else:
+            blit_to_center(font.icon_font.render("OK<select>"), surface, (0, 45))
 
 
 

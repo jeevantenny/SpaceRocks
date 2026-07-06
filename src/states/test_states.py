@@ -6,7 +6,7 @@ from src.ui import elements, font, blit_to_center
 from src.audio.music import MusicManager
 from src.file_processing import data
 
-from src.game_objects.powerups import Dodge
+from src.game_objects import powerups
 
 from . import State
 from .info_states import PowerupInfo
@@ -75,4 +75,11 @@ class TestMusic(State):
 class TestPowerupInfo(State):
     def userinput(self, inputs):
         if inputs.check_input("select"):
-            self.state_stack.push(PowerupInfo(Dodge))
+            self.state_stack.push(State())
+            self.state_stack.push(PowerupInfo(powerups.PowerupCollectable((0, 0), (0, 0), "SuperLaser")))
+            self.state_stack.push(State())
+            self.state_stack.push(PowerupInfo(powerups.PowerupCollectable((0, 0), (0, 0), "Dodge")))
+            self.state_stack.push(State())
+            self.state_stack.push(PowerupInfo(powerups.PowerupCollectable((0, 0), (0, 0), "TripleShot")))
+            self.state_stack.push(State())
+            self.state_stack.push(PowerupInfo(powerups.PowerupCollectable((0, 0), (0, 0), "Shield")))

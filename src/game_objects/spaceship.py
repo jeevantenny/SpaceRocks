@@ -187,7 +187,7 @@ class PlayerShip(Spaceship):
 
     def get_data(self):
         data = super().get_data()
-        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups],
+        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups if powerup.save_powerup],
                      "invincibility": self.__invincibility_timer.countdown})
         return data
 

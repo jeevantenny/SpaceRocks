@@ -24,9 +24,11 @@ class PowerUp(HasSoundQueue):
     "Gives the player's spaceship additional abilities that they can either be offensive or defensive."
 
     texture_key = "default"
+    text_colors = ("#dd6644", "#550011")
     powerup_list: dict[str, type["PowerUp"]] = {}
     priority = 0
     collectable_despawn = True
+    save_powerup = True
 
     _display_name = None
     _powerup_info = "No information"
@@ -259,6 +261,10 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
     @property
     def powerup_name(self) -> str:
         return self.__powerup_name
+    
+    @property
+    def powerup_type(self) -> type[PowerUp]:
+        return PowerUp.powerup_list[self.__powerup_name]
 
 
     def get_data(self):
@@ -288,7 +294,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
         
         elif self.rect.colliderect(self.__player_ship.rect):
             self.__player_ship.acquire_powerup(self.__powerup_name)
-            self.host_state.powerup_info(PowerUp.powerup_list[self.__powerup_name])
+            self.host_state.powerup_info(self)
             self.kill()
         
 
@@ -316,18 +322,28 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
 
 
 class Shield(PowerUp):
-    texture_key = "shield"
     priority = 1
+    texture_key = "shield"
+    text_colors = ("#4488ff", "#004444")
+    _powerup_info = "Protects the ship from one lethal attack"
     def __init__(self):
         super().__init__()
         self.__used = False
+        self.__use_timer = Timer(4)
+
+    
+    def indicator_slider_amount(self):
+        return not self.__used or 1-self.__use_timer.completion_amount
 
 
 
     def update(self, spaceship):
         super().update(spaceship)
-        if self.__used:
+        self.__use_timer.update()
+        if self.__used and self.__use_timer.complete:
             spaceship.remove_powerup(self)
+            spaceship.host_state.slowmo_effect(3)
+            spaceship.host_state.camera_shake(0.5, 3)
     
 
     def on_kill(self, spaceship):
@@ -339,11 +355,12 @@ class Shield(PowerUp):
                 spaceship.accelerate(-push_amount)
 
         self.__used = True
+        self.save_powerup = False
         spaceship.invincibility_frames()
+        self.__use_timer.start()
         
         self._queue_sound("entity.asteroid.small_explode", 0.5)
         controller_rumble("small_pulse", 0.8)
-        spaceship.host_state.camera_shake(0.5)
         return False
 
 
@@ -353,11 +370,13 @@ class Shield(PowerUp):
 
 
 class TripleShot(PowerUp):
-    texture_key = "triple_shot"
     priority = 2
+    texture_key = "triple_shot"
+    text_colors = ("#22bb22", "#004444")
+    __max_rounds = 30
+    _powerup_info = f"Shoot 3 bullets at once to destroy multiple targets simultaneously\nContains {__max_rounds} rounds"
 
     _display_name = "Triple Shot"
-    __max_rounds = 30
 
     def __init__(self, rounds=__max_rounds):
         super().__init__()
@@ -402,6 +421,7 @@ class TripleShot(PowerUp):
 
 class Dodge(PowerUp):
     texture_key = "dodge"
+    text_colors = ("#aa0055", "#442200")
     priority = 3
 
     _usage_instr = "Hold <powerup_use> and input the direction you wanna dodge in"
@@ -481,10 +501,12 @@ class Dodge(PowerUp):
 
 
 class SuperLaser(PowerUp):
+    texture_key = "super_laser"
+    text_colors = ("#bb44ee", "#550055")
+    _powerup_info = "A powerful laser that goes through almost ANYTHING\nBut you only get one shot"
     priority = 4
 
     _display_name = "Super Laser"
-    texture_key = "super_laser"
     _usage_instr = "Hold<shoot> to charge laser, then release"
 
     __charge_time = 18
@@ -509,7 +531,7 @@ class SuperLaser(PowerUp):
 
 
     def indicator_slider_amount(self):
-        return self.__laser_timer.complete or 1 - self.__laser_timer.completion_amount
+        return self.__laser_timer.complete or 1-self.__laser_timer.completion_amount
 
     def userinput(self, inputs):
         self.__charging = inputs.check_input("shoot_hold")
@@ -589,6 +611,9 @@ class SuperLaser(PowerUp):
 
 class Hyperdrive(PowerUp):
     texture_key = "hyperdrive"
+    text_colors = ("#22bbcc", "#005588")
+    _powerup_info = "Engage Hyperdrive to reach the next level"
+    _usage_instr = "Hold <ship_forward> until the powerup charges up"
     collectable_despawn = False
     priority = 6
 

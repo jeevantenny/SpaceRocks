@@ -3,6 +3,7 @@
     "animations": {
         "start": {
             "duration": 12,
+            "anim_speed_multiplier": 1.4,
             "timeline": {
                 "0": "start_1",
                 "1": "start_2",

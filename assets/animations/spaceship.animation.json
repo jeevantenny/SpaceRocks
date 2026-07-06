@@ -55,7 +55,7 @@
         },
         "shield_off": {
             "duration": 3,
-            "anim_speed_multiplier": 0.8,
+            "anim_speed_multiplier": 1.2,
             "timeline": {
                 "0": "shield_off_1",
                 "1": "shield_off_2",

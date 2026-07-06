@@ -213,6 +213,10 @@ class Play(State):
 
 
     def update(self):
+        if self.__slowmo_timer.countdown:
+            glb.game.set_tps(self.__slowmo_tps)
+        self.__slowmo_timer.update()
+
         if not self._game_over_timer.complete or not self._respawn_timer.complete:
             self.entities.update(self._camera.position, (components.Obstacle, powerups.PowerupCollectable))
             for obj in self.asteroids.sprites() + self.enemies.sprites():
@@ -228,9 +232,6 @@ class Play(State):
         self._game_over_timer.update()
         self._respawn_timer.update()
 
-        self.__slowmo_timer.update()
-        if self.__slowmo_timer.countdown:
-            glb.game.set_tps(self.__slowmo_tps)
 
 
 
@@ -304,8 +305,8 @@ class Play(State):
         self._point_combo = 1.0
         
 
-    def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
-        PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
+    def powerup_info(self, collectable: powerups.PowerupCollectable) -> None:
+        PowerupInfo(collectable, self._level_data.background_tint).add_to_stack(self.state_stack)
 
     
     def start_next_level(self) -> None:
