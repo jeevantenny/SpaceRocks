@@ -459,6 +459,8 @@ class Obstacle(ObjectHitbox, ObjectCollision, ObjectHealth):
     Objects that pose as obstacles to the player ship by damaging it upon collision. Obstacles have a health
     value and once this value reaches zero the object is killed.
     """
+    drop_powerup=False
+
     def __init__(self, *, points=0, point_display_height=0, **kwargs):
         super().__init__(**kwargs)
         self.__points = points

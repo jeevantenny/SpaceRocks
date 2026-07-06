@@ -9,7 +9,7 @@
     "asteroid_interval": [3, 80],
 
     "spawn_asteroids": {
-        "yellow_small": 5,
+        "yellow_small": 3,
         "yellow_medium": 1
     },
     

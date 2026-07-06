@@ -255,7 +255,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
     def __init_from_data__(self, object_data):
         self.__init__(object_data["position"], object_data["velocity"], object_data["powerup"])
         self.set_angular_vel(object_data["angular_vel"])
-        # self.__texture.set_effect("main")
+        self.__texture.set_effect("main")
 
 
     @property
@@ -621,7 +621,7 @@ class Hyperdrive(PowerUp):
 
     def __init__(self, hyper_drive_elapsed=0):
         super().__init__()
-        self.__timer = Timer(45).start()
+        self.__timer = Timer(30).start()
         self.__timer.advance(hyper_drive_elapsed)
     
     def get_data(self):

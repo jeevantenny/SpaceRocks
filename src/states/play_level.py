@@ -113,7 +113,7 @@ class PlayLevel(Play):
         super()._setup_game_objects()
         self.__asteroid_timer = Timer(0, True, self.__spawn_asteroid)
         self.__enemy_timer = Timer(0, True, self.__spawn_enemy)
-        self.__powerup_timer = Timer(0, True, self.__spawn_powerup)
+        self.__powerup_timer = Timer(0, False)
 
 
     def _setup_level(self, level_name):
@@ -202,14 +202,21 @@ class PlayLevel(Play):
     def hud_message(self, message, duration=40):
         self.__hud_message.queue_message(message, duration)
     
+
     def player_damage_obstacle(self, obstacle):
         super().player_damage_obstacle(obstacle)
-        if (self._score >= self._level_data.score_range[1]
-            and not obstacle.has_health()
-            and not self.__powerup_exists("Hyperdrive")):
-            self.slowmo_effect(7)
-            self.__hyperdrive_spawn_timer.start()
-            self.camera_shake(0.7, 12)
+        if obstacle.has_health():
+            return
+        if self._score >= self._level_data.score_range[1]:
+            if not self.__powerup_exists("Hyperdrive"):
+                self.slowmo_effect(7)
+                self.camera_shake(0.7, 12)
+                self.__hyperdrive_spawn_timer.start()
+        elif (self._level_data.spawn_powerups
+              and self.__powerup_timer.complete
+              and obstacle.drop_powerup):
+            self.__spawn_powerup(obstacle.position)
+
 
     def start_next_level(self):
         self.__reinit_for_level(self._level_data.next_level)
@@ -373,13 +380,15 @@ class PlayLevel(Play):
         self.__enemy_timer.set_duration(random.randint(*self._level_data.enemy_interval))
 
 
-    def __spawn_powerup(self) -> None:
+    def __spawn_powerup(self, spawn_pos: pg.typing.Point | None = None) -> None:
         powerups_name = weighted_choice(self._level_data.powerup_spawn_weights)
         if not self.__powerup_exists(powerups_name):
-            spawn_pos = self._get_object_spawn_pos()
-            velocity = self._get_object_spawn_velocity(spawn_pos, 2, 0)
+            if spawn_pos is None:
+                spawn_pos = self._get_object_spawn_pos()
+            velocity = self._get_object_spawn_velocity(spawn_pos, 1, 0)
             self.powerups.add(powerups.PowerupCollectable(spawn_pos, velocity, powerups_name))
             self.__powerup_timer.set_duration(random.randint(*self._level_data.powerup_interval))
+            self.__powerup_timer.restart()
     
     def __powerup_exists(self, powerup_name: str) -> bool:
         """Determine if the player currently has the powerup or the collectable for it is spawned in"""

@@ -341,8 +341,8 @@ class Play(State):
 
     def _spawn_hyperdrive_powerup(self) -> None:
         powerup = powerups.PowerupCollectable(
-            self.spaceship.position+(0, -50),
-            self.spaceship.get_velocity()*0.5,
+            self.spaceship.position+pg.Vector2(0, 50).rotate(random.randint(0, 359)),
+            (self.spaceship.get_velocity()*0.5).clamp_magnitude(5),
             "Hyperdrive"
         )
         self.powerups.add(powerup)
