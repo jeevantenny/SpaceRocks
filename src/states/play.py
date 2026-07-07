@@ -340,13 +340,15 @@ class Play(State):
         self._camera.update()
 
     def _spawn_hyperdrive_powerup(self) -> None:
+        spawn_pos = self.spaceship.position+pg.Vector2(0, 50).rotate(random.randint(0, 359))
         powerup = powerups.PowerupCollectable(
-            self.spaceship.position+pg.Vector2(0, 50).rotate(random.randint(0, 359)),
-            (self.spaceship.get_velocity()*0.5).clamp_magnitude(5),
+            spawn_pos,
+            (0, 0),
             "Hyperdrive"
         )
         self.powerups.add(powerup)
-        self.enemies.add(camera.ObjectTracker(powerup))
+        self.entities.add(camera.ObjectTracker(powerup),
+                          particles.Shockwave(spawn_pos, 50, 10, "#eeeeee", "#22bbcc"))
 
 
     def _freeze_gameplay(self) -> bool:
@@ -472,7 +474,7 @@ class Play(State):
 
 
 
-    def _save_progress(self) -> None:
+    def _get_save_data(self) -> SaveData:
         "Saves the current state of the game to a save file."
         
         if self._respawn_timer.countdown:
@@ -491,4 +493,4 @@ class Play(State):
                              tuple(self._camera.position),
                              entity_data)
 
-        data.save_progress(save_data)
+        return save_data

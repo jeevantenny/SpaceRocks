@@ -12,7 +12,7 @@ from . import font
 class AnimatedTexture:
     "Uses the title_font to render text and apply an animations on it."
     
-    __effect_mask_colors = assets.load_json("assets/title_effect_mask_colors")
+    __effect_mask_colors = assets.load_json("assets/animated_texture_mask_colors")
 
     def __init__(self, texture: pg.Surface, texture_map_path: str, anim_path: str, effect_name: str) -> None:
         self.__base = texture

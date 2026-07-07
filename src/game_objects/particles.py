@@ -200,6 +200,36 @@ class ShipSmoke(ObjectAnimation, ObjectVelocity):
 
 
 
+class Shockwave(ObjectTexture):
+    _layer=-5
+    ignore_camera_rotation=True
+
+    def __init__(
+            self,
+            position: pg.typing.Point,
+            radius: int,
+            duration=8,
+            color_a: pg.typing.ColorLike = "#eedd88",
+            color_b: pg.typing.ColorLike = "#bbaa00"
+            ):
+    
+        super().__init__(position=position, texture=None)
+        self.__radius = radius
+        self.__color_a = color_a
+        self.__color_b = color_b
+        self.__timer = Timer(duration, exec_after=self.kill).start()
+        self.__line_thickness = min(radius*0.1, 10)
+
+    def update(self):
+        self.__timer.update()
+    
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        radius = self.__radius*(1-((self.__timer.countdown-lerp_amount)/self.__timer.duration)**3)
+        width = int(self.__line_thickness - self.__timer.completion_amount*self.__line_thickness) + 1
+        pg.draw.circle(surface,self.__color_b, self.position+offset, radius+3, width)
+        pg.draw.circle(surface,self.__color_a, self.position+offset, radius, width)
+
+
 
 
 

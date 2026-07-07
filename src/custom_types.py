@@ -516,3 +516,7 @@ class SaveData(NamedTuple):
     player_lives: int
     camera_pos: tuple[float, float]
     entity_data: list[dict]
+    game_stats: dict[str, Any] = {}
+
+    def add_game_stats(self, **stats) -> None:
+        self.game_stats.update(stats)

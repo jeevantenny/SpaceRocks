@@ -279,6 +279,7 @@ class DebugMenu(State):
         self.__elements = elements.ElementList([
             elements.Toggle("invincible", debug.Cheats.invincible, lambda x: setattr(debug.Cheats, "invincible", x)),
             elements.Toggle("no_obstacles", debug.Cheats.no_obstacles, lambda x: setattr(debug.Cheats, "no_obstacles", x)),
+            elements.Toggle("abundant_powerups", debug.Cheats.abundant_powerups, lambda x: setattr(debug.Cheats, "abundant_powerups", x)),
             elements.Toggle("no_point_combo", debug.Cheats.no_point_combo, lambda x: setattr(debug.Cheats, "no_point_combo", x)),
             elements.Toggle("show_bounding_boxes", debug.Cheats.show_bounding_boxes, lambda x: setattr(debug.Cheats, "show_bounding_boxes", x)),
             elements.Toggle("instant_restart", debug.Cheats.instant_restart, lambda x: setattr(debug.Cheats, "instant_restart", x)),

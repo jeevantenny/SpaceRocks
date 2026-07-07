@@ -586,7 +586,7 @@ class SuperLaser(PowerUp):
             self.__laser_timer.start()
 
         self.__laser = Laser(spaceship,
-                             30, 1, self.__laser_timer.countdown,
+                             30, 2, self.__laser_timer.countdown,
                              (Obstacle,),
                              spaceship.host_state.player_damage_obstacle)
 
