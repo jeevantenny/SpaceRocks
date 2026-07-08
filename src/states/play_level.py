@@ -12,7 +12,7 @@ from src.misc import increment_score, level_completion_amount, weighted_choice
 from src.custom_types import SaveData, Timer
 from src.file_processing import data
 
-from src.game_objects import asteroids, components, enemies, powerups, particles
+from src.game_objects import asteroids, camera, components, enemies, powerups, particles
 
 from src.ui import font, hud, blit_to_center
 
@@ -393,8 +393,10 @@ class PlayLevel(Play):
             if spawn_pos is None:
                 spawn_pos = self._get_object_spawn_pos()
             velocity = self._get_object_spawn_velocity(spawn_pos, 1, 0)
-            self.powerups.add(powerups.PowerupCollectable(spawn_pos, velocity, powerups_name))
-            self.entities.add(particles.Shockwave(spawn_pos, 40))
+            powerup = powerups.PowerupCollectable(spawn_pos, velocity, powerups_name)
+            self.powerups.add(powerup)
+            self.entities.add(camera.ObjectTracker(powerup),
+                              particles.Shockwave(spawn_pos, 40))
             self.__powerup_timer.set_duration(random.randint(*self._level_data.powerup_interval))
             self.__powerup_timer.restart()
     

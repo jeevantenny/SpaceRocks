@@ -179,7 +179,7 @@ class Play(State):
             keyboard = inputs.keyboard_mouse
 
             if keyboard.tap_keys[pg.K_r]:
-                self.spaceship.position = pg.Vector2(200, 150)
+                self.spaceship.position.xy = (0, 0)
                 self.spaceship.set_velocity((0, 0))
 
             if keyboard.tap_keys[pg.K_k]:

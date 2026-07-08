@@ -45,7 +45,7 @@ class PlayBossLevel(Play):
     
     def _setup_game_objects(self):
         super()._setup_game_objects()
-        self._camera = RotoZoomCamera((0, 0))
+        self._camera = RotoZoomCamera((0, 0), 20)
         self.boss = BossShip((0, -500))
         self.enemies.add(self.boss)
         # self.camera.set_zoom(1.5)

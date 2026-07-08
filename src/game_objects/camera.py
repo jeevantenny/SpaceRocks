@@ -3,7 +3,7 @@ import random
 
 import debug
 
-from src.custom_types import Timer
+from src.custom_types import Timer, Stopwatch
 from src.math_functions import unit_vector, format_angle, sign
 from src.file_processing import assets
 
@@ -20,16 +20,19 @@ from .components import ObjectVelocity, ObjectTexture
 class Camera:
     "Moves to target position and captures an area of the world every frame."
     __max_speed = 1000
-    __wander_radius = 20
+    __snap_distance = 100000
     __max_shake_offset=12
-    def __init__(self, start_pos: pg.typing.Point):
+    def __init__(self, start_pos: pg.typing.Point, wander_radius=70):
         self._position = pg.Vector2(start_pos)
         self._velocity = pg.Vector2(0, 0)
         self._target_pos = self.position
-        self.__following = True
-        self.__shake_timer = Timer(0)
-        self.__shake_intensity = 0.0
+        self.__wander_radius = wander_radius
+        self.__trail_distance = wander_radius
+
+        self.__shake_stopwatch = Stopwatch().start()
         self.__shake_offset = pg.Vector2()
+        self.__shake_intensities: list[float] = []
+        self.__shake_end_times: list[int] = []
 
 
 
@@ -49,15 +52,13 @@ class Camera:
         self._velocity.xy = value
 
     def camera_shake(self, intensity: float, duration=0) -> None:
-        self.__shake_intensity = pg.math.clamp(intensity, 0, 1)
-        self.__shake_timer.set_duration(duration)
-        self.__shake_timer.restart()
+        self.__shake_intensities.append(pg.math.clamp(intensity, 0, 1))
+        self.__shake_end_times.append(self.__shake_stopwatch.time_elapsed + duration)
 
 
     def reset_motion(self) -> None:
         self.set_velocity((0, 0))
-        self.__shake_timer.stop()
-        self.__shake_intensity = 0.0
+        self.__shake_intensities.clear()
         self.__shake_offset.xy = (0, 0)
 
 
@@ -67,31 +68,49 @@ class Camera:
         direction = unit_vector(displacement)
         distance = displacement.magnitude()
 
-        if self.__following:
-            if distance < 5:
-                self.set_position(self._target_pos)
-                self.__following = False
-                self.clear_velocity()
-            else:
-                self._velocity = direction*pg.math.clamp((distance-self.__wander_radius)*0.2, 0, self.__max_speed)
-
+        if distance < self.__wander_radius:
+            self.__trail_distance += 1
         else:
-            if distance > self.__wander_radius:
-                self.__following = True
-
+            self.__trail_distance -= 1
         
+        self.__trail_distance = pg.math.clamp(self.__trail_distance, 0, self.__wander_radius)
+
+        if distance < 1 or distance > self.__snap_distance:
+            self.set_position(self._target_pos)
+            self.clear_velocity()
+            self.__trail_distance = 0
+
+        elif distance > self.__trail_distance:
+            self._velocity = direction*pg.math.clamp((distance-self.__trail_distance)*0.23, 0, self.__max_speed)
+        else:
+            self.clear_velocity()
+
         self._position += self._velocity
         self.__update_camera_shake()
     
 
     def __update_camera_shake(self) -> None:
-        if self.__shake_intensity > 0:
-            shake_offset = self.__max_shake_offset*self.__shake_intensity**2
-            self.__shake_offset.x = shake_offset*random.uniform(-1, 1)
-            self.__shake_offset.y = shake_offset*random.uniform(-1, 1)
-            if self.__shake_timer.complete:
-                self.__shake_intensity -= 0.1
-            self.__shake_timer.update()
+        if not self.__shake_intensities:
+            return
+
+        shake_intensity = min(max(self.__shake_intensities), 1)
+        shake_offset = self.__max_shake_offset*shake_intensity**2
+        self.__shake_offset.x = shake_offset*random.uniform(-1, 1)
+        self.__shake_offset.y = shake_offset*random.uniform(-1, 1)
+        self.__shake_stopwatch.update()
+        
+        removed = 0
+        for i, intensity in enumerate(self.__shake_intensities.copy()):
+            if intensity <= 0:
+                self.__shake_intensities.pop(i-removed)
+                self.__shake_end_times.pop(i-removed)
+                removed += 1
+
+        for i, end_time in enumerate(self.__shake_end_times.copy()):
+            if end_time < self.__shake_stopwatch.time_elapsed:
+                self.__shake_intensities[i] = max(self.__shake_intensities[i]-0.1, 0)
+
+
 
     
 
@@ -132,7 +151,7 @@ class Camera:
 
 
     def clear_velocity(self) -> None:
-        self._velocity *= 0
+        self._velocity.xy = (0, 0)
 
 
 
@@ -144,8 +163,8 @@ class Camera:
 class RotoZoomCamera(Camera):
     __rotation_speed = 8
     __rotation_acceleration = 1
-    def __init__(self, start_pos):
-        super().__init__(start_pos)
+    def __init__(self, start_pos, wander_radius=60):
+        super().__init__(start_pos, wander_radius)
         self.__rotation = 0
         self.__target_rotation = 0
         self.__angular_vel = 0
@@ -173,7 +192,7 @@ class RotoZoomCamera(Camera):
     def set_zoom(self, zoom: float) -> None:
         if zoom < 0.5:
             raise ValueError("Camera zoom cannot be less than 0.5")
-        self.__zoom = zoom
+        self.__zoom = round(zoom, 2)
     
     def rotate(self, amount: int) -> None:
         self.set_rotation(self.__rotation+amount)
