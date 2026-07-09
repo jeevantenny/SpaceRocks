@@ -139,7 +139,7 @@ class Timer:
     
     @property
     def completion_amount(self) -> float:
-        return self.time_elapsed/self.__duration
+        return self.__duration and self.time_elapsed/self.__duration
     
 
 
@@ -200,6 +200,7 @@ class Stopwatch:
     def __init__(self):
         self.__time = 0.0
         self.__running = False
+        self.__callbacks: list[tuple[Callable[[], None], float]] = []
 
 
     @property
@@ -219,17 +220,26 @@ class Stopwatch:
     def reset(self) -> None:
         self.__time = 0.0
 
-
     def pause(self):
         self.__running = False
 
     def advance(self, amount: float) -> None:
         self.__time += amount
     
+    def schedule_callback(self, callback: Callable[[], None], wait_ticks: float) -> None:
+        call_time = self.__time + wait_ticks
+        for i in range(len(self.__callbacks)):
+            if self.__callbacks[i][0] > call_time:
+                self.__callbacks.insert(i, (callback, call_time))
+                break
+        else:
+            self.__callbacks.append((callback, call_time))
 
     def update(self, speed_multiplier=1.0) -> None:
         if self.__running:
             self.__time += speed_multiplier
+            while self.__callbacks and self.__callbacks[0][1] <= self.__time:
+                self.__callbacks.pop(0)[0]()
     
 
 

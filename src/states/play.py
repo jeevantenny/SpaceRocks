@@ -1,12 +1,12 @@
 import pygame as pg
 import math
 import random
-from typing import Self
+from typing import Self, Callable
 
 import debug
 
 from src import glb
-from src.custom_types import Timer, SaveData
+from src.custom_types import Timer, Stopwatch, SaveData
 from src.file_processing import assets, data
 from src.misc import scrolling_texture
 
@@ -48,6 +48,7 @@ class Play(State):
 
         self.__slowmo_tps = 20
         self.__slowmo_timer = Timer(0, exec_after=glb.game.set_tps)
+        self.__play_time = Stopwatch().start()
         self.__inactivity_timer = Timer(2400, True, self._pause_game).start()
     
         self._object_spawn_delay = Timer(15)
@@ -313,6 +314,8 @@ class Play(State):
         ...
 
 
+    def schedule_event(self, event: Callable[[], None], wait_ticks: int) -> None:
+        self.__play_time.schedule_callback(event, wait_ticks)
 
 
 
@@ -359,6 +362,7 @@ class Play(State):
     def _game_loop(self) -> None:
         self._update_game_objects()
         self._delete_distant_objects()
+        self.__play_time.update()
 
 
         if (not self.spaceship.health

@@ -39,13 +39,13 @@
             }
         },
         "shield_off": {
-            "duration": 3,
-            "anim_speed_multiplier": 1.2,
+            "duration": 7,
             "timeline": {
                 "0": "shield_off_1",
-                "3": "shield_off_2",
-                "4": "shield_off_3",
-                "5": "shield_off_4"
+                "4": "shield_off_2",
+                "5": "shield_off_3",
+                "6": "shield_off_4",
+                "7": "blank"
             }
         }
     }

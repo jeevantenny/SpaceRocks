@@ -24,18 +24,6 @@
         },
         "explode": {
             "animations": ["explode"]
-        },
-        "shield_on": {
-            "animations": ["shield_on"],
-            "transitions": {
-                "shield_off": "not obj.has_powerup('Shield')"
-            }
-        },
-        "shield_off": {
-            "animations": ["shield_off"],
-            "transitions": {
-                "invincibility": "self.animations_complete"
-            }
         }
     }
 }

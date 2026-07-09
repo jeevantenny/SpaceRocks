@@ -326,15 +326,19 @@ class Shield(PowerUp):
     texture_key = "shield"
     text_colors = ("#4488ff", "#004444")
     _powerup_info = "Protects the ship from one lethal attack"
-    def __init__(self):
+    def __init__(self, shield_on=False):
         super().__init__()
         self.__used = False
-        self.__use_timer = Timer(0)
+        self.__use_timer = Timer(8)
         self.__texture_map = assets.load_texture_map("powerups")
         anim_data = assets.load_anim_data("powerup")["animations"]
         self.__shield_anim = Animation("shield_on",
                                        anim_data["shield_on"])
-        self.__shield_anim.restart()
+        if not shield_on:
+            self.__shield_anim.restart()
+
+    def get_data(self):
+        return (True,)
 
     
     def indicator_slider_amount(self):
@@ -345,7 +349,7 @@ class Shield(PowerUp):
     def update(self, spaceship):
         self.__shield_anim.update()
         self.__use_timer.update()
-        if self.__used and self.__shield_anim.complete:
+        if self.__used and self.__use_timer.complete:
             spaceship.remove_powerup(self)
     
 
@@ -359,12 +363,17 @@ class Shield(PowerUp):
 
         self.__used = True
         self.save_powerup = False
-        self.__use_timer = Timer(4, False, lambda: print("yee")).start()
+        self.__use_timer.start()
+        spaceship.invincibility_frames()
         anim_data = assets.load_anim_data("powerup")["animations"]
         self.__shield_anim = Animation("shield_off", anim_data["shield_off"])
         self.__shield_anim.restart()
 
-        spaceship.invincibility_frames()
+        spaceship.host_state.schedule_event(lambda: (
+            spaceship.host_state.slowmo_effect(3),
+            spaceship.host_state.camera_shake(0.5, 3)
+        ), 4)
+        
         self._queue_sound("entity.asteroid.small_explode", 0.5)
         controller_rumble("small_pulse", 0.8)
         return False
