@@ -10,6 +10,7 @@ from time import perf_counter
 from config import *
 import debug
 
+from src import glb
 from src.custom_types import EngineInterface
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
@@ -130,6 +131,7 @@ class GameEngine(EngineInterface):
         self._window_surface = self._window.get_surface()
         self._window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
         self._window.minimum_size = WINDOW_MINIUM_SIZE
+        glb.steamworks.initialize()
 
         # Initialize states
         font.init()
@@ -182,6 +184,7 @@ class GameEngine(EngineInterface):
         try:
             while self._run:
                 self._process_events()
+                glb.steamworks.run_callbacks()
                 self._draw()
                 self._next_frame()
 

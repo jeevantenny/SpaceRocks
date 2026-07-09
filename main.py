@@ -1,7 +1,14 @@
 import sys
+import os
 import debug
 
+os.add_dll_directory(os.getcwd())
+
+from steamworks import STEAMWORKS
+from src import glb
+
 if __name__ == "__main__":
+    glb.steamworks = STEAMWORKS([])
     sys.setrecursionlimit(200)
     if debug.Cheats.basic_engine:
         from src.basic_engine import BasicEngine
@@ -10,6 +17,5 @@ if __name__ == "__main__":
         from src.game import GameEngine
         game = GameEngine()
     
-    from src import glb
     glb.game = game
     game.start()
