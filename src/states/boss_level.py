@@ -111,7 +111,7 @@ class PlayBossLevel(Play):
 
     
     def _draw_scrolling_background(self, surface, lerp_amount=0):
-        self.__background_surface.fill("black")
+        self.__background_surface.fill(assets.COLORKEY)
         camera_pos = self._camera.blit_position(lerp_amount)
         blit_scale = 1/self._camera.get_zoom()
 

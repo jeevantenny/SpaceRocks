@@ -39,20 +39,24 @@ def scrolling_texture(
         scale=1.0
         ) -> None:
 
-        center = pg.Vector2(output.size)*0.5
         if scale != 1.0:
-            texture = pg.transform.scale_by(texture, scale)
+            from src.file_processing import assets
+            scaled_texture = assets.colorkey_surface(pg.Vector2(output.size)/scale)
+            scrolling_texture(scaled_texture, texture, scroll_offset)
+            scaled_texture = pg.transform.scale(scaled_texture, output.size)
+            output.blit(scaled_texture)
+            return
+
+        center = pg.Vector2(output.size)*0.5
         width = texture.width
         height = texture.height
         scroll_width = int(output.width//width)
         scroll_height = int(output.height//height)
-
-        scroll_offset = pg.Vector2(scroll_offset)*scale
-        r_scroll_offset = -pg.Vector2(scroll_offset[0]%width, scroll_offset[1]%height)
+        scroll_offset = -pg.Vector2(scroll_offset[0]%width, scroll_offset[1]%height)
 
         for x in range(-scroll_width-1, scroll_width+2):
             for y in range(-scroll_height-1, scroll_height+2):
-                output.blit(texture, center+(width*x, height*y)+r_scroll_offset)
+                output.blit(texture, center+(width*x, height*y)+scroll_offset)
 
 
 
