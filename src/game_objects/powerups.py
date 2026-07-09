@@ -3,7 +3,7 @@ from typing import Iterator, Literal
 
 import debug
 
-from src.custom_types import Timer
+from src.custom_types import Timer, Animation
 from src.input_device import controller_rumble, InputInterpreter
 
 from src.file_processing import assets
@@ -329,7 +329,12 @@ class Shield(PowerUp):
     def __init__(self):
         super().__init__()
         self.__used = False
-        self.__use_timer = Timer(4)
+        self.__use_timer = Timer(0)
+        self.__texture_map = assets.load_texture_map("powerups")
+        anim_data = assets.load_anim_data("powerup")["animations"]
+        self.__shield_anim = Animation("shield_on",
+                                       anim_data["shield_on"])
+        self.__shield_anim.restart()
 
     
     def indicator_slider_amount(self):
@@ -338,12 +343,10 @@ class Shield(PowerUp):
 
 
     def update(self, spaceship):
-        super().update(spaceship)
+        self.__shield_anim.update()
         self.__use_timer.update()
-        if self.__used and self.__use_timer.complete:
+        if self.__used and self.__shield_anim.complete:
             spaceship.remove_powerup(self)
-            spaceship.host_state.slowmo_effect(3)
-            spaceship.host_state.camera_shake(0.5, 3)
     
 
     def on_kill(self, spaceship):
@@ -356,12 +359,23 @@ class Shield(PowerUp):
 
         self.__used = True
         self.save_powerup = False
+        self.__use_timer = Timer(4, False, lambda: print("yee")).start()
+        anim_data = assets.load_anim_data("powerup")["animations"]
+        self.__shield_anim = Animation("shield_off", anim_data["shield_off"])
+        self.__shield_anim.restart()
+
         spaceship.invincibility_frames()
-        self.__use_timer.start()
-        
         self._queue_sound("entity.asteroid.small_explode", 0.5)
         controller_rumble("small_pulse", 0.8)
         return False
+
+
+    def draw(self, spaceship, surface, lerp_amount=0, offset = (0, 0)):
+        blit_texture = pg.transform.rotate(
+            self.__shield_anim.get_frame(self.__texture_map),
+            -spaceship.get_lerp_rotation(lerp_amount))
+        surface.blit(blit_texture,
+                     spaceship.get_lerp_pos(lerp_amount) + offset - pg.Vector2(blit_texture.size)*0.5)
 
 
 

@@ -115,11 +115,14 @@ class ObjectTexture(GameObject):
     def rotate(self, amount: float) -> None:
         self._rotation += amount
 
-    def get_rotation(self) -> int:
+    def get_rotation(self, lerp_amount=0.0) -> int:
         return self._rotation
 
     def set_rotation(self, value: int) -> None:
         self._rotation = value
+
+    def get_lerp_rotation(self, lerp_amount=0.0) -> float:
+        return self._rotation-self._angular_vel*(1-lerp_amount)
 
     def get_rotation_vector(self) -> pg.Vector2:
         "Gets rotation of object as a vector relative to (0, -1)."
@@ -127,7 +130,7 @@ class ObjectTexture(GameObject):
     
     def get_lerp_rotation_vector(self, lerp_amount=0.0) -> pg.Vector2:
         "Gets rotation vector taking account interpolation."
-        return pg.Vector2(0, -1).rotate(self._rotation-self._angular_vel*(1-lerp_amount))
+        return pg.Vector2(0, -1).rotate(self.get_lerp_rotation(lerp_amount))
         
 
     def update(self) -> None:
@@ -150,7 +153,7 @@ class ObjectTexture(GameObject):
 
     
     def _get_blit_texture(self, lerp_amount=0.0, rotation=0) -> pg.Surface:
-        return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)) - rotation)
+        return pg.transform.rotate(self.texture, -self.get_lerp_rotation(lerp_amount) - rotation)
     
 
     def _get_blit_pos(self, offset: pg.typing.Point, lerp_amount=0.0) -> pg.Vector2:

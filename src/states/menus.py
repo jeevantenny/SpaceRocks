@@ -111,15 +111,12 @@ class TitleScreen(State):
             blit_to_center(self.__info_text, surface, (0, 50))
 
             if self.is_top_state():
-                info_offset = 18
+                settings_info = font.icon_font.render("Settings<settings>")
+                surface.blit(settings_info, (10, surface.height-18))
                 if not debug.Cheats.demo_mode:
                     if data.get_setting("show_version_number"):
                         version_text = font.small_font.render(self.__version_text, 1, "#ffffff", "#333333")
-                        surface.blit(version_text, (3, surface.height-12))
-                        info_offset += 10
-
-                settings_info = font.icon_font.render("Settings<settings>")
-                surface.blit(settings_info, (10, surface.height-info_offset))
+                        surface.blit(version_text, (surface.width-version_text.width-2, surface.height-12))
 
 
 

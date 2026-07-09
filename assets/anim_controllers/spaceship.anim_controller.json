@@ -13,8 +13,7 @@
             "animations": ["main"],
             "transitions": {
                 "invincibility": "obj.invincible",
-                "explode": "not obj.health",
-                "shield_on": "obj.has_powerup('Shield')"
+                "explode": "not obj.health"
             }
         },
         "invincibility": {
