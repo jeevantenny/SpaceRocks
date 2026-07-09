@@ -3,12 +3,12 @@ import math
 import random
 from typing import Self
 
-import config
 import debug
 
 from src import glb
 from src.custom_types import Timer, SaveData
 from src.file_processing import assets, data
+from src.misc import scrolling_texture
 
 from src.game_objects import (
     GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, projectiles, spaceship, particles
@@ -39,8 +39,8 @@ class Play(State):
 
     def _setup(self) -> None:
         "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
-        self.__parl_a: pg.Surface | None = None
-        self.__parl_b: pg.Surface | None = None
+        self._parl_a: pg.Surface | None = None
+        self._parl_b: pg.Surface | None = None
         self.__base_color: pg.typing.ColorLike = "#000000"
         self.__background_tint: pg.typing.ColorLike = "#777777"
         self.__score_limit = None
@@ -119,14 +119,14 @@ class Play(State):
         self._level_data = data.load_level(level_name)
 
         if self._level_data.parl_a is None:
-            self.__parl_a = None
+            self._parl_a = None
         else:
-            self.__parl_a = assets.load_texture(self._level_data.parl_a, self._level_data.background_palette)
+            self._parl_a = assets.load_texture(self._level_data.parl_a, self._level_data.background_palette)
         
         if self._level_data.parl_b is None:
-            self.__parl_b = None
+            self._parl_b = None
         else:
-            self.__parl_b = assets.load_texture(self._level_data.parl_b, self._level_data.background_palette)
+            self._parl_b = assets.load_texture(self._level_data.parl_b, self._level_data.background_palette)
 
         self.__base_color = self._level_data.base_color
         self.__background_tint = self._level_data.background_tint
@@ -424,37 +424,15 @@ class Play(State):
     def _draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         camera_pos = self._camera.blit_position(lerp_amount)
         # Background B
-        if self.__parl_b is not None:
-            self.__scrolling_texture(surface, self.__parl_b, camera_pos, 0.1)
+        if self._parl_b is not None:
+            scrolling_texture(surface, self._parl_b, camera_pos*0.1)
         # Background A
-        if self.__parl_a is not None:
-            self.__scrolling_texture(surface, self.__parl_a, camera_pos, 0.3)
+        if self._parl_a is not None:
+            scrolling_texture(surface, self._parl_a, camera_pos*0.3)
 
     
     def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         self._camera.capture(surface, self.entities, lerp_amount)
-
-
-
-
-
-
-
-
-
-
-
-    def __scrolling_texture(self, surface: pg.Surface, background_surface: pg.Surface, camera_pos: pg.Vector2, scroll_amount: float) -> None:
-        center = pg.Vector2(surface.size)*0.5
-        width, height = background_surface.size
-        camera_offset = -camera_pos*scroll_amount
-        camera_offset = pg.Vector2(camera_offset[0]%width - width*0.5, camera_offset[1]%height - width*0.5)
-        scroll_width = int(surface.width//width)
-        scroll_height = int(surface.height//height)
-
-        for x in range(-scroll_width-1, scroll_width+1):
-            for y in range(-scroll_height-1, scroll_height+1):
-                surface.blit(background_surface, center+(width*x, height*y)+camera_offset)
 
 
 

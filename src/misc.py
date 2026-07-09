@@ -1,6 +1,6 @@
 "Other stuff that I didn't know where else to put."
 
-
+import pygame as pg
 import random
 import debug
 
@@ -30,6 +30,29 @@ def level_completion_amount(score: int, score_range: tuple[int, int]) -> float:
 
 def weighted_choice[T](choices: tuple[list[T], list[int]]) -> T:
     return random.choices(*choices)[0]
+
+
+def scrolling_texture(
+        output: pg.Surface,
+        texture: pg.Surface,
+        scroll_offset: pg.Vector2,
+        scale=1.0
+        ) -> None:
+
+        center = pg.Vector2(output.size)*0.5
+        if scale != 1.0:
+            texture = pg.transform.scale_by(texture, scale)
+        width = texture.width
+        height = texture.height
+        scroll_width = int(output.width//width)
+        scroll_height = int(output.height//height)
+
+        scroll_offset = pg.Vector2(scroll_offset)*scale
+        r_scroll_offset = -pg.Vector2(scroll_offset[0]%width, scroll_offset[1]%height)
+
+        for x in range(-scroll_width-1, scroll_width+2):
+            for y in range(-scroll_height-1, scroll_height+2):
+                output.blit(texture, center+(width*x, height*y)+r_scroll_offset)
 
 
 
