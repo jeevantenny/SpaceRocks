@@ -3,8 +3,8 @@
 import pygame as pg
 from pygame.locals import *
 from pygame._sdl2.video import Renderer, Texture
-import threading
 
+import threading
 import traceback
 from time import perf_counter
 
@@ -15,7 +15,7 @@ from src import glb
 from src.custom_types import EngineInterface
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
-from src.ui import blit_to_center, font
+from src.ui import font
 from src.states import StateStack, init_state
 from src.file_processing import assets, data
 from src.audio.soundfx import SoundFXManager
@@ -128,14 +128,13 @@ class GameEngine(EngineInterface):
         self.__fullscreen = data.get_setting("open_fullscreen")
 
         # Setup Game Window
-        glb.steamworks.initialize()
         self._window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE, resizable=True, fullscreen_desktop=self.__fullscreen)
-        self._renderer = Renderer(self._window)
-        self._window.get_surface()
-
-        self._window_surface = pg.Surface(WINDOW_START_SIZE)
-        self._window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
         self._window.minimum_size = WINDOW_MINIUM_SIZE
+        self._renderer = Renderer(self._window)
+        
+        # Initialize window surface and surface convert format
+        self._window_surface = self._window.get_surface()
+        self._window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
 
         # Initialize states
         font.init()
@@ -234,7 +233,7 @@ class GameEngine(EngineInterface):
 
         keyboard = self._input_interpreter.keyboard_mouse
 
-        if keyboard.tap_keys[K_F11]:
+        if keyboard.tap_keys[K_F11] and not keyboard.hold_keys[KMOD_CTRL] and not keyboard.hold_keys[KMOD_SHIFT]:
             self.toggle_fullscreen()
 
         if debug.DEBUG_MODE and keyboard.hold_keys[KMOD_CTRL]:
@@ -268,7 +267,6 @@ class GameEngine(EngineInterface):
             else:
                 lerp_amount = min((self.__prev_frame-self.__prev_tick)*self.__tick_rate, 1)
 
-            self._window_surface = pg.Surface(self._window.size)
             game_canvas = self.get_game_canvas()
             self._state_stack.draw(game_canvas, lerp_amount)
             
@@ -328,7 +326,7 @@ class GameEngine(EngineInterface):
 
 
     def _next_frame(self) -> None:
-        texture = Texture.from_surface(self._renderer, self.get_game_canvas())
+        texture = Texture.from_surface(self._renderer, self._window_surface)
         self._renderer.blit(texture)
         self._renderer.present()
         self.__frame_clock.tick(self.__framerate)
@@ -361,6 +359,7 @@ class GameEngine(EngineInterface):
         if self._error and debug.PAUSE_ON_CRASH:
             input("Save and Exit ->")
         try:
+            glb.steamworks.unload()
             self._state_stack.quit()
             data.save_settings()
         
