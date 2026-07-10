@@ -12,11 +12,12 @@ from src.misc import increment_score, level_completion_amount, weighted_choice
 from src.custom_types import SaveData, Timer
 from src.file_processing import data
 
-from src.game_objects import asteroids, camera, components, enemies, powerups, particles
+from src.game_objects import asteroids, camera, components, enemies, powerups, particles, spaceship
 
 from src.ui import font, hud, blit_to_center
 
-from .menus import GameOverScreen
+from .menus import PauseMenu, GameOverScreen
+from .info_states import PowerupInfo
 from .visuals import ShowText
 from .play import Play
 
@@ -178,9 +179,6 @@ class PlayLevel(Play):
     def draw(self, surface, lerp_amount=0.0):
         self._draw_base(surface)
 
-        if self._freeze_gameplay():
-            lerp_amount = 0.0
-
         if not debug.Cheats.ignore_colorkey:
             self._draw_scrolling_background(surface, lerp_amount)
 
@@ -188,9 +186,8 @@ class PlayLevel(Play):
             self._draw_entities(surface, lerp_amount)# if self.spaceship.health else 1)
 
 
-        if ((self.spaceship.health or self._player_lives)
-            and (self.is_top_state() or len(self.state_stack) == 3)):
-
+        if ((isinstance(self.state_stack.top_state, (PauseMenu, ShowText)) or self.is_top_state())
+            and self._player_lives):
             self._draw_hud(surface)
 
 
@@ -279,6 +276,17 @@ class PlayLevel(Play):
         if self.is_top_state():
             surface.blit(font.icon_font.render("Pause<pause>"), (10, surface.height-18+entrance_offset))
 
+
+    def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
+        # Showing powerup Info will only update PowerupCollectable
+        if isinstance(self.state_stack.top_state, PowerupInfo):
+            self._camera.capture(surface, self.entities, lerp_amount, powerups.PowerupCollectable)
+        # Obstacles should not be updated
+        if self._respawn_timer.countdown or self._game_over_timer.countdown:
+            self._camera.capture(surface, self.entities, lerp_amount,
+                                 (powerups.PowerupCollectable, spaceship.PlayerShip, particles.Particle, particles.Shockwave))
+        else:
+            super()._draw_entities(surface, lerp_amount)
 
 
 

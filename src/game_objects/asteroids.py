@@ -136,7 +136,6 @@ class Asteroid(Obstacle, ObjectAnimation):
 
         self.set_velocity((0, 0))
         self.set_angular_vel(0)
-        self.save_entity_progress = False
 
 
     def __spawn_subrock(self):

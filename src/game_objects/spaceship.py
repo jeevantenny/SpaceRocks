@@ -214,6 +214,8 @@ class PlayerShip(Spaceship):
     
     def update(self):
         super().update()
+        if not self.alive():
+            return
         self.__powerups.update(self)
         self._join_sound_queue(self.__powerups.clear_sound_queue())
         self.__invincibility_timer.update()

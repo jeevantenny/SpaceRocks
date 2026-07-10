@@ -385,6 +385,9 @@ class Shield(PowerUp):
             -spaceship.get_lerp_rotation(lerp_amount))
         surface.blit(blit_texture,
                      spaceship.get_lerp_pos(lerp_amount) + offset - pg.Vector2(blit_texture.size)*0.5)
+        
+    def on_turn(self, spaceship, direction):
+        return not self.__used
 
 
 
@@ -416,6 +419,8 @@ class TripleShot(PowerUp):
         self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(10))
         self.__spawn_bullet(spaceship, bullet_rotation_a.rotate(-10))
         self.__spawn_bullet(spaceship, bullet_rotation_a)
+        if not spaceship.thrust:
+            spaceship.accelerate(-bullet_rotation_a)
         self._queue_sound("entity.ship.shoot", 0.8)
         controller_rumble("gun_fire")
 
@@ -554,7 +559,7 @@ class SuperLaser(PowerUp):
 
 
     def indicator_slider_amount(self):
-        return self.__laser_timer.complete or 1-self.__laser_timer.completion_amount
+        return self.__laser is None or 1-self.__laser_timer.completion_amount
 
     def userinput(self, inputs):
         self.__charging = inputs.check_input("shoot_hold")
@@ -563,7 +568,8 @@ class SuperLaser(PowerUp):
     def update(self, spaceship):
         self.__laser_timer.update()
         if self.__laser_from_save or self.__charge_timer.complete and not self.__charging:
-            self.__fire_laser(spaceship)
+            spaceship.host_state.slowmo_effect(3)
+            spaceship.host_state.schedule_event(lambda: self.__fire_laser(spaceship), 4)
             self.__laser_from_save = False
 
         if self.__charging:
@@ -575,7 +581,7 @@ class SuperLaser(PowerUp):
             if self.__laser.alive() and spaceship.health:
                 direction = spaceship.get_rotation_vector()
                 spaceship.accelerate(direction*-0.3)
-                spaceship.host_state.set_camera_target(spaceship.position + direction*50)
+                spaceship.host_state.set_camera_target(spaceship.position + direction*60)
                 spaceship.host_state.camera_shake(0.4)
             else:
                 self.__laser.kill()

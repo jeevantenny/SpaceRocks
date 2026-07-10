@@ -144,7 +144,17 @@ class Play(State):
         self.spaceship = None
 
         for data in entity_data:
-            entity = GameObject.init_from_data(data)
+            try:
+                entity = GameObject.init_from_data(data)
+            except Exception as e:
+                obj_type = GameObject.get_class_from_save_key(data.get("save_key"))
+                print(f"Object reload failed: {obj_type}")
+                if obj_type is None:
+                    print(f"    invalid_save_key: '{data.get("save_key")}'")
+                else:
+                    print(f"    {type(e).__name__}: {e}")
+                continue
+
             self.entities.add(entity)
             if isinstance(entity, asteroids.Asteroid):
                 self.asteroids.add(entity)
@@ -273,7 +283,8 @@ class Play(State):
     def debug_info(self) -> str:
         return (
             f"entity count: {self.entities.count()}, lives: {self._player_lives}, score: {self._score}, "
-            f"combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})"
+            f"combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f}), "
+            f"camera_target: {self.__camera_target}"
         )
 
 

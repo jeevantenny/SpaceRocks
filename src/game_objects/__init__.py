@@ -1,7 +1,7 @@
 "Game objects represent objects that exist within the game world plus the Camera."
 
 import pygame as pg
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Self
 
 from src.math_functions import format_angle
 from src.states import State, StateStack
@@ -40,7 +40,13 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
 
     def __init_subclass__(cls):
         super().__init_subclass__()
-        if cls.progress_save_key is not None:
+        if cls.progress_save_key is None:
+            return
+        if cls.progress_save_key in GameObject.__object_type_list:
+            original_class = GameObject.__object_type_list[cls.progress_save_key]
+            if not issubclass(cls, original_class):
+                raise ValueError(f"Duplicate progress save key '{cls.progress_save_key}' where {cls} is not subclass of {original_class}")
+        else:
             GameObject.__object_type_list[cls.progress_save_key] = cls
 
         
@@ -54,13 +60,6 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
 
 
 
-    def post_init_from_data(self, object_dict: dict[str, "GameObject"]) -> None:
-        "Called after init_from_save to resolve links between multiple game objects."
-        pass
-
-
-
-
     @classmethod
     def init_from_data(cls, object_data: dict) -> "GameObject":
         "Called on GameObject class to create object from save data."
@@ -69,6 +68,17 @@ class GameObject(HasSoundQueue, pg.sprite.Sprite):
         obj: GameObject = obj_cls.__new__(obj_cls)
         obj.__init_from_data__(object_data)
         return obj
+    
+    @classmethod
+    def get_class_from_save_key(cls, save_key: str) -> type[Self] | None:
+        return GameObject.__object_type_list.get(save_key)
+
+
+
+
+    def post_init_from_data(self, object_dict: dict[str, "GameObject"]) -> None:
+        "Called after init_from_save to resolve links between multiple game objects."
+        pass
 
         
 

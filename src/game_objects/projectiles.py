@@ -223,7 +223,6 @@ class PlayerBullet(Projectile):
 class Laser(ObjectTexture):
     "A beam like weapon that has no range limit."
 
-    save_entity_progress=False
     can_despawn=False
     def __init__(
             self,
