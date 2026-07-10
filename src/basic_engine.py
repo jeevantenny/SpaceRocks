@@ -4,6 +4,7 @@ from pygame.locals import *
 from config import *
 import debug
 
+from src import glb
 from src.custom_types import EngineInterface
 from src.input_device import InputInterpreter, KeyboardMouse
 
@@ -55,10 +56,10 @@ class BasicEngine(EngineInterface):
 
 
     def start(self) -> None:
-        self._window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE)
-        self._window_surface = self._window.get_surface()
-        self._window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
-        self._window.minimum_size = WINDOW_MINIUM_SIZE
+        glb.steamworks.initialize()
+        self._window_surface = pg.display.set_mode(WINDOW_START_SIZE, SCALED)
+        pg.display.set_caption(WINDOW_CAPTION)
+        pg.display.set_icon(assets.load_texture(WINDOW_ICON_PATH))
         self._game_canvas = pg.Surface(DEFAULT_CANVAS_SIZE)
 
         font.init()
@@ -67,6 +68,7 @@ class BasicEngine(EngineInterface):
         try:
             while self._run:
                 self._get_userinput()
+                glb.steamworks.run_callbacks()
 
                 self.__state_stack.userinput(self._input_interpreter)
                 self.__state_stack.update()
@@ -74,17 +76,13 @@ class BasicEngine(EngineInterface):
 
                 self.__state_stack.draw(self._game_canvas)
                 pg.transform.scale(self._game_canvas, self._window_surface.size, self._window_surface)
-                self._window.flip()
+                pg.display.flip()
                 self.__clock.tick(self.__tickrate*debug.Cheats.game_speed)
         except KeyboardInterrupt:
-            self._error = KeyboardInterrupt.__name__
-        
-        except Exception as e:
-            self._error = type(e).__name__
+            pass
         
         finally:
             self.__state_stack.quit()
-            print(f"error: {self._error}")
 
 
     def _get_userinput(self) -> None:

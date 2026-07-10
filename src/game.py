@@ -2,6 +2,7 @@
 
 import pygame as pg
 from pygame.locals import *
+from pygame._sdl2.video import Renderer, Texture
 import threading
 
 import traceback
@@ -127,11 +128,14 @@ class GameEngine(EngineInterface):
         self.__fullscreen = data.get_setting("open_fullscreen")
 
         # Setup Game Window
+        glb.steamworks.initialize()
         self._window = pg.Window(WINDOW_CAPTION, WINDOW_START_SIZE, resizable=True, fullscreen_desktop=self.__fullscreen)
-        self._window_surface = self._window.get_surface()
+        self._renderer = Renderer(self._window)
+        self._window.get_surface()
+
+        self._window_surface = pg.Surface(WINDOW_START_SIZE)
         self._window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
         self._window.minimum_size = WINDOW_MINIUM_SIZE
-        glb.steamworks.initialize()
 
         # Initialize states
         font.init()
@@ -264,6 +268,7 @@ class GameEngine(EngineInterface):
             else:
                 lerp_amount = min((self.__prev_frame-self.__prev_tick)*self.__tick_rate, 1)
 
+            self._window_surface = pg.Surface(self._window.size)
             game_canvas = self.get_game_canvas()
             self._state_stack.draw(game_canvas, lerp_amount)
             
@@ -323,7 +328,9 @@ class GameEngine(EngineInterface):
 
 
     def _next_frame(self) -> None:
-        self._window.flip()
+        texture = Texture.from_surface(self._renderer, self.get_game_canvas())
+        self._renderer.blit(texture)
+        self._renderer.present()
         self.__frame_clock.tick(self.__framerate)
         self.__prev_frame = perf_counter()
 
