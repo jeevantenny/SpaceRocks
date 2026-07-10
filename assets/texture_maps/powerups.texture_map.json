@@ -1,5 +1,5 @@
 {
-    "texture": "game_objects/powerups_new",
+    "texture": "game_objects/powerups",
 
     "mappings": {
         "shield": [0, 0, 16, 16],
@@ -21,18 +21,6 @@
         "start_9":  [32, 32, 16, 16],
         "start_10": [48, 32, 16, 16],
         "start_11": [64, 32, 16, 16],
-        "start_12": [80, 32, 16, 16],
-
-        "shield_on_1": [0, 48, 18, 18],
-        "shield_on_2": [18, 48, 18, 18],
-        "shield_on_3": [36, 48, 18, 18],
-        "shield_on_4": [54, 48, 18, 18],
-        "shield_on_5": [72, 48, 18, 18],
-        "shield_on_6": [90, 48, 18, 18],
-
-        "shield_off_1": [0, 68, 18, 20],
-        "shield_off_2": [18, 68, 22, 22],
-        "shield_off_3": [40, 68, 22, 30],
-        "shield_off_4": [63, 68, 26, 24]
+        "start_12": [80, 32, 16, 16]
     }
 }

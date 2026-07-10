@@ -1,0 +1,21 @@
+{
+    "texture": "game_objects/powerup_uses",
+
+    "mappings": {
+        "shield_on_1": [0, 0, 18, 18],
+        "shield_on_2": [18, 0, 18, 18],
+        "shield_on_3": [36, 0, 18, 18],
+        "shield_on_4": [54, 0, 18, 18],
+        "shield_on_5": [72, 0, 18, 18],
+        "shield_on_6": [90, 0, 18, 18],
+
+        "shield_off_1": [0, 20, 18, 20],
+        "shield_off_2": [18, 20, 22, 22],
+        "shield_off_3": [40, 20, 22, 30],
+        "shield_off_4": [63, 20, 26, 24],
+
+        "laser_head": [0, 48, 16, 16],
+        "laser_body": [0, 64, 16, 16],
+        "laser_tail": [0, 80, 16, 16]
+    }
+}

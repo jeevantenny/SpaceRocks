@@ -330,7 +330,7 @@ class Shield(PowerUp):
         super().__init__()
         self.__used = False
         self.__use_timer = Timer(8)
-        self.__texture_map = assets.load_texture_map("powerups")
+        self.__texture_map = assets.load_texture_map("powerup_uses")
         anim_data = assets.load_anim_data("powerup")["animations"]
         self.__shield_anim = Animation("shield_on",
                                        anim_data["shield_on"])
@@ -572,15 +572,13 @@ class SuperLaser(PowerUp):
             self.__charge_timer.restart()
 
         if self.__laser is not None:
-            if self.__laser.alive():
+            if self.__laser.alive() and spaceship.health:
                 direction = spaceship.get_rotation_vector()
                 spaceship.accelerate(direction*-0.3)
                 spaceship.host_state.set_camera_target(spaceship.position + direction*50)
                 spaceship.host_state.camera_shake(0.4)
             else:
-                for obstacle in self.__laser.killed_list:
-                    spaceship.host_state.player_damage_obstacle(obstacle)
-
+                self.__laser.kill()
                 self.__laser = None
                 spaceship.host_state.set_camera_target(spaceship)
                 spaceship.remove_powerup(self)
@@ -608,7 +606,7 @@ class SuperLaser(PowerUp):
         if self.__laser_timer.complete:
             self.__laser_timer.start()
 
-        self.__laser = Laser(spaceship,
+        self.__laser = Laser(spaceship, 8,
                              30, 2, self.__laser_timer.countdown,
                              (Obstacle,),
                              spaceship.host_state.player_damage_obstacle)

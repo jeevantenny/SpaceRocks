@@ -228,6 +228,7 @@ class Laser(ObjectTexture):
     def __init__(
             self,
             anchor_object: ObjectTexture,
+            anchor_offset: int,
             width: int,
             damage: int,
             duration=3,
@@ -237,8 +238,15 @@ class Laser(ObjectTexture):
 
         super().__init__(position=anchor_object.position, texture=None)
         self.set_rotation(anchor_object.get_rotation())
+        texture_map = assets.load_texture_map("powerup_uses")
+        self.__tail = texture_map["laser_tail"]
+        self.__body = texture_map["laser_body"]
+
+        self.__tail_offset = self.__tail.height*0.5
+        self.__body_offset = self.__body.height - 1
 
         self.__anchor_object = anchor_object
+        self.__anchor_offset = anchor_offset
         self.__damage_duration = Timer(duration, exec_after=self.kill).start()
         self.__damage = damage
         self.__width = width
@@ -249,6 +257,10 @@ class Laser(ObjectTexture):
 
 
     def update(self):
+        if not self.__anchor_object.alive():
+            self.kill()
+            return
+
         self.set_position(self.__anchor_object.position)
         self.set_rotation(self.__anchor_object.get_rotation())
         collision_lines = self._get_collision_lines(self.position, self.get_rotation_vector())
@@ -263,12 +275,28 @@ class Laser(ObjectTexture):
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0) -> None:
-        for line in self._get_collision_lines(self.position, self.__anchor_object.get_lerp_rotation_vector()):
-            pg.draw.line(surface, "green", pg.Vector2(line[0])+offset, pg.Vector2(line[1])+offset)
+        rotation = self.__anchor_object.get_lerp_rotation(lerp_amount)
+        direction = self.__anchor_object.get_lerp_rotation_vector(lerp_amount)
+        rotated_tail = pg.transform.rotate(self.__tail, -rotation)
+        rotated_body = pg.transform.rotate(self.__body, -rotation)
+        surface.blit(rotated_tail,
+                     (self.position + offset
+                      + direction*(self.__anchor_offset+self.__tail.height*0.5)
+                      - pg.Vector2(rotated_tail.size)*0.5))
+    
+        for i in range(1, 50):
+            surface.blit(rotated_body,
+                         (self.position + offset
+                          + direction*(self.__anchor_offset+self.__tail_offset+self.__body_offset*i)
+                          - pg.Vector2(rotated_body.size)*0.5))
+
+        if debug.Cheats.show_bounding_boxes:
+            for line in self._get_collision_lines(self.position, direction):
+                pg.draw.line(surface, "green", pg.Vector2(line[0])+offset, pg.Vector2(line[1])+offset)
 
     
     def _get_collision_lines(self, position: pg.Vector2, direction: pg.Vector2) -> None:
-        return get_collision_lines(position, direction, 300, self.__width, 4)
+        return get_collision_lines(position+direction*self.__anchor_offset, direction, 300, self.__width, 4)
 
 
 
