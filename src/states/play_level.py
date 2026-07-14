@@ -277,18 +277,6 @@ class PlayLevel(Play):
             surface.blit(font.icon_font.render("Pause<pause>"), (10, surface.height-18+entrance_offset))
 
 
-    def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        # Showing powerup Info will only update PowerupCollectable
-        if isinstance(self.state_stack.top_state, PowerupInfo):
-            self._camera.capture(surface, self.entities, lerp_amount, powerups.PowerupCollectable)
-        # Obstacles should not be updated
-        if self._respawn_timer.countdown or self._game_over_timer.countdown:
-            self._camera.capture(surface, self.entities, lerp_amount,
-                                 (powerups.PowerupCollectable, spaceship.PlayerShip, particles.Particle, particles.Shockwave))
-        else:
-            super()._draw_entities(surface, lerp_amount)
-
-
 
 
     def _game_loop(self):

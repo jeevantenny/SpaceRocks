@@ -119,6 +119,8 @@ class PowerUpGroup(HasSoundQueue):
 
     
     def draw(self, spaceship: PlayerShip, surface: pg.Surface, lerp_amount=0.0, offset: pg.typing.Point = (0, 0)):
+        if not spaceship.alive():
+            return
         for powerup in self.__container:
             powerup.draw(spaceship, surface, lerp_amount, offset)
 
@@ -539,7 +541,7 @@ class SuperLaser(PowerUp):
 
     __charge_time = 18
     __laser_duration = 25
-    __rotation_speed = 4
+    __rotation_speed = 3
 
     def __init__(self, laser_spawned=False, time_used=0):
         super().__init__()
@@ -549,6 +551,7 @@ class SuperLaser(PowerUp):
         self.__charging = False
         self.__laser = None
         self.__laser_from_save = laser_spawned
+        self.__turning = False
 
         if laser_spawned:
             self.__laser_timer.start()
@@ -569,24 +572,30 @@ class SuperLaser(PowerUp):
         self.__laser_timer.update()
         if self.__laser_from_save or self.__charge_timer.complete and not self.__charging:
             spaceship.host_state.slowmo_effect(3)
+            spaceship.set_turn_inertia(True)
             spaceship.host_state.schedule_event(lambda: self.__fire_laser(spaceship), 4)
             self.__laser_from_save = False
 
-        if self.__charging:
-            self.__charge_timer.update()
+        if self.__laser is None:
+            if self.__charging:
+                self.__charge_timer.update()
+            else:
+                self.__charge_timer.restart()
         else:
-            self.__charge_timer.restart()
+            if not self.__turning:
+                spaceship.set_angular_vel(0)
+            self.__turning = False
 
-        if self.__laser is not None:
-            if self.__laser.alive() and spaceship.health:
+            if self.__laser.is_firing() and spaceship.health:
                 direction = spaceship.get_rotation_vector()
                 spaceship.accelerate(direction*-0.3)
                 spaceship.host_state.set_camera_target(spaceship.position + direction*60)
-                spaceship.host_state.camera_shake(0.4)
+                spaceship.host_state.camera_shake(0.5)
             else:
                 self.__laser.kill()
                 self.__laser = None
                 spaceship.host_state.set_camera_target(spaceship)
+                spaceship.set_turn_inertia(False)
                 spaceship.remove_powerup(self)
 
 
@@ -630,7 +639,8 @@ class SuperLaser(PowerUp):
         if self.__laser_timer.complete:
             return True
         else:
-            spaceship.rotate(direction*self.__rotation_speed)
+            spaceship.set_angular_vel(direction*self.__rotation_speed)
+            self.__turning = True
             return False
 
 

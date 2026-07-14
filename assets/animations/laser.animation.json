@@ -1,0 +1,33 @@
+{
+    "group_name": "laser.animation",
+    "animations": {
+        "laser_start": {
+            "duration": 3,
+            "timeline": {
+                "0": "laser_start_1",
+                "1": "laser_start_2",
+                "2": "laser_start_3"
+            }
+        },
+        "laser_main": {
+            "duration": 0,
+            "timeline": {
+                "0": "laser_main"
+            }
+        },
+        "laser_end": {
+            "duration": 8,
+            "timeline": {
+                "0": "laser_end_1",
+                "1": "laser_end_2",
+                "2": "laser_end_3",
+                "3": "laser_end_4",
+                "4": "laser_end_5",
+                "5": "laser_end_6",
+                "6": "laser_end_7",
+                "7": "laser_end_8",
+                "8": "blank"
+            }
+        }
+    }
+}

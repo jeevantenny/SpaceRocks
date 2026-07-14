@@ -339,9 +339,12 @@ class Animation:
             else:
                 prev_time = time
 
+        frame_name = self.__timeline[prev_time]
         try:
-            return texture_map[self.__timeline[prev_time]]
+            return texture_map[frame_name]
         except KeyError:
+            if frame_name != "blank":
+                raise
             return pg.Surface((0, 0))
         
     

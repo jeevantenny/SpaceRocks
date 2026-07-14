@@ -292,11 +292,11 @@ class Play(State):
         self._score = min(self.__score_limit, self._score+points)
 
 
-    def player_damage_obstacle(self, obstacle: components.Obstacle):
+    def player_damage_obstacle(self, obstacle: components.Obstacle, point_combo=True):
         if self._score >= self.__score_limit or obstacle.has_health():
             return
         
-        if debug.Cheats.no_point_combo:
+        if debug.Cheats.no_point_combo or not point_combo:
             points = obstacle.points
         else:
             points = math.ceil(obstacle.points * self._point_combo)
@@ -307,10 +307,11 @@ class Play(State):
             text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
         
         self.add_points(points)
+        self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
+
+    def increment_point_combo(self) -> None:
         if not debug.Cheats.no_point_combo:
             self._point_combo = min(self._point_combo*1.1, self.__max_combo)
-
-        self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
     
 
     def reset_point_combo(self) -> None:
@@ -332,46 +333,9 @@ class Play(State):
 
 
     
-    def _delete_distant_objects(self) -> None:
-        "Deletes objects that are beyond the despawn radius of the spaceship."
-        for obj in self.spawned_entities.sprites():
-            if obj.can_despawn and not obj.within_distance(self.spaceship, self._despawn_radius):
-                obj.force_kill()
-
-
-    def _update_game_objects(self) -> None:
-        self.entities.update(self._camera.position)
-
-        if isinstance(self.__camera_target, GameObject):
-            target_pos = self.__camera_target.position.copy()
-            if isinstance(self.__camera_target, components.ObjectVelocity):
-                target_pos += self.__camera_target.get_velocity()*2
-        else:
-            target_pos = self.__camera_target
-
-        if target_pos is not None:
-            self._camera.set_target(target_pos)
-        self._camera.update()
-
-    def _spawn_hyperdrive_powerup(self) -> None:
-        spawn_pos = self.spaceship.position+pg.Vector2(0, 50).rotate(random.randint(0, 359))
-        powerup = powerups.PowerupCollectable(
-            spawn_pos,
-            (0, 0),
-            "Hyperdrive"
-        )
-        self.powerups.add(powerup)
-        self.entities.add(camera.ObjectTracker(powerup),
-                          particles.Shockwave(spawn_pos, 50, 10, "#eeeeee", "#22bbcc"))
-
-
-    def _freeze_gameplay(self) -> bool:
-        return not self._respawn_timer.complete or not self._game_over_timer.complete
-
-
-    
     def _game_loop(self) -> None:
         self._update_game_objects()
+        self._update_camera()
         self._delete_distant_objects()
         self.__play_time.update()
 
@@ -392,6 +356,47 @@ class Play(State):
             else:
                 self._game_over_timer.start()
 
+
+
+    
+    def _delete_distant_objects(self) -> None:
+        "Deletes objects that are beyond the despawn radius of the spaceship."
+        for obj in self.spawned_entities.sprites():
+            if obj.can_despawn and not obj.within_distance(self.spaceship, self._despawn_radius):
+                obj.force_kill()
+
+
+    def _update_game_objects(self) -> None:
+        self.entities.update(self._camera.position)
+
+
+    def _update_camera(self) -> None:
+        if isinstance(self.__camera_target, GameObject):
+            target_pos = self.__camera_target.position.copy()
+            if isinstance(self.__camera_target, components.ObjectVelocity):
+                target_pos += self.__camera_target.get_velocity()*2
+        else:
+            target_pos = self.__camera_target
+
+        if target_pos is not None:
+            self._camera.set_target(target_pos)
+        self._camera.update()
+
+
+    def _spawn_hyperdrive_powerup(self) -> None:
+        spawn_pos = self.spaceship.position+pg.Vector2(0, 50).rotate(random.randint(0, 359))
+        powerup = powerups.PowerupCollectable(
+            spawn_pos,
+            (0, 0),
+            "Hyperdrive"
+        )
+        self.powerups.add(powerup)
+        self.entities.add(camera.ObjectTracker(powerup),
+                          particles.Shockwave(spawn_pos, 50, 10, "#eeeeee", "#22bbcc"))
+
+
+    def _freeze_gameplay(self) -> bool:
+        return not self._respawn_timer.complete or not self._game_over_timer.complete
 
 
 
@@ -447,7 +452,18 @@ class Play(State):
 
     
     def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        self._camera.capture(surface, self.entities, lerp_amount)
+        # Showing powerup Info will only update PowerupCollectable
+        if isinstance(self.state_stack.top_state, PowerupInfo):
+            self._camera.capture(surface, self.entities, lerp_amount, powerups.PowerupCollectable)
+        # Obstacles should not be updated
+        elif self._respawn_timer.countdown:
+            self._camera.capture(surface, self.entities, lerp_amount,
+                                 (spaceship.PlayerShip, particles.Particle, particles.Shockwave))
+        elif self._game_over_timer.countdown:
+            self._camera.capture(surface, self.entities, lerp_amount,
+                                 (powerups.PowerupCollectable, spaceship.PlayerShip, particles.Particle, particles.Shockwave))
+        else:
+            self._camera.capture(surface, self.entities, lerp_amount)
 
 
 
