@@ -24,7 +24,7 @@ class PowerUp(HasSoundQueue):
     "Gives the player's spaceship additional abilities that they can either be offensive or defensive."
 
     texture_key = "default"
-    text_colors = ("#dd6644", "#550011")
+    colors = ("#dd6644", "#550011")
     powerup_list: dict[str, type["PowerUp"]] = {}
     priority = 0
     collectable_despawn = True
@@ -76,6 +76,9 @@ class PowerUp(HasSoundQueue):
         "Draws powerup for every frame."
         ...
 
+    def draw_ship(self, spaceship: PlayerShip) -> bool:
+        return True
+
     
     def on_kill(self, spaceship: PlayerShip) -> bool:
         return True
@@ -123,6 +126,16 @@ class PowerUpGroup(HasSoundQueue):
             return
         for powerup in self.__container:
             powerup.draw(spaceship, surface, lerp_amount, offset)
+
+    def draw_ship(self, spaceship: PlayerShip) -> bool:
+        """Run at start of draw method in PlayerShip
+
+        Returns True if the kill main ship texture should be drawn.
+        """
+        for powerup in self:
+            if not powerup.draw_ship(spaceship):
+                return False
+        return True
 
 
     def on_kill(self, spaceship: PlayerShip) -> bool:
@@ -326,7 +339,7 @@ class PowerupCollectable(ObjectTexture, ObjectHitbox, ObjectVelocity):
 class Shield(PowerUp):
     priority = 1
     texture_key = "shield"
-    text_colors = ("#4488ff", "#004444")
+    colors = ("#4488ff", "#004444")
     _powerup_info = "Protects the ship from one lethal attack"
     def __init__(self, shield_on=False):
         super().__init__()
@@ -400,7 +413,7 @@ class Shield(PowerUp):
 class TripleShot(PowerUp):
     priority = 2
     texture_key = "triple_shot"
-    text_colors = ("#22bb22", "#004444")
+    colors = ("#22bb22", "#004444")
     __max_rounds = 30
     _powerup_info = f"Shoot 3 bullets at once to destroy multiple targets simultaneously\nContains {__max_rounds} rounds"
 
@@ -451,7 +464,7 @@ class TripleShot(PowerUp):
 
 class Dodge(PowerUp):
     texture_key = "dodge"
-    text_colors = ("#aa0055", "#442200")
+    colors = ("#aa0055", "#442200")
     priority = 3
 
     _usage_instr = "Hold <powerup_use> and input the direction you wanna dodge in"
@@ -532,7 +545,7 @@ class Dodge(PowerUp):
 
 class SuperLaser(PowerUp):
     texture_key = "super_laser"
-    text_colors = ("#bb44ee", "#550055")
+    colors = ("#bb44ee", "#550055")
     _powerup_info = "A powerful laser that goes through almost ANYTHING\nBut you only get one shot"
     priority = 4
 
@@ -648,7 +661,7 @@ class SuperLaser(PowerUp):
 
 class Hyperdrive(PowerUp):
     texture_key = "hyperdrive"
-    text_colors = ("#22bbcc", "#005588")
+    colors = ("#22bbcc", "#005588")
     _powerup_info = "Engage Hyperdrive to reach the next level"
     _usage_instr = "Hold <ship_forward> until the powerup charges up"
     collectable_despawn = False

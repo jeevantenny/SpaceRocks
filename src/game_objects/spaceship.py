@@ -227,7 +227,8 @@ class PlayerShip(Spaceship):
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
-        super().draw(surface, lerp_amount, offset, rotation)
+        if self.__powerups.draw_ship(self):
+            super().draw(surface, lerp_amount, offset, rotation)
         self.__powerups.draw(self, surface, lerp_amount, offset)
 
 

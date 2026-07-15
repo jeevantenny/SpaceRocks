@@ -229,7 +229,7 @@ class Stopwatch:
     def schedule_callback(self, callback: Callable[[], None], wait_ticks: float) -> None:
         call_time = self.__time + wait_ticks
         for i in range(len(self.__callbacks)):
-            if self.__callbacks[i][0] > call_time:
+            if self.__callbacks[i][1] > call_time:
                 self.__callbacks.insert(i, (callback, call_time))
                 break
         else:

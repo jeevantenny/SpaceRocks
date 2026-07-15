@@ -209,8 +209,8 @@ class PlayLevel(Play):
         self.__hud_message.queue_message(message, duration)
     
 
-    def player_damage_obstacle(self, obstacle):
-        super().player_damage_obstacle(obstacle)
+    def player_damage_obstacle(self, obstacle, point_combo=True):
+        super().player_damage_obstacle(obstacle, point_combo)
         if obstacle.has_health():
             return
         if self._score >= self._level_data.score_range[1]:
@@ -392,7 +392,7 @@ class PlayLevel(Play):
             powerup = powerups.PowerupCollectable(spawn_pos, velocity, powerups_name)
             self.powerups.add(powerup)
             self.entities.add(camera.ObjectTracker(powerup),
-                              particles.Shockwave(spawn_pos, 40))
+                              particles.Shockwave(spawn_pos, 40, 8, *powerups.PowerUp.powerup_list[powerups_name].colors))
             self.__powerup_timer.set_duration(random.randint(*self._level_data.powerup_interval))
             self.__powerup_timer.restart()
     

@@ -95,10 +95,10 @@ class PowerupInfo(State):
         add_background_tint(surface, self.__tint_color)
         
         blit_to_center(self.__anim_texture.render(lerp_amount), surface, (0, -35))
-        blit_to_center(font.large_font.render(self.__powerup.get_display_name(), 1, *self.__powerup.text_colors), surface, (0, 0))
+        blit_to_center(font.large_font.render(self.__powerup.get_display_name(), 1, *self.__powerup.colors), surface, (0, 0))
 
         for i, text in enumerate(self.__info_text):
-            blit_to_center(font.small_font.render(text, 1, *self.__powerup.text_colors),
+            blit_to_center(font.small_font.render(text, 1, *self.__powerup.colors),
                            surface, (0, 20 + i*8))
 
         if self.__usage_instr is not None:
