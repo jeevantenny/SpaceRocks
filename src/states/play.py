@@ -361,8 +361,9 @@ class Play(State):
     
     def _delete_distant_objects(self) -> None:
         "Deletes objects that are beyond the despawn radius of the spaceship."
+        reference_point = self.spaceship.position + self.spaceship.get_velocity()*0.5
         for obj in self.spawned_entities.sprites():
-            if obj.can_despawn and not obj.within_distance(self.spaceship, self._despawn_radius):
+            if obj.can_despawn and not obj.within_distance(reference_point, self._despawn_radius):
                 obj.force_kill()
 
 
@@ -469,8 +470,11 @@ class Play(State):
 
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
-        distance_from_center = self._spawn_radius+self.spaceship.get_speed()*0.3
-        return self._camera.position + pg.Vector2(distance_from_center, 0).rotate(random.randint(0, 360))
+        speed_squared = int(self.spaceship.get_velocity().magnitude_squared())
+        deviation = max(180 - speed_squared*2, 30)
+        distance_from_center = self._spawn_radius + speed_squared*0.05
+        return (self._camera.position
+                + (self.spaceship.get_rotation_vector()*distance_from_center).rotate(random.randint(-deviation, deviation)))
     
 
     def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float, deviation=30) -> pg.Vector2:

@@ -180,7 +180,7 @@ class PlayLevel(Play):
         self._draw_base(surface)
 
         if not debug.Cheats.ignore_colorkey:
-            self._draw_scrolling_background(surface, lerp_amount)
+            self._draw_scrolling_background(surface, self.__lvl_transition_timer.complete and lerp_amount)
 
         if self.__lvl_transition_timer.complete:
             self._draw_entities(surface, lerp_amount)# if self.spaceship.health else 1)
