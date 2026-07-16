@@ -8,7 +8,7 @@
         "main_loop": "music/level_1_main"
     },
     "test_music": {
-        "prelude": "music/test_folder/house_lo",
-        "main_loop": "music/test_folder/apt"
+        "prelude": "music/test/house_lo",
+        "main_loop": "music/test/apt"
     }
 }

@@ -10,14 +10,14 @@ from time import perf_counter
 from config import *
 import debug
 
+from src import misc
 from src.custom_types import EngineInterface
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
-from src.ui import blit_to_center, font
-from src.states import StateStack, init_state
+from src.ui import font
+from src.states import State, StateStack, init_state
 from src.file_processing import assets, data
 from src.audio.soundfx import SoundFXManager
-from src.misc import set_console_style, bar_of_dashes
 
 
 
@@ -118,6 +118,22 @@ class GameEngine(EngineInterface):
                 self._input_interpreter.controller = None
         else:
             self._input_interpreter.controller = None
+
+
+    def __add_state_by_name(self, user_input: str) -> None:
+        if not user_input:
+            return
+        name, *args = user_input.split()
+        state_type = misc.find_subclass_by_name(State, name)
+        if state_type is None:
+            print(f"Invalid state name '{name}'")
+            return
+        try:
+            state = state_type(*args)
+            self._state_stack.push(state)
+            print("Added", state, "to stack")
+        except Exception as e:
+            print(e)
 
     
 
@@ -233,15 +249,18 @@ class GameEngine(EngineInterface):
 
         keyboard = self._input_interpreter.keyboard_mouse
 
-        if keyboard.tap_keys[K_F11]:
+        if (keyboard.tap_keys[K_F11]
+            and not keyboard.hold_keys[KMOD_CTRL]
+            and not keyboard.hold_keys[KMOD_SHIFT]
+            and not keyboard.hold_keys[KMOD_ALT]):
             self.toggle_fullscreen()
 
         if debug.DEBUG_MODE and keyboard.hold_keys[KMOD_CTRL]:
             if self._state_stack.top() is not None and keyboard.tap_keys[K_BACKSPACE]:
                 self._state_stack.pop()
 
-            if keyboard.tap_keys[K_v]:
-                print(self._state_stack)
+            if keyboard.tap_keys[K_s]:
+                misc.async_input(self.__add_state_by_name, "Enter state to add: ")
 
         self._state_stack.userinput(self._input_interpreter)
 
@@ -357,23 +376,23 @@ class GameEngine(EngineInterface):
         except:
             traceback.print_exc()
 
-            set_console_style(91, 1)
-            bar_of_dashes()
+            misc.set_console_style(91, 1)
+            misc.bar_of_dashes()
 
             print("\x1BAn error occurred during saving. Data may not have been saved properly.")
 
-            bar_of_dashes()
-            set_console_style()
+            misc.bar_of_dashes()
+            misc.set_console_style()
 
         else:
-            set_console_style(32, 1)
-            bar_of_dashes()
+            misc.set_console_style(32, 1)
+            misc.bar_of_dashes()
 
             print("Game Data Saved")
             print(f"error: {self._error}")
 
-            bar_of_dashes()
-            set_console_style()
+            misc.bar_of_dashes()
+            misc.set_console_style()
 
 
         finally:

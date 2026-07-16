@@ -3,6 +3,8 @@
 
 import random
 import debug
+from typing import Callable
+import threading
 
 
 
@@ -57,3 +59,10 @@ def find_subclass_by_name[T](class_type: type[T], class_name: str) -> type[T] | 
         found = find_subclass_by_name(cls, class_name)
         if found is not None:
             return found
+        
+
+def async_input(callback: Callable[[str], None], prompt="") -> threading.Thread:
+    thread = threading.Thread(name=f"async_input: '{prompt}'",
+                              target=lambda: callback(input(prompt)))
+    thread.start()
+    return thread

@@ -191,7 +191,8 @@ class StateStack(HasSoundQueue):
 
     def userinput(self, inputs: InputInterpreter) -> None:
         "Processes userinput for top state."
-        self.top().userinput(inputs)
+        if self.top() is not None:
+            self.top().userinput(inputs)
 
 
 
