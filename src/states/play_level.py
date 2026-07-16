@@ -16,8 +16,8 @@ from src.game_objects import asteroids, components, enemies, powerups
 
 from src.ui import font, hud, blit_to_center
 
-from .menus import GameOverScreen
-from .visuals import ShowText
+from .menus import GameOverScreen, ShowScore
+from .visuals import ShowText, BackgroundTint
 from .play import Play
 
 
@@ -328,7 +328,10 @@ class PlayLevel(Play):
                 obj.set_angular_vel(0)
 
         self.__set_score()
-        GameOverScreen(self._level_data.level_name, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
+        BackgroundTint(self._level_data.background_tint).add_to_stack(self.state_stack)
+        ShowScore(self._level_data.level_name,
+                  (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
+        GameOverScreen().add_to_stack(self.state_stack)
 
 
 

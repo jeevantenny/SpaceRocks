@@ -187,7 +187,7 @@ class PauseMenu(State):
         if not self.__exit_menu:
             blit_to_center(self.__info_text, surface, (0, 30))
             surface.blit(font.icon_font.render("Continue<select>     Quit<quit>     Settings<settings>"), (10, surface.height-18))
-            surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
+            surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-17))
 
 
     def debug_info(self):
@@ -260,7 +260,7 @@ class Settings(State):
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
         
         surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
-        surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-18))
+        surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-17))
 
 
     def __draw_background(self, surface: pg.Surface) -> None:
@@ -323,15 +323,12 @@ class DebugMenu(State):
 
 
 class GameOverScreen(State):
-    def __init__(self, level_name: str, score_data: tuple[int, int, bool]):
+    def __init__(self):
         super().__init__()
         from .play_level import PlayLevel
         self.prev_state: PlayLevel
 
         self.__timer = 35
-
-        self.__level_name = level_name
-        self.__score_data = score_data
         self.display_score = 0
         self.title = effects.AnimatedText("game over", "main_entrance_a")
 
@@ -345,14 +342,12 @@ class GameOverScreen(State):
         self.title.update()
         if self.__timer == 0:
             self.state_stack.pop()
-            self.state_stack.push(ShowScore(self.__level_name, self.__score_data))
         else:
             self.__timer -= 1
 
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, 1)
-        add_background_tint(surface, "#777777")
         blit_to_center(self.title.render(lerp_amount), surface)
         
             
@@ -371,6 +366,7 @@ class ShowScore(State):
         self.highscore = score_data[1]
         self.new_highscore = score_data[2]
         self.display_score = 0
+        self.__show = False
 
         # The state will go straight to comparing to highscore if the player scored not points.
         if self.score == 0:
@@ -401,6 +397,7 @@ class ShowScore(State):
 
 
     def update(self):
+        self.__show = True
         if self.display_score < self.score:
             self.display_score = increment_score(self.display_score, self.score, 0.15)
             self._queue_sound("game.point", 0.3)
@@ -411,12 +408,11 @@ class ShowScore(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        add_background_tint(surface, "#777777")
-
-        if self.__timer:
-            self.__draw_a(surface)
-        else:
-            self.__draw_b(surface)
+        if self.__show and self.is_top_state():
+            if self.__timer:
+                self.__draw_a(surface)
+            else:
+                self.__draw_b(surface)
 
 
     def __draw_a(self, surface: pg.Surface) -> None:
