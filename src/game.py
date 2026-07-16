@@ -101,6 +101,9 @@ class GameEngine(EngineInterface):
             self.__prev_window_size = self._window_surface.size
         
         return self.__game_canvas
+    
+    def get_canvas_scale(self) -> float:
+        return self._window_surface.width/self.__game_canvas.width
 
 
 
@@ -267,17 +270,11 @@ class GameEngine(EngineInterface):
             game_canvas = self.get_game_canvas()
             self._state_stack.draw(game_canvas, lerp_amount)
             
-            if not self.__fullscreen:
-                if data.get_setting("scale_blur"):
-                    pg.transform.smoothscale(game_canvas, self._window_surface.size, self._window_surface)
-                else:
-                    pg.transform.scale(game_canvas, self._window_surface.size, self._window_surface)
+            if data.get_setting("scale_blur"):
+                pg.transform.smoothscale(game_canvas, self._window_surface.size, self._window_surface)
             else:
-                self._window_surface.fill("black")
-                if data.get_setting("scale_blur"):
-                    pg.transform.smoothscale(game_canvas, self._window_surface.size, self._window_surface)
-                else:
-                    pg.transform.scale(game_canvas, self._window_surface.size, self._window_surface)
+                pg.transform.scale(game_canvas, self._window_surface.size, self._window_surface)
+
                     
         else:
             self._window_surface.fill("black")

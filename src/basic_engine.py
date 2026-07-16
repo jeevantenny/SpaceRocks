@@ -52,6 +52,15 @@ class BasicEngine(EngineInterface):
     
     def toggle_fullscreen(self):
         raise NotImplementedError("Cannot toggle fullscreen")
+    
+    def get_window_surface(self):
+        return self._window_surface
+    
+    def get_game_canvas(self):
+        return self._game_canvas
+    
+    def get_canvas_scale(self):
+        return self.__canvas_scale
 
 
     def start(self) -> None:
@@ -60,6 +69,7 @@ class BasicEngine(EngineInterface):
         self._window.set_icon(assets.load_texture(WINDOW_ICON_PATH))
         self._window.minimum_size = WINDOW_MINIUM_SIZE
         self._game_canvas = pg.Surface(DEFAULT_CANVAS_SIZE)
+        self.__canvas_scale = WINDOW_START_SIZE[0]/DEFAULT_CANVAS_SIZE[0]
 
         font.init()
         init_state.Initializer(self.__state_stack)

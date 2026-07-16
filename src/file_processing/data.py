@@ -96,7 +96,8 @@ def load_level(name: str) -> LevelData:
             powerup_spawn_weights=  powerup_weights,
 
             score_range=            tuple(level_data["score_range"]),
-            next_level=             level_data["next_level"]
+            next_level=             level_data["next_level"],
+            show_progress=          level_data.get("show_progress", True)
         )
     except KeyError as e:
         raise LevelDataError(name, e.args[0])

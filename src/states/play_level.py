@@ -236,7 +236,7 @@ class PlayLevel(Play):
         y_offset += 22
 
         # Show progress bar from level_2 onwards
-        if self._level_data.level_name != "level_1":
+        if self._level_data.show_progress:
             surface.blit(self.__progress_bar.render(level_completion_amount(self.__display_score, self._level_data.score_range)), (10, y_offset-entrance_offset))
 
         # Show lives indicator

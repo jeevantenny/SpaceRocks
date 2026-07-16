@@ -49,6 +49,23 @@ class EngineInterface(ABC):
     def toggle_fullscreen(self) -> None:
         """Toggle game between windowed and fullscreen mode"""
 
+    @abstractmethod
+    def get_window_surface(self) -> pg.Surface:
+        """
+        Return the actual surface to blit directly to window
+
+        The contents rendered on this surface will appear behind the ones
+        rendered on game canvas
+        """
+
+    @abstractmethod
+    def get_game_canvas(self) -> pg.Surface:
+        """Return the scaled surface for window rendering"""
+
+    @abstractmethod
+    def get_canvas_scale(self) -> float:
+        """Return the scale of the game canvas"""
+
 
 
 class GameSound:
@@ -483,6 +500,7 @@ class LevelData(NamedTuple):
 
     score_range: tuple[int, int]
     next_level: str
+    show_progress: bool
 
 
     @property
