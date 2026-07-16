@@ -88,6 +88,9 @@ class GameEngine(EngineInterface):
     def toggle_fullscreen(self) -> None:
         self.__do_fullscreen_toggle = True
 
+    def get_window_surface(self) -> pg.Surface:
+        return self._window_surface
+
     def get_game_canvas(self) -> pg.Surface:
         if self._window_surface.size != self.__prev_window_size:
             w_width, w_height = self.__constrained_window_size()
@@ -231,7 +234,7 @@ class GameEngine(EngineInterface):
             self.toggle_fullscreen()
 
         if debug.DEBUG_MODE and keyboard.hold_keys[KMOD_CTRL]:
-            if self._state_stack.top_state is not None and keyboard.tap_keys[K_BACKSPACE]:
+            if self._state_stack.top() is not None and keyboard.tap_keys[K_BACKSPACE]:
                 self._state_stack.pop()
 
             if keyboard.tap_keys[K_v]:
@@ -285,7 +288,7 @@ class GameEngine(EngineInterface):
 
 
     def __show_debug_text(self) -> None:
-        blit_text = f"FPS: {self.__frame_clock.get_fps():.0f}, TPS: {self.__tick_clock.get_fps():.0f}, state: {self._state_stack.top_state}"
+        blit_text = f"FPS: {self.__frame_clock.get_fps():.0f}, TPS: {self.__tick_clock.get_fps():.0f}, state: {self._state_stack.top()}"
         debug_message = self._state_stack.debug_info()
         if debug_message:
             blit_text += f"\n{debug_message}"
@@ -297,7 +300,7 @@ class GameEngine(EngineInterface):
     
     def __show_stack_view(self) -> None:
         text = "-- StateStack --"
-        current_state = self._state_stack.top_state
+        current_state = self._state_stack.top()
 
         while current_state is not None:
             text += f"\n{current_state.name}"

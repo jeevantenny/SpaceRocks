@@ -41,7 +41,7 @@ class StateStackTest(unittest.TestCase):
 
     def test_init(self):
         self.assertEqual(len(self.state_stack), 0)
-        self.assertIsNone(self.state_stack.top_state)
+        self.assertIsNone(self.state_stack.top())
         self.assertEqual(str(self.state_stack), f"<StateStack([])>")
     
     def test_init_with_states(self):
@@ -50,7 +50,7 @@ class StateStackTest(unittest.TestCase):
         state3 = State()
         self.state_stack = StateStack([state1, state2, state3])
         self.assertEqual(len(self.state_stack), 3)
-        self.assertIs(self.state_stack.top_state, state3)
+        self.assertIs(self.state_stack.top(), state3)
 
         for state in self.state_stack:
             self.assertIs(state.state_stack, self.state_stack)
@@ -59,7 +59,7 @@ class StateStackTest(unittest.TestCase):
     def test_push(self):
         state = State()
         self.state_stack.push(state)
-        self.assertIs(self.state_stack.top_state, state)
+        self.assertIs(self.state_stack.top(), state)
         self.assertEqual(len(self.state_stack), 1)
         self.assertEqual(str(self.state_stack), f"<StateStack(['<State State>'])>")
 
