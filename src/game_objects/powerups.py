@@ -479,7 +479,8 @@ class Dodge(PowerUp):
             self.__dodge_cooldown.advance(cooldown_used)
 
         self.__dodge_direction = pg.Vector2()
-        self.__dodge_duration = Timer(6, exec_after=self.__reset_dodge)
+        self.__dodge_interval = Timer(6, exec_after=self.__reset_dodge)
+        self.__dodge_duration = Timer(8, exec_after=self.__dodge_cooldown.start)
         self.__activate_dodge = False
 
 
@@ -488,9 +489,13 @@ class Dodge(PowerUp):
         return (self.__dodges, self.__dodge_cooldown.time_elapsed)
     
     def indicator_slider_amount(self):
-        return self.__dodges/self.__max_dodges
+        return (self.__dodges/self.__max_dodges
+                + (self.__dodge_duration.countdown*0.125)**4 * 0.2)
 
     def userinput(self, inputs):
+        if self.__dodge_duration.countdown:
+            return
+
         if inputs.check_input("up"):
             self.__dodge_direction.y -= 1
         if inputs.check_input("down"):
@@ -500,18 +505,21 @@ class Dodge(PowerUp):
         if inputs.check_input("right"):
             self.__dodge_direction.x += 1
         
-        
         if self.__dodge_cooldown.complete and inputs.check_input("powerup_use"):
-            self.__dodge_duration.start()
+            self.__dodge_interval.start()
             self.__activate_dodge = True
 
-        elif self.__dodge_direction and self.__dodge_duration.complete:
-            self.__dodge_duration.start()
+        elif self.__dodge_direction and self.__dodge_interval.complete:
+            self.__dodge_interval.start()
 
     
     def update(self, spaceship):
         self.__dodge_cooldown.update()
+        self.__dodge_interval.update()
         self.__dodge_duration.update()
+
+        if self.__dodge_duration.complete and self.__dodges <= 0:
+            spaceship.remove_powerup(self)
 
         if self.__activate_dodge and self.__dodge_direction:
             self.__dodge_direction.scale_to_length(80)
@@ -519,18 +527,27 @@ class Dodge(PowerUp):
             spaceship.accelerate(spaceship.get_velocity()*-0.5)
             spaceship.invincibility_frames(15)
 
-            self.__dodge_duration.stop()
+            self.__dodge_interval.stop()
+            self.__dodge_duration.start()
             self.__reset_dodge()
-            self.__dodge_cooldown.start()
             self.__dodges -= 1
-            if self.__dodges <= 0:
-                spaceship.remove_powerup(self)
+
+    def draw(self, spaceship, surface, lerp_amount=0, offset=(0, 0)):
+        if self.__dodge_duration.countdown:
+            pg.draw.circle(surface, "#aa0055", spaceship.get_lerp_pos(lerp_amount)+offset, 20, 1)
+
 
     def on_thrust(self, spaceship) -> bool:
-        return not self.__activate_dodge
+        return not self.__activate_dodge and self.__dodge_duration.complete
     
     def on_turn(self, spaceship, direction):
-        return not self.__activate_dodge
+        return not self.__activate_dodge and self.__dodge_duration.complete
+    
+    def do_collision(self, spaceship):
+        return self.__dodge_duration.complete
+    
+    def draw_ship(self, spaceship):
+        return self.__dodge_duration.complete
 
     def __reset_dodge(self) -> None:
         self.__dodge_direction.xy = (0, 0)
