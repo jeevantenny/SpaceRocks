@@ -211,7 +211,7 @@ class PlayLevel(Play):
 
     def player_damage_obstacle(self, obstacle, point_combo=True):
         super().player_damage_obstacle(obstacle, point_combo)
-        if obstacle.has_health():
+        if obstacle.has_health() or self.__level_cleared:
             return
         if self._score >= self._level_data.score_range[1]:
             if self.__hyperdrive_spawn_timer.complete:

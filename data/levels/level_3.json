@@ -3,9 +3,9 @@
     "parl_b": "backgrounds/space_background_big",
     "background_palette": "background/blue",
 
-    "asteroid_density": [8, 15],
-    "asteroid_speed": [2, 5],
-    "asteroid_interval": [10, 20],
+    "asteroid_density": [10, 20],
+    "asteroid_speed": [2, 6],
+    "asteroid_interval": [2, 7],
 
     "spawn_asteroids": {
         "blue_small": 4,

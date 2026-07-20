@@ -18,7 +18,7 @@ class AnimatedTexture:
         self.__base = texture
         self.__effect_texture_map = assets.load_texture_map(texture_map_path)
         self.__anim_data = assets.load_anim_data(anim_path)["animations"]
-        self.__texture_map = LazyDict[str, pg.Surface](self.__get_frame)
+        self.__texture_map: LazyDict[str, pg.Surface] = LazyDict(self.__get_frame)
         self.set_effect(effect_name)
 
 
@@ -49,9 +49,7 @@ class AnimatedTexture:
     def __get_frame(self, key: str) -> pg.Surface:
         if key == "main":
             return self.__base
-        effect_surface = self.__effect_texture_map.get(key)
-        if effect_surface is None:
-            raise KeyError(key)
+        effect_surface = self.__effect_texture_map[key]
         return self.__apply_masks(pg.transform.scale(effect_surface, self.__base.size), self.__base)
     
 

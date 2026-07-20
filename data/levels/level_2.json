@@ -5,7 +5,7 @@
 
     "asteroid_density": [20, 30],
     "asteroid_speed": [2, 8],
-    "asteroid_interval": [5, 10],
+    "asteroid_interval": [2, 7],
 
     "spawn_asteroids": {
         "blue_small": 1,
