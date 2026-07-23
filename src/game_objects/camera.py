@@ -26,6 +26,7 @@ class Camera:
         self._position = pg.Vector2(start_pos)
         self._velocity = pg.Vector2(0, 0)
         self._target_pos = self.position
+        self._track_target = True
         self.__wander_radius = wander_radius
         self.__trail_distance = wander_radius
 
@@ -41,6 +42,8 @@ class Camera:
     def position(self) -> pg.Vector2:
         return self._position.copy()
 
+    def set_position(self, value: pg.typing.Point) -> None:
+        self._position = pg.Vector2(value)
 
     def get_target(self) -> pg.Vector2:
         return self._target_pos.copy()
@@ -48,13 +51,18 @@ class Camera:
     def set_target(self, position: pg.typing.Point) -> None:
         self._target_pos.xy = position
 
+    def track_target(self, track: bool) -> None:
+        self._track_target = track
+
     def set_velocity(self, value: pg.typing.Point) -> None:
         self._velocity.xy = value
+
+    def clear_velocity(self) -> None:
+        self._velocity.xy = (0, 0)
 
     def camera_shake(self, intensity: float, duration=0) -> None:
         self.__shake_intensities.append(pg.math.clamp(intensity, 0, 1))
         self.__shake_end_times.append(self.__shake_stopwatch.time_elapsed + duration)
-
 
     def reset_motion(self) -> None:
         self.set_velocity((0, 0))
@@ -64,6 +72,11 @@ class Camera:
 
     def update(self) -> None:
         "Updates position of camera for every game tick."
+        self.__update_camera_shake()
+        if not self._track_target:
+            self.clear_velocity()
+            return
+
         displacement = self._target_pos-self.position
         direction = unit_vector(displacement)
         distance = displacement.magnitude()
@@ -86,7 +99,6 @@ class Camera:
             self.clear_velocity()
 
         self._position += self._velocity
-        self.__update_camera_shake()
     
 
     def __update_camera_shake(self) -> None:
@@ -112,6 +124,14 @@ class Camera:
             i += 1
 
 
+    def blit_position(self, lerp_amount: float) -> pg.Vector2:
+        """Position of camera after taking interpolation into account and camera shake."""
+        return self.position + self._velocity*lerp_amount + self.__shake_offset
+
+    def get_visible_area(self, area_size: pg.typing.Point) -> pg.Rect:
+        rect = pg.Rect((0, 0), area_size)
+        rect.center = self.position
+        return rect
 
     def capture(
             self,
@@ -140,27 +160,6 @@ class Camera:
         pg.draw.line(surface, "black", position-(4, 0), position+(4, 0), 3)
         pg.draw.line(surface, "white", position-(0, 3), position+(0, 3))
         pg.draw.line(surface, "white", position-(3, 0), position+(3, 0))
-    
-
-
-    def set_position(self, value: pg.typing.Point) -> None:
-        self._position = pg.Vector2(value)
-
-    
-    def get_visible_area(self, area_size: pg.typing.Point) -> pg.Rect:
-        rect = pg.Rect((0, 0), area_size)
-        rect.center = self.position
-        return rect
-
-
-    def blit_position(self, lerp_amount: float) -> pg.Vector2:
-        """Position of camera after taking interpolation into account and camera shake."""
-        return self.position + self._velocity*lerp_amount + self.__shake_offset
-
-
-    def clear_velocity(self) -> None:
-        self._velocity.xy = (0, 0)
-
 
 
 

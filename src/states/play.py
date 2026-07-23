@@ -228,11 +228,12 @@ class Play(State):
             glb.game.set_tps(self.__slowmo_tps)
         self.__slowmo_timer.update()
 
-        if not self._game_over_timer.complete or not self._respawn_timer.complete:
+        if self._game_over_timer.countdown or self._respawn_timer.countdown:
             self.entities.update(self._camera.position, (components.Obstacle, powerups.PowerupCollectable))
             for obj in self.asteroids.sprites() + self.enemies.sprites():
                 if not obj.has_health():
                     obj.update()
+            self._update_camera()
         elif self._player_lives:
             self._game_loop()
             self.__inactivity_timer.update()
@@ -346,7 +347,7 @@ class Play(State):
             and self._game_over_timer.complete):
 
             self._player_lives -= 1
-            self._camera.clear_velocity()
+            self.set_camera_target(None)
 
             for smoke in self.entities.get_type(particles.ShipSmoke):
                 smoke.clear_velocity()
@@ -380,7 +381,10 @@ class Play(State):
             target_pos = self.__camera_target
 
         if target_pos is not None:
+            self._camera.track_target(True)
             self._camera.set_target(target_pos)
+        else:
+            self._camera.track_target(False)
         self._camera.update()
 
 
@@ -470,11 +474,15 @@ class Play(State):
 
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
-        speed_squared = int(self.spaceship.get_velocity().magnitude_squared())
+        ship_vel = self.spaceship.get_velocity()
+        speed_squared = int(ship_vel.magnitude_squared())
         deviation = max(180 - speed_squared*2, 30)
         distance_from_center = self._spawn_radius + speed_squared*0.05
-        return (self._camera.position
-                + (self.spaceship.get_rotation_vector()*distance_from_center).rotate(random.randint(-deviation, deviation)))
+        if ship_vel:
+            ship_vel.scale_to_length(distance_from_center)
+        else:
+            ship_vel = pg.Vector2(distance_from_center)
+        return (self._camera.position + (ship_vel).rotate(random.randint(-deviation, deviation)))
     
 
     def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float, deviation=30) -> pg.Vector2:

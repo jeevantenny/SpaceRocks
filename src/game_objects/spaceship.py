@@ -265,6 +265,7 @@ class PlayerShip(Spaceship):
                 super().kill()
                 self.progress_save_key = None
                 controller_rumble("large_explosion_b", 0.9)
+                self.host_state.camera_shake(0.52)
 
 
     def has_powerup(self, powerup_name: str) -> None:
