@@ -457,18 +457,7 @@ class Play(State):
 
     
     def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
-        # Showing powerup Info will only update PowerupCollectable
-        if isinstance(self.state_stack.top_state, PowerupInfo):
-            self._camera.capture(surface, self.entities, lerp_amount, powerups.PowerupCollectable)
-        # Obstacles should not be updated
-        elif self._respawn_timer.countdown:
-            self._camera.capture(surface, self.entities, lerp_amount,
-                                 (spaceship.PlayerShip, particles.Particle, particles.Shockwave))
-        elif self._game_over_timer.countdown:
-            self._camera.capture(surface, self.entities, lerp_amount,
-                                 (powerups.PowerupCollectable, spaceship.PlayerShip, particles.Particle, particles.Shockwave))
-        else:
-            self._camera.capture(surface, self.entities, lerp_amount)
+        self._camera.capture(surface, self.entities, lerp_amount)
 
 
 

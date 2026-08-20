@@ -3,7 +3,7 @@ import random
 
 import debug
 
-from src.custom_types import Timer, Stopwatch
+from src.custom_types import Stopwatch
 from src.math_functions import unit_vector, format_angle, sign
 from src.file_processing import assets
 
@@ -107,8 +107,8 @@ class Camera:
 
         shake_intensity = min(max(self.__shake_intensities), 1)
         shake_offset = self.__max_shake_offset*shake_intensity**2
-        self.__shake_offset.x = shake_offset*random.uniform(-1, 1)
-        self.__shake_offset.y = shake_offset*random.uniform(-1, 1)
+        self.__shake_offset.xy = (0, shake_offset)
+        self.__shake_offset.rotate_ip(random.randint(1, 359))
         self.__shake_stopwatch.update()
         
         i = 0
@@ -133,26 +133,16 @@ class Camera:
         rect.center = self.position
         return rect
 
-    def capture(
-            self,
-            output_surface: pg.Surface,
-            entities: ObjectGroup,
-            lerp_amount=0.0,
-            interpolate_types: GameObject | tuple[GameObject, ...] = ALL
-            ) -> None:
-        "Draws game objects relative to the camera and blit them to the output surface."
-        lerp_pos = self.blit_position(lerp_amount)
-        blit_offset = pg.Vector2(output_surface.size)*0.5 - lerp_pos
-
-        for obj in entities.get_draw_order():
-            if interpolate_types is ALL or isinstance(obj, interpolate_types):
-                obj.draw(output_surface, lerp_amount, blit_offset)
-            else:
-                obj.draw(output_surface, 1, blit_offset)
-        if debug.Cheats.show_bounding_boxes:
-            pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
-            blit_offset = pg.Vector2(output_surface.size)*0.5 - self._position
-            self._draw_crosshair(output_surface, self._target_pos+blit_offset)
+    def capture(self, output_surface: pg.Surface, entities: ObjectGroup, lerp_amount=0.0) -> None:
+            "Draws game objects relative to the camera and blit them to the output surface."
+            lerp_pos = self.blit_position(lerp_amount)
+            blit_offset = pg.Vector2(output_surface.size)*0.5 - lerp_pos
+    
+            entities.draw(output_surface, lerp_amount, blit_offset)
+            if debug.Cheats.show_bounding_boxes:
+                pg.draw.rect(output_surface, "red", (*blit_offset, *output_surface.size), 1)
+                blit_offset = pg.Vector2(output_surface.size)*0.5 - self._position
+                self._draw_crosshair(output_surface, self._target_pos+blit_offset)
 
 
     def _draw_crosshair(self, surface: pg.Surface, position: pg.typing.Point) -> None:
@@ -223,38 +213,30 @@ class RotoZoomCamera(Camera):
 
 
 
-    def capture(
-            self,
-            output_surface: pg.Surface,
-            entities: ObjectGroup,
-            lerp_amount=0.0,
-            interpolate_types: GameObject | tuple[GameObject, ...] = ALL
-            ) -> None:
-        scaled_surface = assets.colorkey_surface(pg.Vector2(output_surface.size)*self.__zoom)
-        camera_lerp_pos = self.blit_position(lerp_amount)
-        camera_lerp_rotation = self.get_lerp_rotation(lerp_amount)
-        blit_offset = pg.Vector2(scaled_surface.size)*0.5 - camera_lerp_pos
-
-        for obj in entities.get_draw_order():
-            if isinstance(obj, ObjectVelocity):
-                entity_pos: pg.Vector2 = obj.get_lerp_pos(lerp_amount)
-            else:
-                entity_pos = obj.position
-
-            blit_pos = entity_pos - camera_lerp_pos
-            blit_pos.rotate_ip(-camera_lerp_rotation)
-            blit_pos += camera_lerp_pos - entity_pos + blit_offset
-            obj.draw(
-                scaled_surface,
-                lerp_amount if interpolate_types is ALL or isinstance(obj, interpolate_types) else 1.0,
-                blit_pos,
-                -camera_lerp_rotation if not obj.ignore_camera_rotation else 0)
-            
-        output_surface.blit(pg.transform.scale(scaled_surface, output_surface.size))
-
-        if debug.Cheats.show_bounding_boxes:
-            crosshair_pos = (self.get_target()-self.position).rotate(-self.__rotation) + pg.Vector2(output_surface.size)*0.5
-            self._draw_crosshair(output_surface, crosshair_pos)
+    def capture(self, output_surface, entities, lerp_amount=0):
+            scaled_surface = assets.colorkey_surface(pg.Vector2(output_surface.size)*self.__zoom)
+            camera_lerp_pos = self.blit_position(lerp_amount)
+            camera_lerp_rotation = self.get_lerp_rotation(lerp_amount)
+            blit_offset = pg.Vector2(scaled_surface.size)*0.5 - camera_lerp_pos
+    
+            for entity in entities.get_draw_order():
+                if isinstance(entity, ObjectVelocity):
+                    entity_pos: pg.Vector2 = entity.get_lerp_pos(lerp_amount)
+                else:
+                    entity_pos = entity.position
+    
+                blit_pos = entity_pos - camera_lerp_pos
+                blit_pos.rotate_ip(-camera_lerp_rotation)
+                blit_pos += camera_lerp_pos - entity_pos + blit_offset
+                entity.draw(
+                    scaled_surface, lerp_amount, blit_pos,
+                    -camera_lerp_rotation if not entity.ignore_camera_rotation else 0)
+                
+            output_surface.blit(pg.transform.scale(scaled_surface, output_surface.size))
+    
+            if debug.Cheats.show_bounding_boxes:
+                crosshair_pos = (self.get_target()-self.position).rotate(-self.__rotation) + pg.Vector2(output_surface.size)*0.5
+                self._draw_crosshair(output_surface, crosshair_pos)
     
 
 
