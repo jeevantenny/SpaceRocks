@@ -225,7 +225,20 @@ class Stopwatch:
 
 
 
+class LerpTracker:
+    def __init__(self):
+        self.__prev_lerp = 0.0
 
+    def on_update(self) -> None:
+        self.__prev_lerp = 0.0
+
+    def get_lerp(self, lerp_amount: float) -> float:
+        if lerp_amount < self.__prev_lerp:
+            self.__prev_lerp = 2.0
+            return 1.0
+        else:
+            self.__prev_lerp = lerp_amount
+            return lerp_amount
 
 
 
