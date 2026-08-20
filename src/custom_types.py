@@ -226,6 +226,10 @@ class Stopwatch:
 
 
 class LerpTracker:
+    """
+    Prevents interpolation stutters on interpolated objects that are
+    caused by calling draw on the object without calling update.
+    """
     def __init__(self):
         self.__prev_lerp = 0.0
 
