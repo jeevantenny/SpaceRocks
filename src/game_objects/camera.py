@@ -3,7 +3,7 @@ import random
 
 import debug
 
-from src.custom_types import Timer
+from src.custom_types import Timer, LerpTracker
 from src.math_functions import unit_vector, format_angle, sign
 from src.file_processing import assets
 
@@ -30,6 +30,7 @@ class Camera:
         self.__shake_timer = Timer(0)
         self.__shake_intensity = 0.0
         self.__shake_offset = pg.Vector2()
+        self._lerp_tracker = LerpTracker()
 
 
 
@@ -82,6 +83,7 @@ class Camera:
         
         self._position += self._velocity
         self.__update_camera_shake()
+        self._lerp_tracker.on_update()
     
 
     def __update_camera_shake(self) -> None:
@@ -156,6 +158,7 @@ class RotoZoomCamera(Camera):
         return self.__rotation
     
     def get_lerp_rotation(self, lerp_amount: float) -> float:
+        lerp_amount = self._lerp_tracker.get_lerp(lerp_amount)
         return format_angle(self.__rotation-self.__angular_vel*(1-lerp_amount))
     
     def set_rotation(self, value: int) -> None:
