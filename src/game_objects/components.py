@@ -5,7 +5,7 @@ from typing import Generator, Any
 
 import debug
 
-from src.custom_types import Animation, AnimController
+from src.custom_types import LerpTracker, Animation, AnimController
 from src.math_functions import unit_vector, vector_min, format_angle
 
 from src.file_processing import assets
@@ -43,6 +43,7 @@ class ObjectVelocity(GameObject):
         super().__init__(**kwargs)
         self._velocity = pg.Vector2(velocity)
         self.__max_speed_squared = self._max_speed*self._max_speed
+        self._lerp_tracker = LerpTracker()
 
 
 
@@ -52,6 +53,7 @@ class ObjectVelocity(GameObject):
         if self._velocity.magnitude_squared() > self.__max_speed_squared:
             self._velocity.scale_to_length(self._max_speed)
         self.move(self._velocity)
+        self._lerp_tracker.on_update()
 
 
 
@@ -74,7 +76,7 @@ class ObjectVelocity(GameObject):
 
 
     def get_lerp_pos(self, lerp_amount=0.0) -> pg.Vector2:
-        return self.position - self._velocity*(1-lerp_amount)
+        return self.position - self._velocity*(1-self._lerp_tracker.get_lerp(lerp_amount))
 
 
 
@@ -96,6 +98,7 @@ class ObjectTexture(GameObject):
         self.texture = texture
         self.__rotation = 0
         self._angular_vel = 0
+        self._lerp_tracker = LerpTracker()
 
 
 
@@ -122,7 +125,7 @@ class ObjectTexture(GameObject):
         self._rotation = value
 
     def get_lerp_rotation(self, lerp_amount=0.0) -> float:
-        return self._rotation-self._angular_vel*(1-lerp_amount)
+        return self._rotation-self._angular_vel*(1-self._lerp_tracker.get_lerp(lerp_amount))
 
     def get_rotation_vector(self) -> pg.Vector2:
         "Gets rotation of object as a vector relative to (0, -1)."
@@ -136,6 +139,7 @@ class ObjectTexture(GameObject):
     def update(self) -> None:
         super().update()
         self.rotate(self._angular_vel)
+        self._lerp_tracker.on_update()
 
 
     
@@ -237,7 +241,7 @@ class ObjectAnimation(ObjectTexture):
 
 
     def _get_blit_texture(self, lerp_amount=0, rotation=0):
-        self.texture = self.__controller.get_frame(self.__texture_map, lerp_amount)
+        self.texture = self.__controller.get_frame(self.__texture_map, self._lerp_tracker.get_lerp(lerp_amount))
         return super()._get_blit_texture(lerp_amount, rotation)
     
     def _set_anim_state(self, state_name: str) -> None:
@@ -334,6 +338,7 @@ class ObjectCollision(ObjectVelocity):
     def update(self) -> None:
         super().update()
         self.process_collision()
+        # print(f"\033[34m---update{self}---\033[0m")
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):

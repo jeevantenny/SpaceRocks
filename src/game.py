@@ -57,7 +57,7 @@ class GameEngine(EngineInterface):
         self.__event_queue: list[pg.Event] = []
 
         self.__game_process_thread = threading.Thread(name="game_process", target=self._game_process_loop)
-        self.__process_lock = threading.Lock()
+        self.__thread_lock = threading.Lock()
 
         self._state_stack = StateStack()
 
@@ -161,18 +161,16 @@ class GameEngine(EngineInterface):
         try:
             while self._run:
                 self._get_userinput()
-                
-                self.__process_lock.acquire(timeout=0.2)
                 self._userinput()
                 self._update()
-                self.__process_lock.release()
-
                 self._next_tick()
 
         except Exception as e:
             self._error = type(e).__name__
             raise e
         finally:
+            if self.__thread_lock.locked():
+                self.__thread_lock.release()
             self.quit()
             
 
@@ -189,6 +187,8 @@ class GameEngine(EngineInterface):
             self._error = type(e).__name__
             raise e
         finally:
+            if self.__thread_lock.locked():
+                self.__thread_lock.release()
             self.quit()
 
 
@@ -313,7 +313,10 @@ class GameEngine(EngineInterface):
 
 
     def _next_tick(self) -> None:
+        if self.__thread_lock.locked():
+            self.__thread_lock.release()
         self.__tick_clock.tick(self.__tick_rate*debug.Cheats.game_speed)
+        self.__thread_lock.acquire(timeout=1.5)
         current_time = perf_counter()
         self.__prev_tick = current_time
 
@@ -321,7 +324,10 @@ class GameEngine(EngineInterface):
 
     def _next_frame(self) -> None:
         self._window.flip()
+        if self.__thread_lock.locked():
+            self.__thread_lock.release()
         self.__frame_clock.tick(self.__framerate)
+        self.__thread_lock.acquire(timeout=1.5)
         self.__prev_frame = perf_counter()
 
 
