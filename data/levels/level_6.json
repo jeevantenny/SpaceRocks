@@ -2,14 +2,14 @@
     "parl_a": "backgrounds/space_background",
     "parl_b": "backgrounds/space_background_big",
     "background_palette": "background/yellow",
-    "background_tint": "#448866",
+    "background_tint": "#887744",
 
     "asteroid_density": [30, 80],
     "asteroid_speed": [12, 15],
     "asteroid_interval": [3, 80],
 
     "spawn_asteroids": {
-        "yellow_small": 5,
+        "yellow_small": 3,
         "yellow_medium": 1
     },
     

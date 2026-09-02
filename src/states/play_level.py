@@ -12,11 +12,12 @@ from src.misc import increment_score, level_completion_amount, weighted_choice
 from src.custom_types import SaveData, Timer
 from src.file_processing import data
 
-from src.game_objects import asteroids, components, enemies, powerups
+from src.game_objects import asteroids, camera, components, enemies, powerups, particles, spaceship
 
 from src.ui import font, hud, blit_to_center
 
-from .menus import GameOverScreen
+from .menus import PauseMenu, GameOverScreen
+from .info_states import PowerupInfo
 from .visuals import ShowText
 from .play import Play
 
@@ -66,6 +67,7 @@ class PlayLevel(Play):
         self._score = self._level_data.score_range[0]
         self._player_lives = self._player_max_lives
         self.reset_point_combo()
+        self.__prev_powerups = len(self.spaceship.get_powerup_group())
 
         # Reset Camera
         self._camera.set_position((0, 0))
@@ -88,6 +90,11 @@ class PlayLevel(Play):
         self._setup_level(save_data.level_name)
         self._setup_hud()
 
+        self.__asteroid_timer.set_duration(save_data.game_stats.get("asteroid_timer", 0))
+        self.__enemy_timer.set_duration(save_data.game_stats.get("enemy_timer", 0))
+        self.__powerup_timer.set_duration(save_data.game_stats.get("powerup_timer", 0))
+        self.__prev_powerups = save_data.game_stats.get("prev_powerups", 0)
+
         self.__display_score = save_data.score
         self.__hud_timer.stop()
 
@@ -104,6 +111,7 @@ class PlayLevel(Play):
         self.__prev_highscore = self.highscore
         self.highscore_changed = False
         self.__level_cleared = False
+        self.__prev_powerups = 0
         
         self.__lvl_transition_timer = Timer(60)
         self.__hyperdrive_spawn_timer = Timer(60, False, self._spawn_hyperdrive_powerup)
@@ -113,7 +121,7 @@ class PlayLevel(Play):
         super()._setup_game_objects()
         self.__asteroid_timer = Timer(0, True, self.__spawn_asteroid)
         self.__enemy_timer = Timer(0, True, self.__spawn_enemy)
-        self.__powerup_timer = Timer(0, True, self.__spawn_powerup)
+        self.__powerup_timer = Timer(0, False)
 
 
     def _setup_level(self, level_name):
@@ -171,29 +179,28 @@ class PlayLevel(Play):
     def draw(self, surface, lerp_amount=0.0):
         self._draw_base(surface)
 
-        if self._freeze_gameplay():
-            lerp_amount = 0.0
-
         if not debug.Cheats.ignore_colorkey:
-            self._draw_scrolling_background(surface, lerp_amount)
+            self._draw_scrolling_background(surface, self.__lvl_transition_timer.complete and lerp_amount)
 
         if self.__lvl_transition_timer.complete:
             self._draw_entities(surface, lerp_amount)# if self.spaceship.health else 1)
 
 
-        if ((self.spaceship.health or self._player_lives)
-            and (self.is_top_state() or len(self.state_stack) == 3)):
-
+        if ((isinstance(self.state_stack.top_state, (PauseMenu, ShowText)) or self.is_top_state())
+            and self._player_lives):
             self._draw_hud(surface)
 
 
 
 
-    def debug_info(self) -> str | None:
-        return "\n".join((
-            f"level: {self._level_data.level_name}, entity count: {self.entities.count()}, asteroids_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})",
-            f"lives: {self._player_lives}, score: {self._score}, combo: {self._point_combo:.1f}, enemies: {len(self.enemies)}, powerups: {len(self.powerups)}"
-        ))
+    def debug_info(self):
+        return (
+            f"level: {self._level_data.level_name}, {super().debug_info()}\n"
+            f"asteroids: {len(self.asteroids):02};{self.__asteroid_timer.countdown:02.0f}, "
+            f"enemies: {len(self.enemies):02};{self.__enemy_timer.countdown:02.0f}, "
+            f"powerups: {len(self.powerups):02};{self.__powerup_timer.countdown:02.0f}, "
+            f"asteroid_density: {self.__asteroid_density()}/{self.__required_asteroid_density()}"
+        )
 
 
 
@@ -201,14 +208,22 @@ class PlayLevel(Play):
     def hud_message(self, message, duration=40):
         self.__hud_message.queue_message(message, duration)
     
-    def player_damage_obstacle(self, obstacle):
-        super().player_damage_obstacle(obstacle)
-        if (self._score >= self._level_data.score_range[1]
-            and not obstacle.has_health()
-            and not self.__powerup_exists("Hyperdrive")):
-            self.slowmo_effect(7)
-            self.__hyperdrive_spawn_timer.start()
-            self.camera_shake(0.7, 12)
+
+    def player_damage_obstacle(self, obstacle, point_combo=True):
+        super().player_damage_obstacle(obstacle, point_combo)
+        if obstacle.has_health() or self.__level_cleared:
+            return
+        if self._score >= self._level_data.score_range[1]:
+            if self.__hyperdrive_spawn_timer.complete:
+                self.slowmo_effect(7)
+                self.camera_shake(0.7, 12)
+                self.__hyperdrive_spawn_timer.start()
+                self.entities.add(particles.Shockwave(obstacle.position, 300, 10))
+        elif (self._level_data.spawn_powerups
+              and (self.__powerup_timer.complete or debug.Cheats.abundant_powerups)
+              and obstacle.drop_powerup):
+            self.__spawn_powerup(obstacle.position)
+
 
     def start_next_level(self):
         self.__reinit_for_level(self._level_data.next_level)
@@ -264,7 +279,6 @@ class PlayLevel(Play):
 
 
 
-
     def _game_loop(self):
         if not self.__level_cleared:
             if self._object_spawn_delay.complete:
@@ -275,11 +289,7 @@ class PlayLevel(Play):
                 self.__level_cleared = True
                 self.hud_message("Level Cleared")
                 if self.__hyperdrive_spawn_timer.complete:
-                    self.powerups.add(powerups.PowerupCollectable(
-                        self.spaceship.position+(0, -50),
-                        self.spaceship.get_velocity()*0.5,
-                        "Hyperdrive"
-                    ))
+                    self._spawn_hyperdrive_powerup()
 
                 for asteroid in self.asteroids.sprites():
                     asteroid.kill(False)
@@ -344,8 +354,9 @@ class PlayLevel(Play):
                 self.__enemy_timer.update()
 
         if (self._level_data.spawn_powerups
-            and len(self.powerups) + len(self.spaceship.get_powerup_group()) < len(self._level_data.powerup_spawn_weights[0])):
+            and len(self.powerups) + len(self.spaceship.get_powerup_group()) - self.__prev_powerups < len(self._level_data.powerup_spawn_weights[0])):
             self.__powerup_timer.update()
+            self.__prev_powerups = min(len(self.spaceship.get_powerup_group()), self.__prev_powerups)
 
 
     def __spawn_asteroid(self) -> None:
@@ -372,13 +383,18 @@ class PlayLevel(Play):
         self.__enemy_timer.set_duration(random.randint(*self._level_data.enemy_interval))
 
 
-    def __spawn_powerup(self) -> None:
+    def __spawn_powerup(self, spawn_pos: pg.typing.Point | None = None) -> None:
         powerups_name = weighted_choice(self._level_data.powerup_spawn_weights)
         if not self.__powerup_exists(powerups_name):
-            spawn_pos = self._get_object_spawn_pos()
-            velocity = self._get_object_spawn_velocity(spawn_pos, 2, 0)
-            self.powerups.add(powerups.PowerupCollectable(spawn_pos, velocity, powerups_name))
+            if spawn_pos is None:
+                spawn_pos = self._get_object_spawn_pos()
+            velocity = self._get_object_spawn_velocity(spawn_pos, 1, 0)
+            powerup = powerups.PowerupCollectable(spawn_pos, velocity, powerups_name)
+            self.powerups.add(powerup)
+            self.entities.add(camera.ObjectTracker(powerup),
+                              particles.Shockwave(spawn_pos, 40, 8, *powerups.PowerUp.powerup_list[powerups_name].colors))
             self.__powerup_timer.set_duration(random.randint(*self._level_data.powerup_interval))
+            self.__powerup_timer.restart()
     
     def __powerup_exists(self, powerup_name: str) -> bool:
         """Determine if the player currently has the powerup or the collectable for it is spawned in"""
@@ -432,10 +448,18 @@ class PlayLevel(Play):
         self.highscore = max(self.highscore, self.__display_score)
 
 
-    def _save_progress(self):
+    def _get_save_data(self):
         if self.__hyperdrive_spawn_timer.countdown:
             self._spawn_hyperdrive_powerup()
-        super()._save_progress()
+
+        save_data = super()._get_save_data()
+        save_data.add_game_stats(
+            asteroid_timer=self.__asteroid_timer.countdown,
+            enemy_timer=self.__enemy_timer.countdown,
+            powerup_timer=self.__powerup_timer.countdown,
+            prev_powerups=self.__prev_powerups
+        )
+        return save_data
 
 
 
@@ -446,7 +470,7 @@ class PlayLevel(Play):
             data.save_highscore(self.highscore)
 
             if self.is_saving_progress:
-                self._save_progress()
+                data.save_progress(self._get_save_data())
             else:
                 data.delete_progress()
 

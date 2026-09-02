@@ -22,6 +22,7 @@ from .components import ObjectAnimation, ObjectHitbox, Obstacle
 
 
 class Enemy(Obstacle, ObjectAnimation):
+    drop_powerup = True
     _layer = 9
 
     def __init__(self, *, health=1, points=0, point_display_height=0, **kwargs):

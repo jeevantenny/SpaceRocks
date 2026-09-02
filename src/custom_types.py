@@ -25,6 +25,15 @@ type AnimData = dict[str, dict[Literal["duration", "loop", "timeline"], float | 
 type ControllerData = dict[Literal["name", "starting_state", "states"], str | dict[str, dict[Literal["animations", "transitions"], list[str] | dict[str, str]]]]
 
 
+class LazyDict[K, V](dict):
+    def __init__(self, get_value: Callable[[K], V]):
+        super().__init__()
+        self.__get_value = get_value
+    
+    def __missing__(self, key: K):
+        surface = self.__get_value(key)
+        self[key] = surface
+        return surface
 
 
 class EngineInterface(ABC):
@@ -130,7 +139,7 @@ class Timer:
     
     @property
     def completion_amount(self) -> float:
-        return self.time_elapsed/self.__duration
+        return self.__duration and self.time_elapsed/self.__duration
     
 
 
@@ -191,6 +200,7 @@ class Stopwatch:
     def __init__(self):
         self.__time = 0.0
         self.__running = False
+        self.__callbacks: list[tuple[Callable[[], None], float]] = []
 
 
     @property
@@ -210,17 +220,26 @@ class Stopwatch:
     def reset(self) -> None:
         self.__time = 0.0
 
-
     def pause(self):
         self.__running = False
 
     def advance(self, amount: float) -> None:
         self.__time += amount
     
+    def schedule_callback(self, callback: Callable[[], None], wait_ticks: float) -> None:
+        call_time = self.__time + wait_ticks
+        for i in range(len(self.__callbacks)):
+            if self.__callbacks[i][1] > call_time:
+                self.__callbacks.insert(i, (callback, call_time))
+                break
+        else:
+            self.__callbacks.append((callback, call_time))
 
     def update(self, speed_multiplier=1.0) -> None:
         if self.__running:
             self.__time += speed_multiplier
+            while self.__callbacks and self.__callbacks[0][1] <= self.__time:
+                self.__callbacks.pop(0)[0]()
     
 
 
@@ -337,9 +356,12 @@ class Animation:
             else:
                 prev_time = time
 
+        frame_name = self.__timeline[prev_time]
         try:
-            return texture_map[self.__timeline[prev_time]]
+            return texture_map[frame_name]
         except KeyError:
+            if frame_name != "blank":
+                raise
             return pg.Surface((0, 0))
         
     
@@ -524,3 +546,7 @@ class SaveData(NamedTuple):
     player_lives: int
     camera_pos: tuple[float, float]
     entity_data: list[dict]
+    game_stats: dict[str, Any] = {}
+
+    def add_game_stats(self, **stats) -> None:
+        self.game_stats.update(stats)

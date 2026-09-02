@@ -46,6 +46,7 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
         self.health = True
         self.__thrust = False
         self.__turn_direction: Literal[-1, 0, 1] = 0
+        self.__turn_inertia = False
 
 
 
@@ -53,8 +54,11 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
     @property
     def thrust(self) -> bool:
         return self.__thrust
+    
 
-                
+    def set_turn_inertia(self, turn_inertia: bool) -> None:
+        self.__turn_inertia = turn_inertia
+
 
     def __init_from_data__(self, object_data):
         self.__init__(object_data["position"])
@@ -86,9 +90,9 @@ class Spaceship(ObjectAnimation, ObjectHitbox, ObjectCollision):
             self._queue_sound("entity.ship.boost", pg.math.clamp(abs(self._rotation-180)*0.002+0.4, 0, 0.8), True)
 
         if self.health:
-            if self._angular_vel*self.__turn_direction <= 0:
+            if not self.__turn_inertia and self._angular_vel*self.__turn_direction <= 0:
                 self._angular_vel = 0
-            if self.__turn_direction and abs(self._angular_vel) < self._rotation_speed:
+            if self.__turn_direction and self._angular_vel*self.__turn_direction < self._rotation_speed:
                 self._angular_vel += 8*self.__turn_direction
         else:
             self._angular_vel = 0
@@ -187,7 +191,7 @@ class PlayerShip(Spaceship):
 
     def get_data(self):
         data = super().get_data()
-        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups],
+        data.update({"powerups": [(powerup.get_name(), powerup.get_data()) for powerup in self.__powerups if powerup.save_powerup],
                      "invincibility": self.__invincibility_timer.countdown})
         return data
 
@@ -214,6 +218,8 @@ class PlayerShip(Spaceship):
     
     def update(self):
         super().update()
+        if not self.alive():
+            return
         self.__powerups.update(self)
         self._join_sound_queue(self.__powerups.clear_sound_queue())
         self.__invincibility_timer.update()
@@ -221,7 +227,8 @@ class PlayerShip(Spaceship):
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
-        super().draw(surface, lerp_amount, offset, rotation)
+        if self.__powerups.draw_ship(self):
+            super().draw(surface, lerp_amount, offset, rotation)
         self.__powerups.draw(self, surface, lerp_amount, offset)
 
 
@@ -256,7 +263,9 @@ class PlayerShip(Spaceship):
                 self.invincibility_frames()
             else:
                 super().kill()
+                self.progress_save_key = None
                 controller_rumble("large_explosion_b", 0.9)
+                self.host_state.camera_shake(0.52)
 
 
     def has_powerup(self, powerup_name: str) -> None:

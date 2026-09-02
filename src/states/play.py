@@ -1,14 +1,14 @@
 import pygame as pg
 import math
 import random
-from typing import Self
+from typing import Self, Callable
 
-import config
 import debug
 
 from src import glb
-from src.custom_types import Timer, SaveData
+from src.custom_types import Timer, Stopwatch, SaveData
 from src.file_processing import assets, data
+from src.misc import scrolling_texture
 
 from src.game_objects import (
     GameObject, ObjectGroup, asteroids, camera, components, enemies, powerups, projectiles, spaceship, particles
@@ -39,8 +39,8 @@ class Play(State):
 
     def _setup(self) -> None:
         "Called by all initializers to set up needed attributes. Spaceship needs to be made separately."
-        self.__parl_a: pg.Surface | None = None
-        self.__parl_b: pg.Surface | None = None
+        self._parl_a: pg.Surface | None = None
+        self._parl_b: pg.Surface | None = None
         self.__base_color: pg.typing.ColorLike = "#000000"
         self.__background_tint: pg.typing.ColorLike = "#777777"
         self.__score_limit = None
@@ -48,6 +48,7 @@ class Play(State):
 
         self.__slowmo_tps = 20
         self.__slowmo_timer = Timer(0, exec_after=glb.game.set_tps)
+        self.__play_time = Stopwatch().start()
         self.__inactivity_timer = Timer(2400, True, self._pause_game).start()
     
         self._object_spawn_delay = Timer(15)
@@ -119,14 +120,14 @@ class Play(State):
         self._level_data = data.load_level(level_name)
 
         if self._level_data.parl_a is None:
-            self.__parl_a = None
+            self._parl_a = None
         else:
-            self.__parl_a = assets.load_texture(self._level_data.parl_a, self._level_data.background_palette)
+            self._parl_a = assets.load_texture(self._level_data.parl_a, self._level_data.background_palette)
         
         if self._level_data.parl_b is None:
-            self.__parl_b = None
+            self._parl_b = None
         else:
-            self.__parl_b = assets.load_texture(self._level_data.parl_b, self._level_data.background_palette)
+            self._parl_b = assets.load_texture(self._level_data.parl_b, self._level_data.background_palette)
 
         self.__base_color = self._level_data.base_color
         self.__background_tint = self._level_data.background_tint
@@ -142,8 +143,18 @@ class Play(State):
         object_dict = {}
         self.spaceship = None
 
-        for entity_data in entity_data:
-            entity = GameObject.init_from_data(entity_data)
+        for data in entity_data:
+            try:
+                entity = GameObject.init_from_data(data)
+            except Exception as e:
+                obj_type = GameObject.get_class_from_save_key(data.get("save_key"))
+                print(f"Object reload failed: {obj_type}")
+                if obj_type is None:
+                    print(f"    invalid_save_key: '{data.get("save_key")}'")
+                else:
+                    print(f"    {type(e).__name__}: {e}")
+                continue
+
             self.entities.add(entity)
             if isinstance(entity, asteroids.Asteroid):
                 self.asteroids.add(entity)
@@ -153,7 +164,7 @@ class Play(State):
                 self.spaceship = entity
                 self._powerups = self.spaceship.get_powerup_group()
 
-            object_dict[entity_data["id"]] = entity
+            object_dict[data["id"]] = entity
         
         if self.spaceship is None:
             self.can_save_progress(False)
@@ -179,7 +190,7 @@ class Play(State):
             keyboard = inputs.keyboard_mouse
 
             if keyboard.tap_keys[pg.K_r]:
-                self.spaceship.position = pg.Vector2(200, 150)
+                self.spaceship.position.xy = (0, 0)
                 self.spaceship.set_velocity((0, 0))
 
             if keyboard.tap_keys[pg.K_k]:
@@ -213,11 +224,16 @@ class Play(State):
 
 
     def update(self):
-        if not self._game_over_timer.complete or not self._respawn_timer.complete:
+        if self.__slowmo_timer.countdown:
+            glb.game.set_tps(self.__slowmo_tps)
+        self.__slowmo_timer.update()
+
+        if self._game_over_timer.countdown or self._respawn_timer.countdown:
             self.entities.update(self._camera.position, (components.Obstacle, powerups.PowerupCollectable))
             for obj in self.asteroids.sprites() + self.enemies.sprites():
                 if not obj.has_health():
                     obj.update()
+            self._update_camera()
         elif self._player_lives:
             self._game_loop()
             self.__inactivity_timer.update()
@@ -228,9 +244,6 @@ class Play(State):
         self._game_over_timer.update()
         self._respawn_timer.update()
 
-        self.__slowmo_timer.update()
-        if self.__slowmo_timer.countdown:
-            glb.game.set_tps(self.__slowmo_tps)
 
 
 
@@ -268,19 +281,23 @@ class Play(State):
         glb.game.set_tps()
 
 
-    def debug_info(self) -> str | None:
-        return f"entity count: {self.entities.count()}, combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f})"
+    def debug_info(self) -> str:
+        return (
+            f"entity count: {self.entities.count()}, lives: {self._player_lives}, score: {self._score}, "
+            f"combo: {self._point_combo:.1f}, camera: ({self._camera.position.x:.0f}, {self._camera.position.y:.0f}), "
+            f"camera_target: {self.__camera_target}"
+        )
 
 
     def add_points(self, points: int) -> None:
         self._score = min(self.__score_limit, self._score+points)
 
 
-    def player_damage_obstacle(self, obstacle: components.Obstacle):
+    def player_damage_obstacle(self, obstacle: components.Obstacle, point_combo=True):
         if self._score >= self.__score_limit or obstacle.has_health():
             return
         
-        if debug.Cheats.no_point_combo:
+        if debug.Cheats.no_point_combo or not point_combo:
             points = obstacle.points
         else:
             points = math.ceil(obstacle.points * self._point_combo)
@@ -291,68 +308,37 @@ class Play(State):
             text_surface = font.small_font.render(f"+{points}", 1, "#eeeeee", "#004466", False)
         
         self.add_points(points)
+        self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
+
+    def increment_point_combo(self) -> None:
         if not debug.Cheats.no_point_combo:
             self._point_combo = min(self._point_combo*1.1, self.__max_combo)
-
-        self.entities.add(particles.DisplayText(obstacle.position, text_surface, obstacle.point_display_height))
     
 
     def reset_point_combo(self) -> None:
         self._point_combo = 1.0
         
 
-    def powerup_info(self, powerup: type[powerups.PowerUp]) -> None:
-        PowerupInfo(powerup, self._level_data.background_tint).add_to_stack(self.state_stack)
+    def powerup_info(self, collectable: powerups.PowerupCollectable) -> None:
+        PowerupInfo(collectable, self._level_data.background_tint).add_to_stack(self.state_stack)
 
     
     def start_next_level(self) -> None:
         ...
 
 
+    def schedule_event(self, event: Callable[[], None], wait_ticks: int) -> None:
+        self.__play_time.schedule_callback(event, wait_ticks)
 
 
-
-
-    
-    def _delete_distant_objects(self) -> None:
-        "Deletes objects that are beyond the despawn radius of the spaceship."
-        for obj in self.spawned_entities.sprites():
-            if obj.can_despawn and not obj.within_distance(self.spaceship, self._despawn_radius):
-                obj.force_kill()
-
-
-    def _update_game_objects(self) -> None:
-        self.entities.update(self._camera.position)
-
-        if isinstance(self.__camera_target, GameObject):
-            target_pos = self.__camera_target.position.copy()
-            if isinstance(self.__camera_target, components.ObjectVelocity):
-                target_pos += self.__camera_target.get_velocity()*2
-        else:
-            target_pos = self.__camera_target
-
-        if target_pos is not None:
-            self._camera.set_target(target_pos)
-        self._camera.update()
-
-    def _spawn_hyperdrive_powerup(self) -> None:
-        powerup = powerups.PowerupCollectable(
-            self.spaceship.position+(0, -50),
-            self.spaceship.get_velocity()*0.5,
-            "Hyperdrive"
-        )
-        self.powerups.add(powerup)
-        self.enemies.add(camera.ObjectTracker(powerup))
-
-
-    def _freeze_gameplay(self) -> bool:
-        return not self._respawn_timer.complete or not self._game_over_timer.complete
 
 
     
     def _game_loop(self) -> None:
         self._update_game_objects()
+        self._update_camera()
         self._delete_distant_objects()
+        self.__play_time.update()
 
 
         if (not self.spaceship.health
@@ -361,7 +347,7 @@ class Play(State):
             and self._game_over_timer.complete):
 
             self._player_lives -= 1
-            self._camera.clear_velocity()
+            self.set_camera_target(None)
 
             for smoke in self.entities.get_type(particles.ShipSmoke):
                 smoke.clear_velocity()
@@ -371,6 +357,51 @@ class Play(State):
             else:
                 self._game_over_timer.start()
 
+
+
+    
+    def _delete_distant_objects(self) -> None:
+        "Deletes objects that are beyond the despawn radius of the spaceship."
+        reference_point = self.spaceship.position + self.spaceship.get_velocity()*0.5
+        for obj in self.spawned_entities.sprites():
+            if obj.can_despawn and not obj.within_distance(reference_point, self._despawn_radius):
+                obj.force_kill()
+
+
+    def _update_game_objects(self) -> None:
+        self.entities.update(self._camera.position)
+
+
+    def _update_camera(self) -> None:
+        if isinstance(self.__camera_target, GameObject):
+            target_pos = self.__camera_target.position.copy()
+            if isinstance(self.__camera_target, components.ObjectVelocity):
+                target_pos += self.__camera_target.get_velocity()*2
+        else:
+            target_pos = self.__camera_target
+
+        if target_pos is not None:
+            self._camera.track_target(True)
+            self._camera.set_target(target_pos)
+        else:
+            self._camera.track_target(False)
+        self._camera.update()
+
+
+    def _spawn_hyperdrive_powerup(self) -> None:
+        spawn_pos = self.spaceship.position+pg.Vector2(0, 50).rotate(random.randint(0, 359))
+        powerup = powerups.PowerupCollectable(
+            spawn_pos,
+            (0, 0),
+            "Hyperdrive"
+        )
+        self.powerups.add(powerup)
+        self.entities.add(camera.ObjectTracker(powerup),
+                          particles.Shockwave(spawn_pos, 50, 10, "#eeeeee", "#22bbcc"))
+
+
+    def _freeze_gameplay(self) -> bool:
+        return not self._respawn_timer.complete or not self._game_over_timer.complete
 
 
 
@@ -418,11 +449,11 @@ class Play(State):
     def _draw_scrolling_background(self, surface: pg.Surface, lerp_amount=0.0) -> None:
         camera_pos = self._camera.blit_position(lerp_amount)
         # Background B
-        if self.__parl_b is not None:
-            self.__scrolling_texture(surface, self.__parl_b, camera_pos, 0.1)
+        if self._parl_b is not None:
+            scrolling_texture(surface, self._parl_b, camera_pos*0.1)
         # Background A
-        if self.__parl_a is not None:
-            self.__scrolling_texture(surface, self.__parl_a, camera_pos, 0.3)
+        if self._parl_a is not None:
+            scrolling_texture(surface, self._parl_a, camera_pos*0.3)
 
     
     def _draw_entities(self, surface: pg.Surface, lerp_amount=0.0) -> None:
@@ -430,32 +461,17 @@ class Play(State):
 
 
 
-
-
-
-
-
-
-
-
-    def __scrolling_texture(self, surface: pg.Surface, background_surface: pg.Surface, camera_pos: pg.Vector2, scroll_amount: float) -> None:
-        center = pg.Vector2(surface.size)*0.5
-        width, height = background_surface.size
-        camera_offset = -camera_pos*scroll_amount
-        camera_offset = pg.Vector2(camera_offset[0]%width - width*0.5, camera_offset[1]%height - width*0.5)
-        scroll_width = int(surface.width//width)
-        scroll_height = int(surface.height//height)
-
-        for x in range(-scroll_width-1, scroll_width+1):
-            for y in range(-scroll_height-1, scroll_height+1):
-                surface.blit(background_surface, center+(width*x, height*y)+camera_offset)
-
-
-
     def _get_object_spawn_pos(self) -> pg.Vector2:
         "Returns a random position for objects like asteroids and powerups to spawn offscreen."
-        distance_from_center = self._spawn_radius+self.spaceship.get_speed()*0.3
-        return self._camera.position + pg.Vector2(distance_from_center, 0).rotate(random.randint(0, 360))
+        ship_vel = self.spaceship.get_velocity()
+        speed_squared = int(ship_vel.magnitude_squared())
+        deviation = max(180 - speed_squared*2, 30)
+        distance_from_center = self._spawn_radius + speed_squared*0.05
+        if ship_vel:
+            ship_vel.scale_to_length(distance_from_center)
+        else:
+            ship_vel = pg.Vector2(distance_from_center)
+        return (self._camera.position + (ship_vel).rotate(random.randint(-deviation, deviation)))
     
 
     def _get_object_spawn_velocity(self, start_pos: pg.typing.Point, magnitude: float, deviation=30) -> pg.Vector2:
@@ -468,12 +484,11 @@ class Play(State):
 
 
 
-    def _save_progress(self) -> None:
+    def _get_save_data(self) -> SaveData:
         "Saves the current state of the game to a save file."
         
-        if not self._respawn_timer.complete:
-            respawn_pos = self._player_respawn_pos()
-            self.spaceship.set_position(respawn_pos)
+        if self._respawn_timer.countdown:
+            self._respawn_player()
 
 
         entity_data = [entity.get_data()
@@ -488,4 +503,4 @@ class Play(State):
                              tuple(self._camera.position),
                              entity_data)
 
-        data.save_progress(save_data)
+        return save_data

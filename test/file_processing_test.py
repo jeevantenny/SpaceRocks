@@ -47,12 +47,11 @@ class AssetsTest(unittest.TestCase):
     Test the assets module in file_processing.
     """
 
-    texture_path = "game_objects/medium_rock"
+    texture_path = "game_objects/player_laser"
     pallette_swap = "asteroid/green_rocks"
     
     test_sound = "entity.asteroid.small_explode"
     test_music = "test_music"
-    test_music_attr = "music/test_folder/house_lo", "music/test_folder/apt"
 
 
     @classmethod
