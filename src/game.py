@@ -10,14 +10,14 @@ from time import perf_counter
 from config import *
 import debug
 
+from src import misc
 from src.custom_types import EngineInterface
 from src.input_device import stop_controller_rumble, KeyboardMouse, Controller, InputInterpreter
 
-from src.ui import blit_to_center, font
-from src.states import StateStack, init_state
+from src.ui import font
+from src.states import State, StateStack, init_state
 from src.file_processing import assets, data
 from src.audio.soundfx import SoundFXManager
-from src.misc import set_console_style, bar_of_dashes
 
 
 
@@ -88,6 +88,9 @@ class GameEngine(EngineInterface):
     def toggle_fullscreen(self) -> None:
         self.__do_fullscreen_toggle = True
 
+    def get_window_surface(self) -> pg.Surface:
+        return self._window_surface
+
     def get_game_canvas(self) -> pg.Surface:
         if self._window_surface.size != self.__prev_window_size:
             w_width, w_height = self.__constrained_window_size()
@@ -98,6 +101,9 @@ class GameEngine(EngineInterface):
             self.__prev_window_size = self._window_surface.size
         
         return self.__game_canvas
+    
+    def get_canvas_scale(self) -> float:
+        return self._window_surface.width/self.__game_canvas.width
 
 
 
@@ -112,6 +118,22 @@ class GameEngine(EngineInterface):
                 self._input_interpreter.controller = None
         else:
             self._input_interpreter.controller = None
+
+
+    def __add_state_by_name(self, user_input: str) -> None:
+        if not user_input:
+            return
+        name, *args = user_input.split()
+        state_type = misc.find_subclass_by_name(State, name)
+        if state_type is None:
+            print(f"Invalid state name '{name}'")
+            return
+        try:
+            state = state_type(*args)
+            self._state_stack.push(state)
+            print("Added", state, "to stack")
+        except Exception as e:
+            print(e)
 
     
 
@@ -227,15 +249,18 @@ class GameEngine(EngineInterface):
 
         keyboard = self._input_interpreter.keyboard_mouse
 
-        if keyboard.tap_keys[K_F11]:
+        if (keyboard.tap_keys[K_F11]
+            and not keyboard.hold_keys[KMOD_CTRL]
+            and not keyboard.hold_keys[KMOD_SHIFT]
+            and not keyboard.hold_keys[KMOD_ALT]):
             self.toggle_fullscreen()
 
         if debug.DEBUG_MODE and keyboard.hold_keys[KMOD_CTRL]:
-            if self._state_stack.top_state is not None and keyboard.tap_keys[K_BACKSPACE]:
+            if self._state_stack.top() is not None and keyboard.tap_keys[K_BACKSPACE]:
                 self._state_stack.pop()
 
-            if keyboard.tap_keys[K_v]:
-                print(self._state_stack)
+            if keyboard.tap_keys[K_s]:
+                misc.async_input(self.__add_state_by_name, "Enter state to add: ")
 
         self._state_stack.userinput(self._input_interpreter)
 
@@ -264,17 +289,11 @@ class GameEngine(EngineInterface):
             game_canvas = self.get_game_canvas()
             self._state_stack.draw(game_canvas, lerp_amount)
             
-            if not self.__fullscreen:
-                if data.get_setting("scale_blur"):
-                    pg.transform.smoothscale(game_canvas, self._window_surface.size, self._window_surface)
-                else:
-                    pg.transform.scale(game_canvas, self._window_surface.size, self._window_surface)
+            if data.get_setting("scale_blur"):
+                pg.transform.smoothscale(game_canvas, self._window_surface.size, self._window_surface)
             else:
-                self._window_surface.fill("black")
-                if data.get_setting("scale_blur"):
-                    pg.transform.smoothscale(game_canvas, self._window_surface.size, self._window_surface)
-                else:
-                    pg.transform.scale(game_canvas, self._window_surface.size, self._window_surface)
+                pg.transform.scale(game_canvas, self._window_surface.size, self._window_surface)
+
                     
         else:
             self._window_surface.fill("black")
@@ -285,7 +304,7 @@ class GameEngine(EngineInterface):
 
 
     def __show_debug_text(self) -> None:
-        blit_text = f"FPS: {self.__frame_clock.get_fps():.0f}, TPS: {self.__tick_clock.get_fps():.0f}, state: {self._state_stack.top_state}"
+        blit_text = f"FPS: {self.__frame_clock.get_fps():.0f}, TPS: {self.__tick_clock.get_fps():.0f}, state: {self._state_stack.top()}"
         debug_message = self._state_stack.debug_info()
         if debug_message:
             blit_text += f"\n{debug_message}"
@@ -297,7 +316,7 @@ class GameEngine(EngineInterface):
     
     def __show_stack_view(self) -> None:
         text = "-- StateStack --"
-        current_state = self._state_stack.top_state
+        current_state = self._state_stack.top()
 
         while current_state is not None:
             text += f"\n{current_state.name}"
@@ -363,23 +382,23 @@ class GameEngine(EngineInterface):
         except:
             traceback.print_exc()
 
-            set_console_style(91, 1)
-            bar_of_dashes()
+            misc.set_console_style(91, 1)
+            misc.bar_of_dashes()
 
             print("\x1BAn error occurred during saving. Data may not have been saved properly.")
 
-            bar_of_dashes()
-            set_console_style()
+            misc.bar_of_dashes()
+            misc.set_console_style()
 
         else:
-            set_console_style(32, 1)
-            bar_of_dashes()
+            misc.set_console_style(32, 1)
+            misc.bar_of_dashes()
 
             print("Game Data Saved")
             print(f"error: {self._error}")
 
-            bar_of_dashes()
-            set_console_style()
+            misc.bar_of_dashes()
+            misc.set_console_style()
 
 
         finally:

@@ -65,6 +65,7 @@ class TestMusic(State):
 
 
     def draw(self, surface, lerp_amount=0):
+        surface.fill("black")
         blit_to_center(font.large_font.render("Music Test"), surface, (0, -30))
         blit_to_center(font.small_font.render(f"Track name: {MusicManager.get_track_name()}"), surface, (0, -12))
         blit_to_center(font.icon_font.render("Pause/Resume<shoot>"), surface)

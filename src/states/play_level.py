@@ -16,9 +16,8 @@ from src.game_objects import asteroids, camera, components, enemies, powerups, p
 
 from src.ui import font, hud, blit_to_center
 
-from .menus import PauseMenu, GameOverScreen
-from .info_states import PowerupInfo
-from .visuals import ShowText
+from .menus import PauseMenu, GameOverScreen, ShowScore
+from .visuals import ShowText, BackgroundTint
 from .play import Play
 
 
@@ -186,7 +185,7 @@ class PlayLevel(Play):
             self._draw_entities(surface, lerp_amount)# if self.spaceship.health else 1)
 
 
-        if ((isinstance(self.state_stack.top_state, (PauseMenu, ShowText)) or self.is_top_state())
+        if ((isinstance(self.state_stack.top(), (PauseMenu, ShowText)) or self.is_top_state())
             and self._player_lives):
             self._draw_hud(surface)
 
@@ -251,7 +250,7 @@ class PlayLevel(Play):
         y_offset += 22
 
         # Show progress bar from level_2 onwards
-        if self._level_data.level_name != "level_1":
+        if self._level_data.show_progress:
             surface.blit(self.__progress_bar.render(level_completion_amount(self.__display_score, self._level_data.score_range)), (10, y_offset-entrance_offset))
 
         # Show lives indicator
@@ -338,7 +337,10 @@ class PlayLevel(Play):
                 obj.set_angular_vel(0)
 
         self.__set_score()
-        GameOverScreen(self._level_data.level_name, (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
+        BackgroundTint(self._level_data.background_tint).add_to_stack(self.state_stack)
+        ShowScore(self._level_data.level_name,
+                  (self.__display_score, self.highscore, self.highscore_changed)).add_to_stack(self.state_stack)
+        GameOverScreen().add_to_stack(self.state_stack)
 
 
 
