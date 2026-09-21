@@ -1,0 +1,33 @@
+{
+    "texture": "game_objects/player_laser",
+    "mappings": {
+        "laser_start_1_body": [16, 16, 16, 16],
+        "laser_start_2_body": [32, 16, 16, 16],
+        "laser_start_3_body": [48, 16, 16, 16],
+        
+        "laser_start_1_tail": [16, 32, 16, 16],
+        "laser_start_2_tail": [32, 32, 16, 16],
+        "laser_start_3_tail": [48, 32, 16, 16],
+
+        "laser_main_body": [64, 16, 16, 16],
+        "laser_main_tail": [64, 32, 16, 16],
+        
+        "laser_end_1_body": [16, 64, 16, 16],
+        "laser_end_2_body": [32, 64, 16, 16],
+        "laser_end_3_body": [48, 64, 16, 16],
+        "laser_end_4_body": [64, 64, 16, 16],
+        "laser_end_5_body": [16, 112, 16, 16],
+        "laser_end_6_body": [32, 112, 16, 16],
+        "laser_end_7_body": [48, 112, 16, 16],
+        "laser_end_8_body": [64, 112, 16, 16],
+        
+        "laser_end_1_tail": [16, 80, 16, 16],
+        "laser_end_2_tail": [32, 80, 16, 16],
+        "laser_end_3_tail": [48, 80, 16, 16],
+        "laser_end_4_tail": [64, 80, 16, 16],
+        "laser_end_5_tail": [16, 128, 16, 16],
+        "laser_end_6_tail": [32, 128, 16, 16],
+        "laser_end_7_tail": [48, 128, 16, 16],
+        "laser_end_8_tail": [64, 128, 16, 16]
+    }
+}

@@ -34,7 +34,7 @@ class Particle(ObjectVelocity, ObjectAnimation):
             position: pg.typing.Point,
             velocity: pg.typing.Point,
             lifetime: int,
-            rotation=0,
+            angular_vel=0,
             draw_layer=0,
             persistent=False
         ):
@@ -49,7 +49,7 @@ class Particle(ObjectVelocity, ObjectAnimation):
 
         self.__texture_map_path = texture_map_path
         self.__lifetime = Timer(lifetime, exec_after=self.kill).start()
-        self.set_angular_vel(rotation)
+        self.set_angular_vel(angular_vel)
 
         self._layer = draw_layer
         if not persistent:
@@ -151,53 +151,52 @@ class Emitter:
 
 
 
-class ShipSmoke(ObjectAnimation, ObjectVelocity):
+class ShipSmoke(Particle):
     "The smoke particle produced by the spaceship."
-    save_entity_progress=True
-    _layer=6
-
-    progress_save_key="ship_thruster_smoke"
 
     def __init__(self, position: pg.typing.Point, velocity: pg.typing.Point):
-        
         super().__init__(
-            position=position,
             texture_map_path="smoke",
-            anim_path="basic",
-            controller_path="basic"
+            position=position,
+            velocity=velocity,
+            lifetime=random.randint(12, 18),
+            angular_vel=random.randint(-6, 6),
+            draw_layer=6,
+            persistent=True
         )
 
-        self.accelerate(velocity)
-        self._angular_vel = random.randint(-6, 6)
-        self.__lifetime = Timer(random.randint(12, 18), exec_after=self.kill).start()
 
+
+
+
+class Shockwave(ObjectTexture):
+    _layer=-5
+    ignore_camera_rotation=True
+
+    def __init__(
+            self,
+            position: pg.typing.Point,
+            radius: int,
+            duration=8,
+            color_a: pg.typing.ColorLike = "#eedd88",
+            color_b: pg.typing.ColorLike = "#bbaa00"
+            ):
     
-    def __init_from_data__(self, object_data):
-        self.__init__(object_data["position"], object_data["velocity"])
-        self._angular_vel = object_data["angular_vel"]
-        self.__lifetime = Timer(object_data["total_time"], exec_after=self.kill).start()
-        self.__lifetime.advance(object_data["time_elapsed"])
-        self._advance_animation(object_data["time_elapsed"])
-    
-
-    def get_data(self):
-        data = super().get_data()
-        data.update({
-            "position": tuple(self.position),
-            "velocity": tuple(self._velocity),
-            "angular_vel": self._angular_vel,
-            "total_time": self.__lifetime.duration,
-            "time_elapsed": self.__lifetime.time_elapsed
-        })
-        return data
-
+        super().__init__(position=position, texture=None)
+        self.__radius = radius
+        self.__color_a = color_a
+        self.__color_b = color_b
+        self.__timer = Timer(duration, exec_after=self.kill).start()
+        self.__line_thickness = min(radius*0.1, 10)
 
     def update(self):
-        super().update()
-        self.__lifetime.update()
-
-
-
+        self.__timer.update()
+    
+    def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
+        radius = self.__radius*(1-((self.__timer.countdown-lerp_amount)/self.__timer.duration)**3)
+        width = int(self.__line_thickness - self.__timer.completion_amount*self.__line_thickness) + 1
+        pg.draw.circle(surface,self.__color_b, self.position+offset, radius+3, width)
+        pg.draw.circle(surface,self.__color_a, self.position+offset, radius, width)
 
 
 
@@ -208,7 +207,6 @@ class ShipSmoke(ObjectAnimation, ObjectVelocity):
 
 class DisplayText(ObjectTexture):
     "Shows how many points were obtained from destroying an asteroid."
-    save_entity_progress=False
     _layer = 5
     ignore_camera_rotation=True
 

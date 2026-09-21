@@ -1,6 +1,6 @@
 import pygame as pg
 
-from src.custom_types import TextureMap, Animation
+from src.custom_types import TextureMap, Animation, LazyDict
 from src.file_processing import assets
 
 from . import font
@@ -9,19 +9,17 @@ from . import font
 
 
 
-class AnimatedText:
+class AnimatedTexture:
     "Uses the title_font to render text and apply an animations on it."
     
-    __effect_mask_colors = assets.load_json("assets/title_effect_mask_colors")
-    __effects_file = "title_effects"
+    __effect_mask_colors = assets.load_json("assets/animated_texture_mask_colors")
 
-    def __init__(self, text: str, effect_name: str, font=font.title_font) -> None:
-        self.__texture_map = self.__make_title_effect(font.render(text))
+    def __init__(self, texture: pg.Surface, texture_map_path: str, anim_path: str, effect_name: str) -> None:
+        self.__base = texture
+        self.__effect_texture_map = assets.load_texture_map(texture_map_path)
+        self.__anim_data = assets.load_anim_data(anim_path)["animations"]
+        self.__texture_map: LazyDict[str, pg.Surface] = LazyDict(self.__get_frame)
         self.set_effect(effect_name)
-
-
-    def _get_text_surface(self, text: str) -> pg.Surface:
-        return font.title_font.render(text)
 
 
     @property
@@ -44,24 +42,15 @@ class AnimatedText:
 
     def set_effect(self, effect_name: str) -> None:
         "Sets the current animation effect to play on the text."
-        self.__animation = Animation(effect_name, assets.load_anim_data("title_text")["animations"][effect_name])
+        self.__animation = Animation(effect_name, self.__anim_data[effect_name])
         self.__animation.restart()
 
 
-    def __make_title_effect(self, title_surface: pg.Surface) -> TextureMap:
-        texture_map = assets.load_texture_map(self.__effects_file).copy()
-
-        for name, surface in texture_map.items():
-            if name == "main":
-                texture_map[name] = title_surface
-                continue
-
-            surface = pg.transform.scale(surface, title_surface.size)
-            texture_map[name] = self.__apply_masks(surface, title_surface)
-        
-        texture_map["blank"] = assets.colorkey_surface(title_surface.size)
-        
-        return texture_map
+    def __get_frame(self, key: str) -> pg.Surface:
+        if key == "main":
+            return self.__base
+        effect_surface = self.__effect_texture_map[key]
+        return self.__apply_masks(pg.transform.scale(effect_surface, self.__base.size), self.__base)
     
 
     def __apply_masks(self, effect_surface: pg.Surface, title_surface: pg.Surface) -> None:
@@ -75,3 +64,10 @@ class AnimatedText:
                 overlay_mask.to_surface(output_surface, setcolor=new_c, unsetcolor=None)
 
         return output_surface
+    
+
+
+
+class AnimatedText(AnimatedTexture):
+    def __init__(self, text: str, effect_name: str, font_type=font.title_font) -> None:
+        super().__init__(font_type.render(text), "title_effects", "title_text", effect_name)

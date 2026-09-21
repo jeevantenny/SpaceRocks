@@ -18,7 +18,7 @@ INPUT_DETAILS_DIR = "data/input_devices"
 def controller_rumble(pattern_name: str, intensity=0.5, wait_until_clear=False) -> None:
     """
     Makes the controller vibrate in a certain pattern defined in `rumble_patterns.json` with a specific intensity.
-    The `wait_until_clear` parameter means thr rumble pattern will not be played if a pattern is already playing.
+    The `wait_until_clear` parameter means the rumble pattern will not be played if a pattern is already playing.
     """
     if InputInterpreter.current_input_type() == "controller":
         InputInterpreter.get_current_instance().controller.rumble(pattern_name, intensity, wait_until_clear)

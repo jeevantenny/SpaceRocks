@@ -5,7 +5,7 @@ from typing import Generator, Any
 
 import debug
 
-from src.custom_types import Animation, AnimController
+from src.custom_types import LerpTracker, Animation, AnimController
 from src.math_functions import unit_vector, vector_min, format_angle
 
 from src.file_processing import assets
@@ -43,6 +43,7 @@ class ObjectVelocity(GameObject):
         super().__init__(**kwargs)
         self._velocity = pg.Vector2(velocity)
         self.__max_speed_squared = self._max_speed*self._max_speed
+        self._lerp_tracker = LerpTracker()
 
 
 
@@ -52,6 +53,7 @@ class ObjectVelocity(GameObject):
         if self._velocity.magnitude_squared() > self.__max_speed_squared:
             self._velocity.scale_to_length(self._max_speed)
         self.move(self._velocity)
+        self._lerp_tracker.on_update()
 
 
 
@@ -74,7 +76,7 @@ class ObjectVelocity(GameObject):
 
 
     def get_lerp_pos(self, lerp_amount=0.0) -> pg.Vector2:
-        return self.position - self._velocity*(1-lerp_amount)
+        return self.position - self._velocity*(1-self._lerp_tracker.get_lerp(lerp_amount))
 
 
 
@@ -96,6 +98,7 @@ class ObjectTexture(GameObject):
         self.texture = texture
         self.__rotation = 0
         self._angular_vel = 0
+        self._lerp_tracker = LerpTracker()
 
 
 
@@ -115,11 +118,14 @@ class ObjectTexture(GameObject):
     def rotate(self, amount: float) -> None:
         self._rotation += amount
 
-    def get_rotation(self) -> int:
+    def get_rotation(self, lerp_amount=0.0) -> int:
         return self._rotation
 
     def set_rotation(self, value: int) -> None:
         self._rotation = value
+
+    def get_lerp_rotation(self, lerp_amount=0.0) -> float:
+        return self._rotation-self._angular_vel*(1-self._lerp_tracker.get_lerp(lerp_amount))
 
     def get_rotation_vector(self) -> pg.Vector2:
         "Gets rotation of object as a vector relative to (0, -1)."
@@ -127,12 +133,13 @@ class ObjectTexture(GameObject):
     
     def get_lerp_rotation_vector(self, lerp_amount=0.0) -> pg.Vector2:
         "Gets rotation vector taking account interpolation."
-        return pg.Vector2(0, -1).rotate(self._rotation-self._angular_vel*(1-lerp_amount))
+        return pg.Vector2(0, -1).rotate(self.get_lerp_rotation(lerp_amount))
         
 
     def update(self) -> None:
         super().update()
         self.rotate(self._angular_vel)
+        self._lerp_tracker.on_update()
 
 
     
@@ -150,7 +157,7 @@ class ObjectTexture(GameObject):
 
     
     def _get_blit_texture(self, lerp_amount=0.0, rotation=0) -> pg.Surface:
-        return pg.transform.rotate(self.texture, -(self._rotation-self._angular_vel*(1-lerp_amount)) - rotation)
+        return pg.transform.rotate(self.texture, -self.get_lerp_rotation(lerp_amount) - rotation)
     
 
     def _get_blit_pos(self, offset: pg.typing.Point, lerp_amount=0.0) -> pg.Vector2:
@@ -234,7 +241,7 @@ class ObjectAnimation(ObjectTexture):
 
 
     def _get_blit_texture(self, lerp_amount=0, rotation=0):
-        self.texture = self.__controller.get_frame(self.__texture_map, lerp_amount)
+        self.texture = self.__controller.get_frame(self.__texture_map, self._lerp_tracker.get_lerp(lerp_amount))
         return super()._get_blit_texture(lerp_amount, rotation)
     
     def _set_anim_state(self, state_name: str) -> None:
@@ -331,6 +338,7 @@ class ObjectCollision(ObjectVelocity):
     def update(self) -> None:
         super().update()
         self.process_collision()
+        # print(f"\033[34m---update{self}---\033[0m")
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0):
@@ -361,7 +369,10 @@ class ObjectCollision(ObjectVelocity):
         for other_obj in self.colliding_objects():
             prev_position = self.position.copy()
             normal: pg.Vector2 = self.position-other_obj.position
-            normal.scale_to_length(self.radius+other_obj.radius)
+            try:
+                normal.scale_to_length(self.radius+other_obj.radius)
+            except ValueError:
+                normal = pg.Vector2(0, self.radius+other_obj.radius)
 
             speed = (self.get_speed() + other_obj.get_speed())*0.5
 
@@ -456,6 +467,8 @@ class Obstacle(ObjectHitbox, ObjectCollision, ObjectHealth):
     Objects that pose as obstacles to the player ship by damaging it upon collision. Obstacles have a health
     value and once this value reaches zero the object is killed.
     """
+    drop_powerup=False
+
     def __init__(self, *, points=0, point_display_height=0, **kwargs):
         super().__init__(**kwargs)
         self.__points = points

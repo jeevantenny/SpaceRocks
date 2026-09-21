@@ -31,7 +31,8 @@ class Asteroid(Obstacle, ObjectAnimation):
                  velocity: pg.typing.Point,
                  id: str):
         
-        self.__setup_id(id)
+        self.__id = id
+        self.__data: dict[str, str | int] = self.__asteroid_data[id]
 
         super().__init__(
             position=position,
@@ -51,10 +52,10 @@ class Asteroid(Obstacle, ObjectAnimation):
 
         self.set_angular_vel(random.randint(-8, 8))
         self.accelerate(velocity)
+        self.drop_powerup = self.__data.get("drop_powerup", False)
 
 
 
-    
     def __init_from_data__(self, object_data):
         self.__init__(
             object_data["position"],
@@ -69,12 +70,6 @@ class Asteroid(Obstacle, ObjectAnimation):
         # To address an issue where asteroids will show wrong texture when loaded from
         # save file and when the pause menu is showing.
         self._do_transition()
-
-
-
-    def __setup_id(self, id: str) -> None:
-        self.__id = id
-        self.__data: dict[str, str | int] = self.__asteroid_data[id]
 
 
     @property
@@ -141,7 +136,6 @@ class Asteroid(Obstacle, ObjectAnimation):
 
         self.set_velocity((0, 0))
         self.set_angular_vel(0)
-        self.save_entity_progress = False
 
 
     def __spawn_subrock(self):

@@ -1,0 +1,22 @@
+{
+    "name": "laser.anim_controller",
+    "starting_state": "start",
+
+    "states": {
+        "start": {
+            "animations": ["laser_start"],
+            "transitions": {
+                "main": "self.animations_complete"
+            }
+        },
+        "main": {
+            "animations": ["laser_main"],
+            "transitions": {
+                "end": "not obj.is_firing()"
+            }
+        },
+        "end": {
+            "animations": ["laser_end"]
+        }
+    }
+}

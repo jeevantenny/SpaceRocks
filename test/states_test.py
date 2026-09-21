@@ -16,14 +16,14 @@ class StateTest(unittest.TestCase):
         self.assertIsNone(self.state.state_stack)
         self.assertIsNone(self.state.prev_state)
         self.assertEqual(self.state.name, type(self.state).__name__)
-        self.assertEqual(str(self.state), f"<{self.state.name} State(in_state_stack=False)>")
+        self.assertEqual(str(self.state), f"<{self.state.name} State>")
 
     def test_add_to_stack(self):
         state_stack = StateStack()
         self.state.add_to_stack(state_stack)
         self.assertIs(self.state.state_stack, state_stack)
         self.assertIsNone(self.state.prev_state)
-        self.assertEqual(str(self.state), f"<{self.state.name} State(in_state_stack=True)>")
+        self.assertEqual(str(self.state), f"<{self.state.name} State>")
     
     def test_prev_state(self):
         other_state = State()

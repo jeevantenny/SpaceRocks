@@ -20,14 +20,15 @@ class BossShip(Obstacle, ObjectTexture):
     _max_speed = 500
 
     def __init__(self, position: pg.typing.Point):
-        texture = assets.colorkey_surface((256, 256))
-        pg.draw.circle(texture, "#338888", (128, 128), 128)
+        size = 130
+        texture = assets.colorkey_surface((size*2, size*2))
+        pg.draw.circle(texture, "#338888", (size, size), size)
         super().__init__(
             health=99999999,
             position=position,
             texture=texture,
-            radius=128,
-            hitbox_size=(230, 230)
+            radius=size,
+            hitbox_size=(size*1.65, size*1.65)
         )
     
         self.__timer = Timer(1)

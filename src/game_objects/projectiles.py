@@ -3,7 +3,7 @@ from typing import Callable
 
 import debug
 
-from src.custom_types import Timer
+from src.custom_types import Timer, LazyDict, AnimController, Animation
 from src.file_processing import assets
 
 from . import GameObject
@@ -147,11 +147,11 @@ class PlayerBullet(Projectile):
                  shooter_vel: pg.typing.Point,
                  alt_texture=False):
         
+        self.__alt_texture = alt_texture
         if alt_texture:
             texture = assets.load_texture_map("particles")["player_bullet_2"]
         else:
             texture = assets.load_texture_map("particles")["player_bullet_1"]
-        self.__alt_texture = alt_texture
 
         super().__init__(
             texture,
@@ -203,6 +203,7 @@ class PlayerBullet(Projectile):
                 obj.damage(1)
                 
             self.host_state.player_damage_obstacle(obj)
+            self.host_state.increment_point_combo()
             return True
 
         else:
@@ -223,11 +224,11 @@ class PlayerBullet(Projectile):
 class Laser(ObjectTexture):
     "A beam like weapon that has no range limit."
 
-    save_entity_progress=False
     can_despawn=False
     def __init__(
             self,
             anchor_object: ObjectTexture,
+            anchor_offset: int,
             width: int,
             damage: int,
             duration=3,
@@ -236,19 +237,41 @@ class Laser(ObjectTexture):
             ):
 
         super().__init__(position=anchor_object.position, texture=None)
-        self.set_rotation(anchor_object.get_rotation())
 
+        self.__texture_map = assets.load_texture_map("player_laser")
+        self.__tail_map = LazyDict(lambda x: self.__texture_map[f"{x}_tail"])
+        self.__body_map = LazyDict(lambda x: self.__texture_map[f"{x}_body"])
+        self.__anim_controller = AnimController(
+            assets.load_anim_controller_data("laser"),
+            Animation.load_from_dict(assets.load_anim_data("laser"))
+        )
+
+        self.set_rotation(anchor_object.get_rotation())
         self.__anchor_object = anchor_object
+        self.__anchor_offset = anchor_offset
         self.__damage_duration = Timer(duration, exec_after=self.kill).start()
+        self.__despawn_timer = Timer(10, exec_after=self.force_kill)
         self.__damage = damage
         self.__width = width
-        self.killed_list: list[GameObject] = []
 
         self.__damage_types = damage_types
         self.__on_damage = on_damage
 
 
+    def is_firing(self) -> bool:
+        return self.alive() and self.__damage_duration.countdown > 0
+
+
     def update(self):
+        self.__despawn_timer.update()
+        self.__damage_duration.update()
+        self.__anim_controller.update(self)
+        if not self.__anchor_object.alive():
+            self.kill()
+        if not self.is_firing():
+            return
+
+
         self.set_position(self.__anchor_object.position)
         self.set_rotation(self.__anchor_object.get_rotation())
         collision_lines = self._get_collision_lines(self.position, self.get_rotation_vector())
@@ -259,16 +282,46 @@ class Laser(ObjectTexture):
                     if self.__on_damage is not None:
                         self.__on_damage(obj)
         
-        self.__damage_duration.update()
 
 
     def draw(self, surface, lerp_amount=0, offset=(0, 0), rotation=0) -> None:
-        for line in self._get_collision_lines(self.position, self.__anchor_object.get_lerp_rotation_vector()):
-            pg.draw.line(surface, "green", pg.Vector2(line[0])+offset, pg.Vector2(line[1])+offset)
+        if self.is_firing():
+            rotation = self.__anchor_object.get_lerp_rotation(lerp_amount)
+            direction = self.__anchor_object.get_lerp_rotation_vector(lerp_amount)
+        else:
+            rotation = self._rotation
+            direction = self.get_rotation_vector()
 
+        tail = self.__anim_controller.get_frame(self.__tail_map, lerp_amount)
+        body = self.__anim_controller.get_frame(self.__body_map, lerp_amount)
+        rotated_tail = pg.transform.rotate(tail, -rotation)
+        rotated_body = pg.transform.rotate(body, -rotation)
+
+        surface.blit(rotated_tail,
+                     (self.position + offset
+                      + direction*(self.__anchor_offset+tail.height*0.5)
+                      - pg.Vector2(rotated_tail.size)*0.5))
     
+        for i in range(1, 50):
+            surface.blit(rotated_body,
+                         (self.position + offset
+                          + direction*(self.__anchor_offset + tail.height*0.5 + (body.height - 1)*i)
+                          - pg.Vector2(rotated_body.size)*0.5))
+
+        if debug.Cheats.show_bounding_boxes:
+            for line in self._get_collision_lines(self.position, direction):
+                pg.draw.line(surface, "green", pg.Vector2(line[0])+offset, pg.Vector2(line[1])+offset)
+
+
+
+    def kill(self):
+        if self.__despawn_timer.complete:
+            self.__despawn_timer.start()
+
+
+
     def _get_collision_lines(self, position: pg.Vector2, direction: pg.Vector2) -> None:
-        return get_collision_lines(position, direction, 300, self.__width, 4)
+        return get_collision_lines(position+direction*self.__anchor_offset, direction, 300, self.__width, 4)
 
 
 

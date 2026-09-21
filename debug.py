@@ -38,6 +38,7 @@ class Cheats():
     instant_restart = False
     no_lerp = False
     ignore_colorkey = False
+    abundant_powerups = False
 
     test_state = None
     test_state_args = ()
