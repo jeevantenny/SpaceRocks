@@ -30,7 +30,7 @@ class GameEngine(EngineInterface):
 
     def __init__(self) -> None:
         try:
-            pg.mixer.pre_init(channels=128, buffer=1024)
+            pg.mixer.pre_init(channels=256, buffer=1024)
             pg.mixer.init()
         except pg.error as e:
             print(f"Warning:", *e.args)
