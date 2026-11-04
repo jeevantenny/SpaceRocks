@@ -413,10 +413,12 @@ class Play(State):
 
 
     def _respawn_player(self) -> None:
+        rotation = self.spaceship.get_rotation()
         self.spaceship = spaceship.PlayerShip(self._player_respawn_pos())
         self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
         self.spaceship.invincibility_frames()
+        self.spaceship.set_rotation(rotation)
         self.set_camera_target(self.spaceship)
 
         self.reset_point_combo()
