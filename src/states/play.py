@@ -107,7 +107,7 @@ class Play(State):
 
         self.asteroids: ObjectGroup[asteroids.Asteroid] = self.spawned_entities.make_subgroup()
         self.powerups: ObjectGroup[powerups.PowerupCollectable] = self.spawned_entities.make_subgroup()
-        self.enemies = self.spawned_entities.make_subgroup()
+        self.enemies: ObjectGroup[enemies.Enemy] = self.spawned_entities.make_subgroup()
 
         self._camera = camera.Camera((0, 0))
         self.__camera_target: pg.typing.Point | GameObject | None = None
