@@ -595,7 +595,7 @@ class SuperLaser(PowerUp):
         return self.__laser is None or 1-self.__laser_timer.completion_amount
 
     def userinput(self, inputs):
-        self.__charging = inputs.check_input("shoot_hold")
+        self.__charging = inputs.check_input("shoot_hold") and inputs.check_input("powerup_use")
         
     
     def update(self, spaceship):
@@ -663,7 +663,7 @@ class SuperLaser(PowerUp):
         return self.__laser_timer.complete
     
     def on_shoot(self, spaceship):
-        return self.__laser_timer.complete
+        return not self.__charging and self.__laser_timer.complete
     
     def on_turn(self, spaceship, direction):
         if self.__laser_timer.complete:

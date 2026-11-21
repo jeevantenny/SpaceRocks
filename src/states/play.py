@@ -107,7 +107,7 @@ class Play(State):
 
         self.asteroids: ObjectGroup[asteroids.Asteroid] = self.spawned_entities.make_subgroup()
         self.powerups: ObjectGroup[powerups.PowerupCollectable] = self.spawned_entities.make_subgroup()
-        self.enemies = self.spawned_entities.make_subgroup()
+        self.enemies: ObjectGroup[enemies.Enemy] = self.spawned_entities.make_subgroup()
 
         self._camera = camera.Camera((0, 0))
         self.__camera_target: pg.typing.Point | GameObject | None = None
@@ -413,10 +413,12 @@ class Play(State):
 
 
     def _respawn_player(self) -> None:
+        rotation = self.spaceship.get_rotation()
         self.spaceship = spaceship.PlayerShip(self._player_respawn_pos())
         self._powerups = self.spaceship.get_powerup_group()
         self.entities.add(self.spaceship)
         self.spaceship.invincibility_frames()
+        self.spaceship.set_rotation(rotation)
         self.set_camera_target(self.spaceship)
 
         self.reset_point_combo()

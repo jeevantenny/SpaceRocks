@@ -330,7 +330,7 @@ class Laser(ObjectTexture):
 
 
 class EnemyBullet(Projectile):
-    __speed = 16
+    __speed = 12
     __lifetime_value = 100
 
     def __init__(self, position: pg.typing.Point, direction: pg.Vector2, shooter_vel: pg.typing.Point):
@@ -354,5 +354,7 @@ class EnemyBullet(Projectile):
         elif isinstance(obj, Asteroid) and obj.health and self._collides_with(obj.rect):
             obj.damage(1, self._velocity*0.1/obj.size)
             return True
+        # elif isinstance(obj, PlayerBullet):
+        #     return True
         else:
             return False

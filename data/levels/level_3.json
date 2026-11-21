@@ -17,8 +17,8 @@
         "Shield": 1
     },
 
-    "enemy_interval": [200, 400],
-    "enemy_count": 1,
+    "enemy_interval": [50, 200],
+    "enemy_count": 3,
     "spawn_enemies": {
         "EnemyShip": 1
     },

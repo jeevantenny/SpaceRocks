@@ -209,7 +209,7 @@ class PlayerShip(Spaceship):
             if inputs.check_input("ship_right"):
                 self._turn(1)
             
-            if self.__shoot_delay.complete and inputs.check_input("shoot") and self.alive():
+            if self.__shoot_delay.complete and inputs.check_input("shoot_hold") and self.alive():
                 self._shoot()
                 self.__shoot_delay.restart()
 

@@ -92,8 +92,10 @@ class PowerupInfo(State):
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
-        add_background_tint(surface, self.__tint_color)
-        
+        if not self.is_top_state():
+            return
+
+        add_background_tint(surface, self.__tint_color)        
         blit_to_center(self.__anim_texture.render(lerp_amount), surface, (0, -35))
         blit_to_center(font.large_font.render(self.__powerup.get_display_name(), 1, *self.__powerup.colors), surface, (0, 0))
 

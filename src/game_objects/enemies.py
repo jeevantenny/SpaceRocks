@@ -50,9 +50,9 @@ class EnemyShip(Enemy):
 
     __move_speed = 4
     __rotation_speed = 8
-    __player_shoot_range = 170
-    __asteroid_shoot_range = 60
-    __shoot_deviation = 30
+    __player_shoot_range = 160
+    __asteroid_shoot_range = 70
+    __shoot_deviation = 50
 
     def __init__(self, position: pg.typing.Point):
         super().__init__(
@@ -69,7 +69,7 @@ class EnemyShip(Enemy):
 
         self.__speed = 0
         self.__move_direction = pg.Vector2()
-        self.__shoot_interval = Timer(22)
+        self.__shoot_interval = Timer(12)
         self.__start_attack_delay = Timer(35).start()
 
         self.set_angular_vel(self.__rotation_speed)
