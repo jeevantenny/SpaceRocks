@@ -15,9 +15,6 @@ from .info_states import InfoState, DeleteUserDataOption
 from .visuals import BackgroundTint, add_background_tint
 
 
-
-
-
 def option_to_delete_user_data(state_stack: StateStack, inputs: InputInterpreter) -> None:
     tap_keys = inputs.keyboard_mouse.tap_keys
     hold_keys = inputs.keyboard_mouse.hold_keys
@@ -26,11 +23,9 @@ def option_to_delete_user_data(state_stack: StateStack, inputs: InputInterpreter
         state_stack.push(DeleteUserDataOption())
 
 
-
-
-
 class TitleScreen(State):
     "Shows the game's title screen."
+
     def __init__(self):
         super().__init__()
 
@@ -47,10 +42,6 @@ class TitleScreen(State):
         from .play import Play
         self.prev_state: Play
 
-
-
-
-
     def userinput(self, inputs):
         if inputs.keyboard_mouse.hold_keys[pg.KMOD_SHIFT]:
             return
@@ -61,32 +52,27 @@ class TitleScreen(State):
 
                 # The game will start once the player presses one of the controls
                 if (not inputs.keyboard_mouse.hold_keys[pg.KMOD_CTRL]
-                    and (inputs.check_input("select")
-                         or inputs.check_input("ship_forward")
-                         or inputs.check_input("shoot")
-                         or inputs.check_input("ship_left")
-                         or inputs.check_input("ship_right"))
+                        and (inputs.check_input("select")
+                             or inputs.check_input("ship_forward")
+                             or inputs.check_input("shoot")
+                             or inputs.check_input("ship_left")
+                             or inputs.check_input("ship_right"))
                     ):
                     self.__start_gameplay = True
                     self.title.set_effect("main_exit")
-                
+
                 if inputs.check_input("settings"):
                     self.state_stack.push(BackgroundTint("#4E6382"))
                     self.state_stack.push(Settings())
-    
+
         else:
             self.prev_state.spaceship.userinput(inputs)
 
-        
         # Tell the player what controls to use depending on weather they use keyboard or controller.
         if inputs.current_input_type() == "keyboard_mouse":
             self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
             self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
-        
-
-
-
 
     def update(self):
         self.title.update()
@@ -98,10 +84,6 @@ class TitleScreen(State):
             self.prev_state.update()
             if self.title.animations_complete:
                 self.state_stack.pop()
-
-
-
-
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount*self.__start_gameplay)
@@ -119,12 +101,9 @@ class TitleScreen(State):
                         surface.blit(version_text, (surface.width-version_text.width-2, surface.height-12))
 
 
-
-
-
-
 class PauseMenu(State):
     "Shows the pause menu with the game title. This freezes the gameplay in the previous state."
+
     def __init__(self):
         super().__init__()
 
@@ -133,8 +112,6 @@ class PauseMenu(State):
 
         # Assigned default values to avoid raising Attribute Errors.
         self.__info_text = pg.Surface((1, 1))
-
-
 
     def userinput(self, inputs):
         if inputs.check_input("settings"):
@@ -156,16 +133,11 @@ class PauseMenu(State):
                     ).add_to_stack(self.state_stack)
                 else:
                     self.__quit_to_main_menu()
-                
 
-        
-        
         if inputs.current_input_type() == "keyboard_mouse":
             self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<left><right>")
         else:
             self.__info_text = font.icon_font.render("forward<ship_forward>     shoot<shoot>     turn<l_stick>")
-        
-
 
     def update(self):
         self.title.update()
@@ -173,23 +145,22 @@ class PauseMenu(State):
             prev_state = self.prev_state
             self.state_stack.pop()
             prev_state.update()
-    
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, 1)
         if not self.is_top_state():
             return
-        
+
         blit_to_center(self.title.render(lerp_amount), surface, (0, -40))
         if not self.__exit_menu:
             blit_to_center(self.__info_text, surface, (0, 30))
-            surface.blit(font.icon_font.render("Continue<select>     Quit<quit>     Settings<settings>"), (10, surface.height-18))
-            surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-17))
-
+            surface.blit(font.icon_font.render("Continue<select>     Quit<quit>     Settings<settings>"),
+                         (10, surface.height-18))
+            surface.blit(font.small_font.render("F11 to toggle fullscreen mode"),
+                         (surface.width-112, surface.height-17))
 
     def debug_info(self):
         return self.prev_state.debug_info()
-    
 
     def __quit_to_main_menu(self):
         play_state = self.state_stack.find_by_name("Play")
@@ -199,11 +170,6 @@ class PauseMenu(State):
         self.state_stack.quit()
         from .init_state import Initializer
         Initializer.main_title_screen(self.state_stack)
-
-    
-
-
-
 
 
 class Settings(State):
@@ -231,42 +197,32 @@ class Settings(State):
 
         self.__elements = elements.ElementList(settings_elements, wrap_list=True)
 
-
     def userinput(self, inputs):
         if not debug.Cheats.demo_mode:
             option_to_delete_user_data(self.state_stack, inputs)
-        
+
         if debug.DEBUG_MODE and inputs.check_input("settings"):
             self.state_stack.push(DebugMenu())
 
         if inputs.check_input("back"):
             self.state_stack.pop()
-        
-        self.__elements.userinput(inputs)
 
+        self.__elements.userinput(inputs)
 
     def update(self):
         self.prev_state.update()
         self.__elements.update()
-    
+
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, lerp_amount)
         surface.blit(font.large_font.render("Settings"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
-        
+
         surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
         surface.blit(font.small_font.render("F11 to toggle fullscreen mode"), (surface.width-112, surface.height-17))
 
-
     def quit(self):
         data.save_settings()
-
-
-
-
-
-
-
 
 
 class DebugMenu(State):
@@ -275,14 +231,18 @@ class DebugMenu(State):
 
         self.__elements = elements.ElementList([
             elements.Toggle("invincible", debug.Cheats.invincible, lambda x: setattr(debug.Cheats, "invincible", x)),
-            elements.Toggle("no_obstacles", debug.Cheats.no_obstacles, lambda x: setattr(debug.Cheats, "no_obstacles", x)),
-            elements.Toggle("abundant_powerups", debug.Cheats.abundant_powerups, lambda x: setattr(debug.Cheats, "abundant_powerups", x)),
-            elements.Toggle("no_point_combo", debug.Cheats.no_point_combo, lambda x: setattr(debug.Cheats, "no_point_combo", x)),
-            elements.Toggle("show_bounding_boxes", debug.Cheats.show_bounding_boxes, lambda x: setattr(debug.Cheats, "show_bounding_boxes", x)),
-            elements.Toggle("instant_restart", debug.Cheats.instant_restart, lambda x: setattr(debug.Cheats, "instant_restart", x)),
+            elements.Toggle("no_obstacles", debug.Cheats.no_obstacles,
+                            lambda x: setattr(debug.Cheats, "no_obstacles", x)),
+            elements.Toggle("abundant_powerups", debug.Cheats.abundant_powerups,
+                            lambda x: setattr(debug.Cheats, "abundant_powerups", x)),
+            elements.Toggle("no_point_combo", debug.Cheats.no_point_combo,
+                            lambda x: setattr(debug.Cheats, "no_point_combo", x)),
+            elements.Toggle("show_bounding_boxes", debug.Cheats.show_bounding_boxes,
+                            lambda x: setattr(debug.Cheats, "show_bounding_boxes", x)),
+            elements.Toggle("instant_restart", debug.Cheats.instant_restart,
+                            lambda x: setattr(debug.Cheats, "instant_restart", x)),
             elements.Toggle("no_lerp", debug.Cheats.no_lerp, lambda x: setattr(debug.Cheats, "no_lerp", x)),
         ], wrap_list=True)
-
 
     def userinput(self, inputs):
         if inputs.check_input("back"):
@@ -290,19 +250,15 @@ class DebugMenu(State):
             return
 
         self.__elements.userinput(inputs)
-    
+
     def update(self):
         self.__elements.update()
-    
+
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
         surface.blit(font.large_font.render("Debug Menu"), (20, 20))
         self.__elements.draw(surface.subsurface(20, 50, min(250, surface.width-40), max(surface.height-50, 0)))
         surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
-
-
-
-
 
 
 class GameOverScreen(State):
@@ -315,12 +271,10 @@ class GameOverScreen(State):
         self.display_score = 0
         self.title = effects.AnimatedText("game over", "main_entrance_a")
 
-    
     def userinput(self, inputs):
         if inputs.check_input("select") or inputs.keyboard_mouse.tap_keys[pg.K_SPACE]:
             self.__timer = 0
 
-    
     def update(self):
         self.title.update()
         if self.__timer == 0:
@@ -328,19 +282,14 @@ class GameOverScreen(State):
         else:
             self.__timer -= 1
 
-
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface, 1)
         blit_to_center(self.title.render(lerp_amount), surface)
-        
-            
-
-
-
 
 
 class ShowScore(State):
     "Shows the player what score they got on their play-through before comparing it to the highscore."
+
     def __init__(self, level_name: str, score_data: tuple[int, int, bool]):
         super().__init__()
         self.__level_display_name = level_name.replace('_', ' ').upper()
@@ -357,8 +306,6 @@ class ShowScore(State):
         else:
             self.__timer = 30
 
-
-
     def userinput(self, inputs):
         if inputs.check_input("select") or inputs.keyboard_mouse.tap_keys[pg.K_SPACE]:
             if self.__timer:
@@ -370,14 +317,11 @@ class ShowScore(State):
                 # Empties the state stack and adds a new Play state.
                 self.state_stack.quit()
                 self.state_stack.push(PlayLevel(get_start_level()))
-        
+
         if not self.__timer and inputs.check_input("quit"):
             from .init_state import Initializer
             self.state_stack.quit()
             Initializer.main_title_screen(self.state_stack)
-                
-
-
 
     def update(self):
         self.__show = True
@@ -387,8 +331,6 @@ class ShowScore(State):
         elif self.__timer:
             self.__timer -= 1
 
-
-
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
         if self.__show and self.is_top_state():
@@ -397,12 +339,10 @@ class ShowScore(State):
             else:
                 self.__draw_b(surface)
 
-
     def __draw_a(self, surface: pg.Surface) -> None:
         blit_to_center(font.large_font.render(self.__level_display_name), surface, (0, -30))
-        text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=(self.display_score==self.score))
+        text_surface = font.large_font.render(f"{self.display_score:05}", 2, cache=(self.display_score == self.score))
         surface.blit(text_surface, (surface.width*0.5 - 61, surface.height*0.5 - 19))
-
 
     def __draw_b(self, surface: pg.Surface) -> None:
         self.__display_score(surface, "Highscore", self.highscore, -35)
@@ -411,7 +351,6 @@ class ShowScore(State):
         info_text = font.icon_font.render("Play Again<select>")
         blit_to_center(info_text, surface, (0, 70))
         surface.blit(font.icon_font.render("Main menu<quit>"), (10, surface.height-18))
-
 
     def __display_score(self, surface: pg.Surface, name: str, score: int, y_offset: int) -> None:
         text_surface = font.small_font.render(name, 2)

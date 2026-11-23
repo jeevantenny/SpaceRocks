@@ -13,8 +13,6 @@ from . import State, StateStack, menus, info_states, boss_level, play_level, vis
 from .test_states import *
 
 
-
-
 class Initializer:
     "This state will not be added to the state_stack. Instead it adds the relevant states needed when the game is opened."
 
@@ -22,7 +20,8 @@ class Initializer:
         state_stack.quit()
 
         if debug.Cheats.test_state is not None:
-            find_subclass_by_name(State, debug.Cheats.test_state)(*debug.Cheats.test_state_args).add_to_stack(state_stack)
+            state = find_subclass_by_name(State, debug.Cheats.test_state)(*debug.Cheats.test_state_args)
+            state.add_to_stack(state_stack)
             return
 
         if debug.Cheats.demo_mode:
@@ -30,7 +29,7 @@ class Initializer:
                 "DEMO MODE",
                 "User data is not saved or loaded from previous save",
                 confirm_action=lambda: self.main_title_screen(state_stack)
-                ).add_to_stack(state_stack)
+            ).add_to_stack(state_stack)
             return
 
         try:
@@ -48,7 +47,6 @@ class Initializer:
             except SaveFileError:
                 self.save_file_corrupted(state_stack)
                 traceback.print_exc()
-    
 
     @classmethod
     def main_title_screen(cls, state_stack: StateStack) -> None:
@@ -59,7 +57,6 @@ class Initializer:
     def main_gameplay(cls, state_stack: StateStack) -> None:
         play_level.PlayLevel(get_start_level()).add_to_stack(state_stack)
 
-    
     @classmethod
     def continue_from_save(cls, state_stack: StateStack, save_data: SaveData) -> None:
         play_level.PlayLevel.init_from_save(save_data).add_to_stack(state_stack)
@@ -75,4 +72,4 @@ class Initializer:
             text_color_a="#aa0055",
             confirm_action=lambda: (data.delete_progress(),
                                     cls.main_title_screen(state_stack))
-            ).add_to_stack(state_stack)
+        ).add_to_stack(state_stack)

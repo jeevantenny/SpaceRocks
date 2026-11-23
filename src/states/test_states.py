@@ -12,8 +12,6 @@ from . import State
 from .info_states import PowerupInfo
 
 
-
-
 class TestElementList(State):
     def __init__(self):
         super().__init__()
@@ -27,14 +25,14 @@ class TestElementList(State):
                 elements.Slider(f"Test Slider {i}", (0, 100), 0, 10)
                 for i in range(0)
             ],
-        wrap_list=True)
+            wrap_list=True)
 
     def userinput(self, inputs):
         self.__elements.userinput(inputs)
 
     def update(self):
         self.__elements.update()
-    
+
     def draw(self, surface, lerp_amount=0):
         surface.fill("#333333")
         subsurface = surface.subsurface(10, 10, surface.width-20, surface.height-20)
@@ -42,13 +40,14 @@ class TestElementList(State):
         self.__elements.draw(subsurface)
 
 
-
 class TestMusic(State):
     def __init__(self):
         super().__init__()
         MusicManager.play("test_music")
         self.__volume_slider = elements.Slider("Music Volume", (0, 1), data.get_setting("music_volume"), 0.1)
-        self.__volume_slider.on_slide(lambda x: (data.update_settings(music_volume=x), MusicManager.update_music_volume()))
+        self.__volume_slider.on_slide(
+            lambda x: (data.update_settings(music_volume=x), MusicManager.update_music_volume())
+        )
 
     def userinput(self, inputs):
         if inputs.check_input("shoot"):
@@ -56,13 +55,11 @@ class TestMusic(State):
                 MusicManager.pause()
             else:
                 MusicManager.resume()
-        
+
         self.__volume_slider.userinput(inputs)
 
-    
     def update(self):
         self.__volume_slider.update()
-
 
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
@@ -70,7 +67,6 @@ class TestMusic(State):
         blit_to_center(font.small_font.render(f"Track name: {MusicManager.get_track_name()}"), surface, (0, -12))
         blit_to_center(font.icon_font.render("Pause/Resume<shoot>"), surface)
         blit_to_center(self.__volume_slider.render(), surface, (0, 20))
-
 
 
 class TestPowerupInfo(State):

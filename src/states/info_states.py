@@ -9,13 +9,9 @@ from . import State
 from .visuals import add_background_tint
 
 
-
-
-
-
 class InfoState(State):
     def __init__(self,
-                 title: str, subtitle: str, prompt = "Continue<select>",
+                 title: str, subtitle: str, prompt="Continue<select>",
                  background_color="#000000",
                  text_color_a="#dd6644", text_color_b="#550011",
                  confirm_action: Callable[[], None] = None,
@@ -28,20 +24,19 @@ class InfoState(State):
         self.__text_colors = text_color_a, text_color_b
         self.__confirm_action = confirm_action
         self.__can_escape = can_escape
-    
+
     def userinput(self, inputs):
         if inputs.check_input("select"):
             self.state_stack.pop()
             if self.__confirm_action is not None:
                 self.__confirm_action()
-        
+
         elif self.__can_escape and inputs.check_input("back"):
             self.state_stack.pop()
 
-
     def debug_info(self):
         return self.__prompt
-    
+
     def draw(self, surface, lerp_amount=0):
         surface.fill(self.__background_color)
         if self.__subtitle:
@@ -56,13 +51,11 @@ class InfoState(State):
             offset += 30
         else:
             offset += 15
-        
+
         blit_to_center(font.icon_font.render(self.__prompt), surface, (0, offset))
 
         if self.__can_escape:
             surface.blit(font.icon_font.render("Back<back>"), (10, surface.height-18))
-
-
 
 
 class PowerupInfo(State):
@@ -78,26 +71,25 @@ class PowerupInfo(State):
         self.__anim_texture = effects.AnimatedTexture(pg.transform.scale_by(texture, 2),
                                                       "powerups", "powerup", "start")
 
-
     def userinput(self, inputs):
         if inputs.check_input("select"):
             self.state_stack.pop()
-    
+
     def update(self):
         if self.__collectable.alive():
             self.__collectable.update()
         else:
             self.__anim_texture.update()
-    
 
     def draw(self, surface, lerp_amount=0):
         self.prev_state.draw(surface)
         if not self.is_top_state():
             return
 
-        add_background_tint(surface, self.__tint_color)        
+        add_background_tint(surface, self.__tint_color)
         blit_to_center(self.__anim_texture.render(lerp_amount), surface, (0, -35))
-        blit_to_center(font.large_font.render(self.__powerup.get_display_name(), 1, *self.__powerup.colors), surface, (0, 0))
+        blit_to_center(font.large_font.render(self.__powerup.get_display_name(), 1, *self.__powerup.colors),
+                       surface, (0, 0))
 
         for i, text in enumerate(self.__info_text):
             blit_to_center(font.small_font.render(text, 1, *self.__powerup.colors),
@@ -108,7 +100,6 @@ class PowerupInfo(State):
             blit_to_center(font.icon_font.render("OK<select>"), surface, (0, 60))
         else:
             blit_to_center(font.icon_font.render("OK<select>"), surface, (0, 45))
-
 
 
 class DeleteUserDataOption(State):
@@ -132,13 +123,12 @@ class DeleteUserDataOption(State):
                 "Main Menu<select>",
                 text_color_a="#aa0055",
                 confirm_action=lambda: Initializer.main_title_screen(self.state_stack)
-                ).add_to_stack(self.state_stack)
+            ).add_to_stack(self.state_stack)
 
-
-    
     def draw(self, surface, lerp_amount=0):
         surface.fill("black")
         blit_to_center(font.large_font.render("DELETE USER DATA?", color_a="#aa0055"), surface, (0, -20))
-        blit_to_center(font.small_font.render("Are you sure you want to delete all user data?", color_a="#aa0055"), surface, (0, 5))
+        blit_to_center(font.small_font.render(
+            "Are you sure you want to delete all user data?", color_a="#aa0055"), surface, (0, 5))
         blit_to_center(font.small_font.render("If so press ALT + SHIFT + D", color_a="#aa0055"), surface, (0, 15))
         blit_to_center(font.icon_font.render("Back<back>"), surface, (0, 35))
