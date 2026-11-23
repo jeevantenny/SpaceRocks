@@ -5,9 +5,6 @@ from src.custom_types import GameMusic
 from src.file_processing import assets, data
 
 
-
-
-
 class MusicManager:
     __current_music: GameMusic | None = None
 
@@ -31,21 +28,17 @@ class MusicManager:
             pg.mixer_music.fadeout(fadeout)
         else:
             pg.mixer_music.stop()
-        
-        cls.__current_music = None
 
+        cls.__current_music = None
 
     @classmethod
     def get_track_name(cls) -> str | None:
         if cls.__current_music is not None:
             return cls.__current_music.get_name()
 
-        
     @classmethod
     def update_music_volume(cls) -> None:
         pg.mixer_music.set_volume(data.get_setting("music_volume"))
-
-
 
     def __new__(cls):
         return NotImplementedError("Cannot instantiate MusicManager")

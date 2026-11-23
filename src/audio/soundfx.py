@@ -18,8 +18,6 @@ class SoundFXManager:
             sound = assets.load_sound(name)
             return sound.play(pg.math.clamp(volume, 0, 1)*data.get_setting("soundfx_volume"), loops)
 
-
-
     @classmethod
     def play_sound_queue(cls, queue: SoundQueue) -> None:
         new_loop_sounds: dict[tuple[str, int], float] = {}
@@ -28,7 +26,7 @@ class SoundFXManager:
                 cls.play_sound(name, volume)
             else:
                 new_loop_sounds[(name, object_id)] = volume
-        
+
         for loop_id, channel in list(cls.__looping_sounds.items()):
             # If a currently looping sound should continue in next tick
             if loop_id in new_loop_sounds:
@@ -45,8 +43,6 @@ class SoundFXManager:
             if new_channel is not None:
                 cls.__looping_sounds[loop_id] = new_channel
 
-
-
     @classmethod
     def stop_looping_sounds(cls) -> None:
         "Stops all currently playing looping sounds"
@@ -55,18 +51,15 @@ class SoundFXManager:
         cls.__looping_sounds.clear()
 
 
-
-
 class HasSoundQueue:
     "Has methods for storing sounds in queue and removing theme all at once."
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__sound_queue: SoundQueue = []
 
-
     def get_sound_queue(self) -> SoundQueue:
         return self.__sound_queue.copy()
-
 
     def _queue_sound(self, sound_name: str, volume=1.0, loop=False) -> None:
         if loop:
@@ -80,7 +73,7 @@ class HasSoundQueue:
         "Adds all sounds from a queue."
         for sound_data in queue:
             self._queue_sound(*sound_data)
-    
+
     def clear_sound_queue(self) -> SoundQueue:
         queue = self.__sound_queue
         self.__sound_queue = []

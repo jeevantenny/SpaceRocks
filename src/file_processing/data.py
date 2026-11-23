@@ -36,13 +36,11 @@ DEFAULT_SETTINGS = {
 
 
 __demo_highscore = 0
-__settings_data: dict[str, bool|float] = {}
+__settings_data: dict[str, bool | float] = {}
 
 
 if not (os.path.exists("user_data") or debug.Cheats.demo_mode):
     os.makedirs("user_data")
-
-
 
 
 def load_level(name: str) -> LevelData:
@@ -76,41 +74,33 @@ def load_level(name: str) -> LevelData:
 
     try:
         level_data_obj = LevelData(
-            level_name=             name,
-            base_color=             level_data.get("base_color", "#000000"),
-            parl_a=                 level_data.get("parl_a"),
-            parl_b=                 level_data.get("parl_b"),
-            background_palette=     level_data.get("background_palette"),
-            background_tint=        level_data.get("background_tint", "#4E6382"),
+            level_name             = name,
+            base_color             = level_data.get("base_color", "#000000"),
+            parl_a                 = level_data.get("parl_a"),
+            parl_b                 = level_data.get("parl_b"),
+            background_palette     = level_data.get("background_palette"),
+            background_tint        = level_data.get("background_tint", "#4E6382"),
 
-            asteroid_density=       tuple(level_data["asteroid_density"]),
-            asteroid_speed=         tuple(level_data["asteroid_speed"]),
-            asteroid_interval=      asteroid_interval,
-            asteroid_spawn_weights= asteroid_weights,
+            asteroid_density       = tuple(level_data["asteroid_density"]),
+            asteroid_speed         = tuple(level_data["asteroid_speed"]),
+            asteroid_interval      = asteroid_interval,
+            asteroid_spawn_weights = asteroid_weights,
 
-            enemy_interval=         enemy_interval,
-            enemy_count=            level_data.get("enemy_count", 0),
-            enemy_spawn_weights=    enemy_weights,
+            enemy_interval         = enemy_interval,
+            enemy_count            = level_data.get("enemy_count", 0),
+            enemy_spawn_weights    = enemy_weights,
 
-            powerup_interval=       powerup_interval,
-            powerup_spawn_weights=  powerup_weights,
+            powerup_interval       = powerup_interval,
+            powerup_spawn_weights  = powerup_weights,
 
-            score_range=            tuple(level_data["score_range"]),
-            next_level=             level_data["next_level"],
-            show_progress=          level_data.get("show_progress", True)
+            score_range            = tuple(level_data["score_range"]),
+            next_level             = level_data["next_level"],
+            show_progress          = level_data.get("show_progress", True)
         )
     except KeyError as e:
         raise LevelDataError(name, e.args[0])
 
     return level_data_obj
-
-
-
-
-
-
-
-
 
 
 def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
@@ -119,7 +109,7 @@ def load_highscore(path=HIGHSCORE_DATA_PATH) -> int:
     # Loads temporary highscore in demo mode
     if debug.Cheats.demo_mode:
         return __demo_highscore
-    
+
     try:
         return pg.math.clamp(int(load_json(path)["highscore"]), 0, SCORE_LIMIT)
     except (FileNotFoundError, JSONDecodeError, KeyError, TypeError, ValueError):
@@ -134,15 +124,14 @@ def save_highscore(value: int, path=HIGHSCORE_DATA_PATH) -> None:
         global __demo_highscore
         __demo_highscore = value
         return
-    
-    save_json({"highscore": pg.math.clamp(int(value), 0, SCORE_LIMIT)}, path)
 
+    save_json({"highscore": pg.math.clamp(int(value), 0, SCORE_LIMIT)}, path)
 
 
 def load_progress(path=SAVE_DATA_PATH) -> SaveData | None:
     "Loads the player's from save data as a SaveData object. Returns None if there us no progress saved."
 
-    #Does not load progress in demo mode
+    # Does not load progress in demo mode
     if debug.Cheats.demo_mode:
         return None
 
@@ -154,16 +143,14 @@ def load_progress(path=SAVE_DATA_PATH) -> SaveData | None:
                 return None
             except Exception:
                 raise SaveFileError("Save file got corrupted")
-    
+
     except FileNotFoundError:
         return None
 
-    
     if isinstance(save_data, SaveData):
         return save_data
     else:
         raise SaveFileError("Save file is of incorrect type")
-    
 
 
 def save_progress(save_data: SaveData) -> None:
@@ -178,14 +165,13 @@ def save_progress(save_data: SaveData) -> None:
             pickle.dump(save_data, fp)
 
 
-
 def delete_progress(path=SAVE_DATA_PATH) -> None:
     "Deleted save data for player's progress."
 
     # Does not delete progress in demo mode.
     if not debug.Cheats.demo_mode:
-        with open(path, "wb") as _: pass
-
+        with open(path, "wb") as _:
+            pass
 
 
 def load_settings(path=SETTINGS_DATA_PATH) -> None:
@@ -199,8 +185,7 @@ def load_settings(path=SETTINGS_DATA_PATH) -> None:
         __settings_data = {}
 
 
-
-def get_setting(name: str) -> bool|float:
+def get_setting(name: str) -> bool | float:
     "Gets the value of a user setting."
     try:
         return __settings_data.get(name, DEFAULT_SETTINGS[name])
@@ -215,7 +200,6 @@ def update_settings(**settings_data) -> None:
             __settings_data[name] = value
         else:
             raise KeyError(f"Invalid setting '{name}'")
-        
 
 
 def save_settings() -> None:
@@ -224,12 +208,10 @@ def save_settings() -> None:
         save_json(__settings_data, SETTINGS_DATA_PATH)
 
 
-
 def reset_settings() -> None:
     "Resets all settings to default values."
     global __settings_data
     __settings_data = {}
-
 
 
 def delete_user_data() -> None:
@@ -237,7 +219,7 @@ def delete_user_data() -> None:
 
     if debug.Cheats.demo_mode:
         raise RuntimeError("Cannot delete user data in demo mode")
-    
+
     delete_progress()
     save_highscore(0)
     reset_settings()

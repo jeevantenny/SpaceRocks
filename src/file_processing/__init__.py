@@ -3,12 +3,10 @@
 import json
 
 
-
 def load_json(path: str) -> dict:
     "Loads a json file as a dict (don't include .json in path)"
     with open(f"{path}.json", 'r') as fp:
         return json.load(fp)
-    
 
 
 def save_json(data: dict, path: str) -> None:

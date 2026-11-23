@@ -28,8 +28,6 @@ SOUND_DEFINITIONS: dict[str, dict[str, list[str] | str]] = load_json("assets/sou
 MUSIC_DEFINITIONS: dict[str, dict[str, str]] = load_json("assets/music_definitions")
 
 
-
-
 @asset_cache
 def load_texture(path: str, palette_swap_name: str | None = None, file_type="png") -> pg.Surface:
     "Loads a texture from the textures folder as a pygame.Surface"
@@ -43,10 +41,6 @@ def load_texture(path: str, palette_swap_name: str | None = None, file_type="png
     return texture
 
 
-
-
-
-
 def colorkey_surface(size: pg.typing.Point) -> pg.Surface:
     "Creates a surface that is made transparent using the colorkey."
     surface = pg.Surface(size)
@@ -54,7 +48,6 @@ def colorkey_surface(size: pg.typing.Point) -> pg.Surface:
         surface.set_colorkey(COLORKEY)
     surface.fill(COLORKEY)
     return surface
-
 
 
 @asset_cache
@@ -65,11 +58,8 @@ def load_texture_map(path: str, palette_swap_name: str | None = None) -> Texture
     texture_map = {}
     for name, area in mapping_data["mappings"].items():
         texture_map[name] = main_texture.subsurface(area)
-    
+
     return texture_map
-
-
-
 
 
 @overload
@@ -77,26 +67,23 @@ def palette_swap(texture: pg.Surface, load_swap_file: str) -> pg.Surface: ...
 @overload
 def palette_swap(texture: pg.Surface, swap_colors: dict[str, str]) -> pg.Surface: ...
 
+
 def palette_swap(texture: pg.Surface, swap_colors: dict[str, str] | str) -> pg.Surface:
     "Swaps all colors in a surface with a corresponding color if specified."
 
     if isinstance(swap_colors, str):
         swap_colors = load_json(f"assets/palette_swaps/{swap_colors}")
-    
+
     masks: dict[pg.typing.ColorLike, pg.Mask] = {}
 
     for old_c, new_c in swap_colors.items():
         masks[new_c] = pg.mask.from_threshold(texture, old_c, (1, 1, 1, 255))
-    
 
     texture_copy = texture.copy()
     for new_c, mask in masks.items():
         mask.to_surface(texture_copy, setcolor=new_c, unsetcolor=None)
-    
+
     return texture_copy
-
-
-
 
 
 @asset_cache
@@ -109,16 +96,15 @@ def load_anim_controller_data(path: str) -> ControllerData:
     return load_json(f"{ANIM_CONTROLLERS_DIR}/{path}.anim_controller")
 
 
-
 @asset_cache
 def load_sound(name: str) -> GameSound:
     "Loads a sound defined in sound definitions. (OGG file)"
 
     if name not in SOUND_DEFINITIONS:
         raise ValueError(f"Invalid sound name '{name}'")
-    
+
     sound_data = SOUND_DEFINITIONS[name]
-    
+
     sounds = []
     for path in sound_data["sounds"]:
         final_path = f"{SOUNDS_DIR}/{path}.{sound_data.get("file_type", "ogg")}"
@@ -137,4 +123,3 @@ def load_music_data(name: str) -> GameMusic:
         f"{SOUNDS_DIR}/{data["prelude"]}.ogg" if data.get("prelude")
         else None
     )
-
